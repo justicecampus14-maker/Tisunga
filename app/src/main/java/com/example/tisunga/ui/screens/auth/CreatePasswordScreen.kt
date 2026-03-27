@@ -108,10 +108,17 @@ fun CreatePasswordScreen(navController: NavController, viewModel: AuthViewModel)
         
         Button(
             onClick = { 
+                val hasUpperCase = password.any { it.isUpperCase() }
+                val hasSymbol = password.any { !it.isLetterOrDigit() }
+
                 if (password != confirmPassword) {
                     error = "Passwords do not match"
-                } else if (password.length < 6) {
-                    error = "Password must be at least 6 characters"
+                } else if (password.length < 8 || password.length > 64) {
+                    error = "Password must be between 8 and 64 characters"
+                } else if (!hasUpperCase) {
+                    error = "Password must include at least one capital letter"
+                } else if (!hasSymbol) {
+                    error = "Password must include at least one symbol"
                 } else {
                     error = ""
                     viewModel.createPassword(uiState.userPhone, password)

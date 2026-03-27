@@ -4,6 +4,8 @@ import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -12,18 +14,21 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.tisunga.R
 import com.example.tisunga.data.model.Group
 import com.example.tisunga.ui.components.BottomNavBar
 import com.example.tisunga.ui.navigation.Routes
@@ -31,6 +36,7 @@ import com.example.tisunga.ui.theme.*
 import com.example.tisunga.viewmodel.HomeViewModel
 import com.example.tisunga.utils.SessionManager
 import com.example.tisunga.utils.MockDataProvider
+import kotlinx.coroutines.delay
 
 @Composable
 fun HomeScreen(navController: NavController, viewModel: HomeViewModel) {
@@ -69,7 +75,7 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel) {
                 }
             }
 
-            // Banner
+            // Sliding Banner Cards
             BannerSection()
 
             // Quick Actions
@@ -125,54 +131,113 @@ fun HomeHeader(userName: String, userPhone: String, navController: NavController
 
 @Composable
 private fun BannerSection() {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal=16.dp)
-            .height(200.dp)
-            .clip(RoundedCornerShape(20.dp))
-            .background(
-                brush = Brush.horizontalGradient(
-                    colors = listOf(
-                        Color(0xFF1B5E20),
-                        Color(0xFF2E7D32),
-                        Color(0xFF388E3C)
-                    )
-                )
-            ),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("TISUNGA", color=Color.White,
-                 fontSize=24.sp, fontWeight=FontWeight.Bold,
-                 letterSpacing=4.sp)
-            Text("Save Together. Grow Together.",
-                 color=Color.White.copy(0.8f), fontSize=13.sp)
-            Spacer(modifier = Modifier.height(8.dp))
-            Text("My Savings: MK 12,500.00",
-                 color=Color(0xFFFFEB3B),
-                 fontSize=16.sp, fontWeight=FontWeight.SemiBold)
+    val pagerState = rememberPagerState(pageCount = { 3 })
+    
+    // Auto-slide effect every 3 seconds
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(3000)
+            val nextPage = (pagerState.currentPage + 1) % pagerState.pageCount
+            pagerState.animateScrollToPage(nextPage)
         }
     }
-    // Pager dots
-    Row(
-        modifier=Modifier.fillMaxWidth().padding(top=8.dp),
-        horizontalArrangement=Arrangement.Center
+    
+    Column(modifier = Modifier.fillMaxWidth()) {
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(200.dp)
+                .padding(horizontal = 16.dp),
+            contentPadding = PaddingValues(end = 12.dp),
+            pageSpacing = 12.dp
+        ) { page ->
+            BannerCard(page)
+        }
+        
+        Spacer(modifier = Modifier.height(12.dp))
+        
+        // Pager dots
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center
+        ) {
+            repeat(3) { index ->
+                Box(
+                    modifier = Modifier
+                        .padding(horizontal = 3.dp)
+                        .size(if (pagerState.currentPage == index) 8.dp else 6.dp)
+                        .background(
+                            if (pagerState.currentPage == index) NavyBlue
+                            else Color(0xFFCCCCCC),
+                            CircleShape
+                        )
+                )
+            }
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+    }
+}
+
+@Composable
+fun BannerCard(page: Int) {
+    // Background color/brush based on page
+    val brush = when (page) {
+        0 -> Brush.horizontalGradient(listOf(Color(0xFF1B5E20), Color(0xFF2E7D32)))
+        1 -> Brush.horizontalGradient(listOf(Color(0xFF1565C0), Color(0xFF1E88E5)))
+        else -> Brush.horizontalGradient(listOf(Color(0xFF4A148C), Color(0xFF7B1FA2)))
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .clip(RoundedCornerShape(20.dp))
+            .background(brush),
+        contentAlignment = Alignment.Center
     ) {
-        repeat(3) { index ->
-            Box(
-                modifier=Modifier
-                    .padding(horizontal=3.dp)
-                    .size(if(index==0) 8.dp else 6.dp)
-                    .background(
-                        if(index==0) NavyBlue
-                        else Color(0xFFCCCCCC),
-                        CircleShape
-                    )
+        Row(
+            modifier = Modifier.fillMaxSize().padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = when(page) {
+                        0 -> "TISUNGA"
+                        1 -> "SAVE MORE"
+                        else -> "GROW FAST"
+                    },
+                    color = Color.White,
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 4.sp
+                )
+                Text(
+                    text = when(page) {
+                        0 -> "Save Together. Grow Together."
+                        1 -> "Your future is built today."
+                        else -> "Loans at low interest rates."
+                    },
+                    color = Color.White.copy(0.8f),
+                    fontSize = 13.sp
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = if(page == 0) "My Savings: MK 12,500.00" else "Join 100+ Groups",
+                    color = Color(0xFFFFEB3B),
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+            
+            // Stylized "Group of people" icon placeholder
+            Icon(
+                Icons.Default.Groups,
+                contentDescription = null,
+                modifier = Modifier.size(80.dp).alpha(0.3f),
+                tint = Color.White
             )
         }
     }
-    Spacer(modifier = Modifier.height(16.dp))
 }
 
 @Composable

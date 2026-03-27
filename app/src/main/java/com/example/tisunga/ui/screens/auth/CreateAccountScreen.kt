@@ -51,7 +51,11 @@ fun CreateAccountScreen(navController: NavController, viewModel: AuthViewModel) 
             Column(modifier = Modifier.padding(16.dp)) {
                 OutlinedTextField(
                     value = phone,
-                    onValueChange = { phone = it },
+                    onValueChange = { input -> 
+                        if (input.all { it.isDigit() }) {
+                            phone = input
+                        }
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(10.dp),
                     label = { Text("Phone Number") },

@@ -2,7 +2,6 @@ package com.example.tisunga.ui.components
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalance
-import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
@@ -33,47 +32,15 @@ fun BottomNavBar(
         .currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
-    val items: List<BottomNavItem> = when (type) {
-        "A" -> listOf(
-            BottomNavItem(
-                "Home", Icons.Filled.Home, Routes.HOME),
-            BottomNavItem(
-                "Save", Icons.Filled.AccountBalance,
-                Routes.GROUP_SAVINGS),
-            BottomNavItem(
-                "Me", Icons.Filled.Person, "me")
-        )
-        "B" -> listOf(
-            BottomNavItem(
-                "Home", Icons.Filled.Home, Routes.HOME),
-            BottomNavItem(
-                "Savings", Icons.Filled.AccountBalance,
-                Routes.GROUP_SAVINGS),
-            BottomNavItem(
-                "Me", Icons.Filled.Person, "me")
-        )
-        "C" -> listOf(
-            BottomNavItem(
-                "Home", Icons.Filled.Home, Routes.HOME),
-            BottomNavItem(
-                "Group", Icons.Filled.Group,
-                "group_nav"),
-            BottomNavItem(
-                "Save", Icons.Filled.AccountBalance,
-                Routes.GROUP_SAVINGS),
-            BottomNavItem(
-                "Me", Icons.Filled.Person, "me")
-        )
-        else -> listOf(
-            BottomNavItem(
-                "Home", Icons.Filled.Home, Routes.HOME),
-            BottomNavItem(
-                "Save", Icons.Filled.AccountBalance,
-                Routes.GROUP_SAVINGS),
-            BottomNavItem(
-                "Me", Icons.Filled.Person, "me")
-        )
-    }
+    val items: List<BottomNavItem> = listOf(
+        BottomNavItem("Home", Icons.Filled.Home, Routes.HOME),
+        BottomNavItem(
+            if (type == "B") "Savings" else "Save", 
+            Icons.Filled.AccountBalance, 
+            Routes.GROUP_SAVINGS
+        ),
+        BottomNavItem("Me", Icons.Filled.Person, "me")
+    )
 
     NavigationBar(
         containerColor = Color.White,
@@ -81,16 +48,8 @@ fun BottomNavBar(
     ) {
         items.forEach { item ->
             val isSelected = when (item.route) {
-                Routes.HOME ->
-                    currentRoute == Routes.HOME
-                Routes.GROUP_SAVINGS ->
-                    currentRoute == Routes.GROUP_SAVINGS ||
-                    currentRoute?.startsWith(
-                        "group_savings") == true
-                "group_nav" ->
-                    currentRoute?.startsWith(
-                        "group_detail") == true ||
-                    currentRoute == "group_nav"
+                Routes.HOME -> currentRoute == Routes.HOME
+                Routes.GROUP_SAVINGS -> currentRoute == Routes.GROUP_SAVINGS
                 else -> currentRoute == item.route
             }
 
@@ -109,22 +68,10 @@ fun BottomNavBar(
                 },
                 selected = isSelected,
                 onClick = {
-                    when (item.route) {
-                        "me" -> { /* Profile screen TODO */ }
-                        "group_nav" -> {
-                            // Navigate to first group detail
-                            // or discover if no groups
-                            navController.navigate(
-                                Routes.DISCOVER_GROUPS
-                            ) {
-                                popUpTo(Routes.HOME) {
-                                    saveState = true
-                                }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        }
-                        else -> {
+                    if (currentRoute != item.route) {
+                        if (item.route == "me") {
+                            // TODO: Navigate to profile
+                        } else {
                             navController.navigate(item.route) {
                                 popUpTo(Routes.HOME) {
                                     saveState = true
