@@ -71,7 +71,7 @@ fun WelcomeScreen(navController: NavController) {
                 .height(56.dp)
         ) {
             Button(
-                onClick = { navController.navigate(Routes.CREATE_ACCOUNT) },
+                onClick = { navController.navigate(Routes.SIGN_IN) },
                 modifier = Modifier
                     .weight(0.7f)
                     .fillMaxHeight(),
@@ -81,7 +81,7 @@ fun WelcomeScreen(navController: NavController) {
                 Text("GET STARTED", color = White, fontWeight = FontWeight.Bold)
             }
             Button(
-                onClick = { navController.navigate(Routes.CREATE_ACCOUNT) },
+                onClick = { navController.navigate(Routes.SIGN_IN) },
                 modifier = Modifier
                     .weight(0.3f)
                     .fillMaxHeight(),

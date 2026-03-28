@@ -66,7 +66,11 @@ fun SignInScreen(navController: NavController, viewModel: AuthViewModel) {
                 Spacer(modifier = Modifier.height(8.dp))
                 OutlinedTextField(
                     value = phone,
-                    onValueChange = { phone = it },
+                    onValueChange = { input -> 
+                        if (input.all { it.isDigit() }) {
+                            phone = input
+                        }
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(10.dp),
                     placeholder = { Text("Enter Phone number") },

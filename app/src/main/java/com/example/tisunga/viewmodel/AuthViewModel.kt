@@ -50,12 +50,18 @@ class AuthViewModel(private val sessionManager: SessionManager) : ViewModel() {
                 // DEVELOPMENT MODE: Use mock data when no network
                 android.util.Log.d("AuthViewModel", "Network error, using mock data: ${e.message}")
                 val mockUser = MockDataProvider.getMockUser()
+                val mockUserName = "${mockUser.firstName} ${mockUser.lastName}"
+                
+                // Ensure session manager is updated so other ViewModels can read the data
+                sessionManager.saveAuthToken(MockDataProvider.MOCK_TOKEN)
+                sessionManager.saveUserData(mockUser.id, mockUserName, mockUser.phone, mockUser.role)
+                
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     isSuccess = true,
                     token = MockDataProvider.MOCK_TOKEN,
                     userId = mockUser.id,
-                    userName = "${mockUser.firstName} ${mockUser.lastName}",
+                    userName = mockUserName,
                     userPhone = mockUser.phone,
                     userRole = mockUser.role
                 )
