@@ -17,6 +17,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.compose.ui.res.stringResource
+import com.example.tisunga.R
 import com.example.tisunga.ui.components.BottomNavBar
 import com.example.tisunga.ui.components.LoanCard
 import com.example.tisunga.ui.navigation.Routes
@@ -27,8 +29,15 @@ import com.example.tisunga.viewmodel.LoanViewModel
 @Composable
 fun MyLoansScreen(navController: NavController, groupId: Int, viewModel: LoanViewModel) {
     val uiState by viewModel.uiState.collectAsState()
-    var selectedTab by remember { mutableStateOf("My Loans") }
-    var selectedFilter by remember { mutableStateOf("Active") }
+    
+    val tabMyLoans = stringResource(R.string.tab_my_loans)
+    val tabMemberLoans = stringResource(R.string.tab_member_loans)
+    val filterActive = stringResource(R.string.filter_active)
+    val filterPending = stringResource(R.string.filter_pending)
+    val filterHistory = stringResource(R.string.filter_history)
+
+    var selectedTab by remember { mutableStateOf(tabMyLoans) }
+    var selectedFilter by remember { mutableStateOf(filterActive) }
 
     LaunchedEffect(Unit) {
         viewModel.getMyLoans()
@@ -60,8 +69,8 @@ fun MyLoansScreen(navController: NavController, groupId: Int, viewModel: LoanVie
                 }
                 Spacer(modifier = Modifier.width(16.dp))
                 Column {
-                    Text("Loans", fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                    Text("Doman Group", fontSize = 12.sp, color = TextSecondary)
+                    Text(stringResource(R.string.loans_title), fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.placeholder_group_name), fontSize = 12.sp, color = TextSecondary)
                 }
             }
 
@@ -71,23 +80,23 @@ fun MyLoansScreen(navController: NavController, groupId: Int, viewModel: LoanVie
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                TabButton("My Loans", selectedTab == "My Loans", Modifier.weight(1f)) { selectedTab = "My Loans" }
-                TabButton("Member Loans", selectedTab == "Member Loans", Modifier.weight(1f)) { 
-                    selectedTab = "Member Loans"
+                TabButton(tabMyLoans, selectedTab == tabMyLoans, Modifier.weight(1f)) { selectedTab = tabMyLoans }
+                TabButton(tabMemberLoans, selectedTab == tabMemberLoans, Modifier.weight(1f)) { 
+                    selectedTab = tabMemberLoans
                     navController.navigate("group_loans/$groupId")
                 }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            if (selectedTab == "My Loans") {
+            if (selectedTab == tabMyLoans) {
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    FilterChip(label = "Active", isSelected = selectedFilter == "Active", onClick = { selectedFilter = "Active" })
-                    FilterChip(label = "Pending", isSelected = selectedFilter == "Pending", onClick = { selectedFilter = "Pending" })
-                    FilterChip(label = "History", isSelected = selectedFilter == "History", onClick = { selectedFilter = "History" })
+                    FilterChip(label = filterActive, isSelected = selectedFilter == filterActive, onClick = { selectedFilter = filterActive })
+                    FilterChip(label = filterPending, isSelected = selectedFilter == filterPending, onClick = { selectedFilter = filterPending })
+                    FilterChip(label = filterHistory, isSelected = selectedFilter == filterHistory, onClick = { selectedFilter = filterHistory })
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -111,7 +120,7 @@ fun MyLoansScreen(navController: NavController, groupId: Int, viewModel: LoanVie
                 shape = RoundedCornerShape(10.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = NavyBlue)
             ) {
-                Text("Apply Loan", color = White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                Text(stringResource(R.string.apply_loan_button), color = White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
             }
         }
     }
@@ -159,32 +168,32 @@ fun FeaturedLoanCard(onRepayClick: () -> Unit) {
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("Doman Group Loan", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                Text(stringResource(R.string.loan_group_name_label, stringResource(R.string.placeholder_group_name)), fontWeight = FontWeight.Bold, fontSize = 18.sp)
                 Surface(color = Color(0xFFFCE4EC), shape = RoundedCornerShape(4.dp)) {
-                    Text("active", modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp), color = Color(0xFFE91E63), fontSize = 12.sp)
+                    Text(stringResource(R.string.loan_status_active), modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp), color = Color(0xFFE91E63), fontSize = 12.sp)
                 }
             }
-            Text("Aproved by Laston Mzumala\nchairperson. Feb 01 2026", fontSize = 12.sp, color = TextSecondary)
+            Text(stringResource(R.string.loan_approved_by, "Laston Mzumala", "chairperson", "Feb 01 2026"), fontSize = 12.sp, color = TextSecondary)
             
             Spacer(modifier = Modifier.weight(1f))
             
-            Text("MK 650,000", fontWeight = FontWeight.Bold, fontSize = 32.sp)
+            Text(stringResource(R.string.amount_mk, "650,000"), fontWeight = FontWeight.Bold, fontSize = 32.sp)
             
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Bottom) {
                 Column {
-                    Text("50% repaid", fontSize = 12.sp, color = TextSecondary)
+                    Text(stringResource(R.string.loan_repaid_percent, 50), fontSize = 12.sp, color = TextSecondary)
                     LinearProgressIndicator(progress = { 0.5f }, color = PurpleProgress, trackColor = DividerColor, modifier = Modifier.width(100.dp).height(6.dp))
                 }
                 Column(horizontalAlignment = Alignment.End) {
-                    Text("Remaining: MK 50,000", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                    Text("Due nov 04, 2026", color = RedAccent, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                    Text(stringResource(R.string.loan_remaining_amount, "50,000"), fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    Text(stringResource(R.string.loan_due_date, "nov 04, 2026"), color = RedAccent, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                 }
             }
             
             Spacer(modifier = Modifier.height(16.dp))
             
             Text(
-                "Repay Now →",
+                stringResource(R.string.repay_now_link),
                 modifier = Modifier.align(Alignment.End).clickable { onRepayClick() },
                 fontWeight = FontWeight.Bold,
                 fontSize = 14.sp,

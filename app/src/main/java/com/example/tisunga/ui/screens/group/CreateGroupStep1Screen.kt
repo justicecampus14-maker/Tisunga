@@ -18,6 +18,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.compose.ui.res.stringResource
+import com.example.tisunga.R
 import com.example.tisunga.ui.navigation.Routes
 import com.example.tisunga.ui.theme.*
 
@@ -43,15 +45,15 @@ fun CreateGroupStep1Screen(navController: NavController) {
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = { navController.popBackStack() }) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back_desc))
             }
-            Text("Create Group", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+            Text(stringResource(R.string.create_group_title), fontSize = 20.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
         }
         
         Spacer(modifier = Modifier.height(8.dp))
         
         Text(
-            "Upon Creation You are the Chair for the group",
+            stringResource(R.string.chair_notice),
             color = PurpleSubtitle,
             fontSize = 14.sp,
             fontWeight = FontWeight.SemiBold,
@@ -68,12 +70,12 @@ fun CreateGroupStep1Screen(navController: NavController) {
             elevation = CardDefaults.cardElevation(4.dp)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text("Group Name*", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                Text(stringResource(R.string.group_name_label), fontWeight = FontWeight.Bold, fontSize = 14.sp)
                 OutlinedTextField(
                     value = groupName,
                     onValueChange = { groupName = it },
                     modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("eg, Mphatsso Group") },
+                    placeholder = { Text(stringResource(R.string.group_name_hint)) },
                     shape = RoundedCornerShape(10.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         unfocusedBorderColor = DividerColor,
@@ -85,12 +87,12 @@ fun CreateGroupStep1Screen(navController: NavController) {
                 
                 Spacer(modifier = Modifier.height(12.dp))
                 
-                Text("Description", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                Text(stringResource(R.string.description_label), fontWeight = FontWeight.Bold, fontSize = 14.sp)
                 OutlinedTextField(
                     value = description,
                     onValueChange = { description = it },
                     modifier = Modifier.fillMaxWidth().height(100.dp),
-                    placeholder = { Text("Mphatso group is a group that saves a minimum of k2000 each week .......") },
+                    placeholder = { Text(stringResource(R.string.description_hint)) },
                     shape = RoundedCornerShape(10.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         unfocusedBorderColor = DividerColor,
@@ -102,12 +104,12 @@ fun CreateGroupStep1Screen(navController: NavController) {
                 
                 Spacer(modifier = Modifier.height(12.dp))
                 
-                Text("Location", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                Text(stringResource(R.string.location_label), fontWeight = FontWeight.Bold, fontSize = 14.sp)
                 OutlinedTextField(
                     value = location,
                     onValueChange = { location = it },
                     modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("e.g Zomba, Chikanda") },
+                    placeholder = { Text(stringResource(R.string.location_hint)) },
                     shape = RoundedCornerShape(10.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         unfocusedBorderColor = DividerColor,
@@ -119,7 +121,7 @@ fun CreateGroupStep1Screen(navController: NavController) {
                 
                 Spacer(modifier = Modifier.height(12.dp))
                 
-                Text("Minimun Contribtuion (MK 2,000)", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                Text(stringResource(R.string.min_contribution_label), fontWeight = FontWeight.Bold, fontSize = 14.sp)
                 OutlinedTextField(
                     value = minContribution,
                     onValueChange = { minContribution = it },
@@ -135,7 +137,7 @@ fun CreateGroupStep1Screen(navController: NavController) {
                 
                 Spacer(modifier = Modifier.height(12.dp))
                 
-                Text("Saving Period (Months)", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                Text(stringResource(R.string.saving_period_label), fontWeight = FontWeight.Bold, fontSize = 14.sp)
                 Box {
                     OutlinedTextField(
                         value = savingPeriod,
@@ -164,7 +166,7 @@ fun CreateGroupStep1Screen(navController: NavController) {
                 
                 Spacer(modifier = Modifier.height(12.dp))
                 
-                Text("Max Members", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                Text(stringResource(R.string.max_members_label), fontWeight = FontWeight.Bold, fontSize = 14.sp)
                 OutlinedTextField(
                     value = maxMembers,
                     onValueChange = { maxMembers = it },
@@ -180,7 +182,7 @@ fun CreateGroupStep1Screen(navController: NavController) {
                 
                 Spacer(modifier = Modifier.height(12.dp))
                 
-                Text("Vissibility", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                Text(stringResource(R.string.visibility_label), fontWeight = FontWeight.Bold, fontSize = 14.sp)
                 Box {
                     OutlinedTextField(
                         value = visibility,
@@ -219,7 +221,7 @@ fun CreateGroupStep1Screen(navController: NavController) {
                     shape = RoundedCornerShape(10.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = NavyBlue)
                 ) {
-                    Text("Continue", color = White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.continue_button), color = White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
                 }
             }
         }

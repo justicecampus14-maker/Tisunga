@@ -16,6 +16,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.compose.ui.res.stringResource
+import com.example.tisunga.R
 import com.example.tisunga.data.model.Loan
 import com.example.tisunga.ui.theme.*
 import com.example.tisunga.viewmodel.LoanViewModel
@@ -23,8 +25,15 @@ import com.example.tisunga.viewmodel.LoanViewModel
 @Composable
 fun ApplyLoanScreen(navController: NavController, groupId: Int, viewModel: LoanViewModel) {
     val uiState by viewModel.uiState.collectAsState()
+    
+    val period1Month = stringResource(R.string.period_1_month)
+    val period2Months = stringResource(R.string.period_2_months)
+    val period3Months = stringResource(R.string.period_3_months)
+    val period6Months = stringResource(R.string.period_6_months)
+    val period12Months = stringResource(R.string.period_12_months)
+
     var amount by remember { mutableStateOf("") }
-    var period by remember { mutableStateOf("1 Month") }
+    var period by remember { mutableStateOf(period1Month) }
     var purpose by remember { mutableStateOf("") }
     var periodExpanded by remember { mutableStateOf(false) }
 
@@ -43,15 +52,15 @@ fun ApplyLoanScreen(navController: NavController, groupId: Int, viewModel: LoanV
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = { navController.popBackStack() }) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back_desc))
             }
-            Text("Apply Loan", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+            Text(stringResource(R.string.apply_loan_title), fontSize = 20.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
         }
 
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            "The requested loan will be repayed with an interest of 5%.\nAnd the interest will increase by 5% if not paid on time.",
+            stringResource(R.string.loan_notice),
             color = PurpleSubtitle,
             fontSize = 14.sp,
             fontWeight = FontWeight.SemiBold,
@@ -59,7 +68,7 @@ fun ApplyLoanScreen(navController: NavController, groupId: Int, viewModel: LoanV
             modifier = Modifier.fillMaxWidth()
         )
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(20.dp)        )
 
         Card(
             modifier = Modifier.fillMaxWidth(),
@@ -68,7 +77,7 @@ fun ApplyLoanScreen(navController: NavController, groupId: Int, viewModel: LoanV
             elevation = CardDefaults.cardElevation(4.dp)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text("Loan Amount", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                Text(stringResource(R.string.loan_amount_label), fontWeight = FontWeight.Bold, fontSize = 14.sp)
                 OutlinedTextField(
                     value = amount,
                     onValueChange = { 
@@ -76,7 +85,7 @@ fun ApplyLoanScreen(navController: NavController, groupId: Int, viewModel: LoanV
                         it.toDoubleOrNull()?.let { valAmt -> viewModel.calculateLoan(valAmt) }
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("Mk 20,000") },
+                    placeholder = { Text(stringResource(R.string.loan_amount_placeholder)) },
                     shape = RoundedCornerShape(10.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         unfocusedContainerColor = BackgroundGray,
@@ -89,14 +98,14 @@ fun ApplyLoanScreen(navController: NavController, groupId: Int, viewModel: LoanV
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Card(modifier = Modifier.weight(1f), colors = CardDefaults.cardColors(containerColor = BackgroundGray)) {
                             Column(modifier = Modifier.padding(8.dp)) {
-                                Text("Interest", fontSize = 12.sp, color = TextSecondary)
-                                Text("MK ${uiState.calculatedInterest}", fontWeight = FontWeight.Bold)
+                                Text(stringResource(R.string.interest_label), fontSize = 12.sp, color = TextSecondary)
+                                Text(stringResource(R.string.amount_mk, uiState.calculatedInterest), fontWeight = FontWeight.Bold)
                             }
                         }
                         Card(modifier = Modifier.weight(1f), colors = CardDefaults.cardColors(containerColor = BackgroundGray)) {
                             Column(modifier = Modifier.padding(8.dp)) {
-                                Text("Total Repayable", fontSize = 12.sp, color = TextSecondary)
-                                Text("MK ${uiState.calculatedRepayable}", fontWeight = FontWeight.Bold)
+                                Text(stringResource(R.string.total_repayable_label), fontSize = 12.sp, color = TextSecondary)
+                                Text(stringResource(R.string.amount_mk, uiState.calculatedRepayable), fontWeight = FontWeight.Bold)
                             }
                         }
                     }
@@ -104,7 +113,7 @@ fun ApplyLoanScreen(navController: NavController, groupId: Int, viewModel: LoanV
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Text("Loan Period", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                Text(stringResource(R.string.loan_period_label), fontWeight = FontWeight.Bold, fontSize = 14.sp)
                 Box {
                     OutlinedTextField(
                         value = period,
@@ -119,7 +128,7 @@ fun ApplyLoanScreen(navController: NavController, groupId: Int, viewModel: LoanV
                         )
                     )
                     DropdownMenu(expanded = periodExpanded, onDismissRequest = { periodExpanded = false }) {
-                        listOf("1 Month", "2 Months", "3 Months", "6 Months", "12 Months").forEach {
+                        listOf(period1Month, period2Months, period3Months, period6Months, period12Months).forEach {
                             DropdownMenuItem(text = { Text(it) }, onClick = { period = it; periodExpanded = false })
                         }
                     }
@@ -127,12 +136,12 @@ fun ApplyLoanScreen(navController: NavController, groupId: Int, viewModel: LoanV
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Text("Purpose", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                Text(stringResource(R.string.purpose_label), fontWeight = FontWeight.Bold, fontSize = 14.sp)
                 OutlinedTextField(
                     value = purpose,
                     onValueChange = { purpose = it },
                     modifier = Modifier.fillMaxWidth().height(80.dp),
-                    placeholder = { Text("Friday") },
+                    placeholder = { Text(stringResource(R.string.purpose_placeholder)) },
                     shape = RoundedCornerShape(10.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         unfocusedContainerColor = BackgroundGray,
@@ -160,7 +169,7 @@ fun ApplyLoanScreen(navController: NavController, groupId: Int, viewModel: LoanV
                     shape = RoundedCornerShape(10.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = NavyBlue)
                 ) {
-                    Text("Apply Now", color = White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.apply_now_button), color = White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
                 }
             }
         }

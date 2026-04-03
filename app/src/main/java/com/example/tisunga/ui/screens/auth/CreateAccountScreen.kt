@@ -17,6 +17,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.compose.ui.res.stringResource
+import com.example.tisunga.R
 import com.example.tisunga.ui.navigation.Routes
 import com.example.tisunga.ui.theme.*
 import com.example.tisunga.viewmodel.AuthViewModel
@@ -37,8 +39,8 @@ fun CreateAccountScreen(navController: NavController, viewModel: AuthViewModel) 
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Spacer(modifier = Modifier.height(40.dp))
-        Text(text = "Create Account", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = NavyBlue)
-        Text(text = "Join us today and get started", fontSize = 14.sp, color = TextSecondary)
+        Text(text = stringResource(R.string.create_account_title), fontSize = 28.sp, fontWeight = FontWeight.Bold, color = NavyBlue)
+        Text(text = stringResource(R.string.create_account_subtitle), fontSize = 14.sp, color = TextSecondary)
         
         Spacer(modifier = Modifier.height(32.dp))
         
@@ -58,7 +60,7 @@ fun CreateAccountScreen(navController: NavController, viewModel: AuthViewModel) 
                     },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(10.dp),
-                    label = { Text("Phone Number") },
+                    label = { Text(stringResource(R.string.phone_number_label)) },
                     leadingIcon = { Icon(Icons.Default.Phone, contentDescription = null) },
                     colors = OutlinedTextFieldDefaults.colors(
                         unfocusedBorderColor = DividerColor,
@@ -76,7 +78,7 @@ fun CreateAccountScreen(navController: NavController, viewModel: AuthViewModel) 
                     onValueChange = { firstName = it },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(10.dp),
-                    label = { Text("First Name") },
+                    label = { Text(stringResource(R.string.first_name_label)) },
                     leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
                     colors = OutlinedTextFieldDefaults.colors(
                         unfocusedBorderColor = DividerColor,
@@ -93,7 +95,7 @@ fun CreateAccountScreen(navController: NavController, viewModel: AuthViewModel) 
                     onValueChange = { middleName = it },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(10.dp),
-                    label = { Text("Middle Name (Optional)") },
+                    label = { Text(stringResource(R.string.middle_name_label)) },
                     leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
                     colors = OutlinedTextFieldDefaults.colors(
                         unfocusedBorderColor = DividerColor,
@@ -110,7 +112,7 @@ fun CreateAccountScreen(navController: NavController, viewModel: AuthViewModel) 
                     onValueChange = { lastName = it },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(10.dp),
-                    label = { Text("Last Name") },
+                    label = { Text(stringResource(R.string.last_name_label)) },
                     leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
                     colors = OutlinedTextFieldDefaults.colors(
                         unfocusedBorderColor = DividerColor,
@@ -122,7 +124,7 @@ fun CreateAccountScreen(navController: NavController, viewModel: AuthViewModel) 
                 
                 if (showError) {
                     Text(
-                        text = "Please fill all required fields",
+                        text = stringResource(R.string.error_fill_all_fields),
                         color = RedAccent,
                         fontSize = 12.sp,
                         modifier = Modifier.padding(top = 8.dp)
@@ -144,15 +146,15 @@ fun CreateAccountScreen(navController: NavController, viewModel: AuthViewModel) 
                     shape = RoundedCornerShape(10.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = NavyBlue)
                 ) {
-                    Text("Continue", color = White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.continue_button), color = White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
                 }
                 
                 Spacer(modifier = Modifier.height(16.dp))
                 
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-                    Text("Already have an account? ", fontSize = 14.sp, color = TextSecondary)
+                    Text(stringResource(R.string.already_have_account_text), fontSize = 14.sp, color = TextSecondary)
                     TextButton(onClick = { navController.navigate(Routes.SIGN_IN) }) {
-                        Text("Sign In", color = NavyBlue, fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.signin_link), color = NavyBlue, fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -161,7 +163,7 @@ fun CreateAccountScreen(navController: NavController, viewModel: AuthViewModel) 
         Spacer(modifier = Modifier.weight(1f))
         
         Text(
-            text = "By continuing, you agree to our Terms of Service and Privacy Policy",
+            text = stringResource(R.string.terms_and_privacy),
             fontSize = 12.sp,
             color = TextSecondary,
             textAlign = TextAlign.Center,

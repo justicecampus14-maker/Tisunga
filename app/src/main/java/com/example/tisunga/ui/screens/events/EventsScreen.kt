@@ -22,6 +22,8 @@ import androidx.compose.ui.text.font.FontWeight.Companion.Bold
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.compose.ui.res.stringResource
+import com.example.tisunga.R
 import com.example.tisunga.data.model.Event
 import com.example.tisunga.ui.components.BottomNavBar
 import com.example.tisunga.ui.components.TisungaConfirmDialog
@@ -32,7 +34,12 @@ import com.example.tisunga.viewmodel.EventViewModel
 @Composable
 fun EventsScreen(navController: NavController, groupId: Int, viewModel: EventViewModel) {
     val uiState by viewModel.uiState.collectAsState()
-    var selectedFilter by remember { mutableStateOf("All events") }
+    val filterAll = stringResource(R.string.filter_all_events)
+    val filterActive = stringResource(R.string.filter_active)
+    val filterUpcoming = stringResource(R.string.filter_upcoming)
+    val filterClosed = stringResource(R.string.filter_closed)
+    
+    var selectedFilter by remember { mutableStateOf(filterAll) }
     var showCreateDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
@@ -62,7 +69,7 @@ fun EventsScreen(navController: NavController, groupId: Int, viewModel: EventVie
                 }
                 Spacer(modifier = Modifier.width(8.dp))
                 Column {
-                    Text("Events", fontSize = 20.sp, fontWeight = Bold)
+                    Text(stringResource(R.string.events_title), fontSize = 20.sp, fontWeight = Bold)
                     Text("Doman Group", fontSize = 12.sp, color = TextSecondary)
                 }
             }
@@ -73,7 +80,7 @@ fun EventsScreen(navController: NavController, groupId: Int, viewModel: EventVie
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                val filters = listOf("All events", "Active", "Upcoming", "Closed")
+                val filters = listOf(filterAll, filterActive, filterUpcoming, filterClosed)
                 items(filters) { filter ->
                     FilterChip(label = filter, isSelected = selectedFilter == filter) { selectedFilter = filter }
                 }
@@ -86,9 +93,9 @@ fun EventsScreen(navController: NavController, groupId: Int, viewModel: EventVie
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Active Events(${uiState.activeEvents.size})", fontSize = 15.sp, fontWeight = Bold)
+                Text(stringResource(R.string.active_events_count, uiState.activeEvents.size), fontSize = 15.sp, fontWeight = Bold)
                 Text(
-                    "Create",
+                    stringResource(R.string.create_link),
                     color = BlueLink,
                     fontWeight = Bold,
                     modifier = Modifier.clickable { showCreateDialog = true }
@@ -109,7 +116,7 @@ fun EventsScreen(navController: NavController, groupId: Int, viewModel: EventVie
 
                 item {
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text("Closed Events", fontSize = 15.sp, fontWeight = Bold)
+                    Text(stringResource(R.string.closed_events_title), fontSize = 15.sp, fontWeight = Bold)
                     Spacer(modifier = Modifier.height(12.dp))
                 }
 
@@ -191,7 +198,7 @@ fun EventCard(event: Event, isChair: Boolean, isClosed: Boolean = false, onClose
             
             if (isChair && !isClosed) {
                 Text(
-                    "Close Event",
+                    stringResource(R.string.close_event_button),
                     color = RedAccent,
                     fontWeight = Bold,
                     fontSize = 14.sp,
@@ -203,8 +210,8 @@ fun EventCard(event: Event, isChair: Boolean, isClosed: Boolean = false, onClose
 
     if (showConfirmClose) {
         TisungaConfirmDialog(
-            title = "Close Event",
-            message = "Are you sure you want to close this event?",
+            title = stringResource(R.string.close_event_button),
+            message = stringResource(R.string.close_event_confirm_msg),
             onConfirm = {
                 onCloseClick()
                 showConfirmClose = false
@@ -216,10 +223,18 @@ fun EventCard(event: Event, isChair: Boolean, isClosed: Boolean = false, onClose
 
 @Composable
 fun CreateEventDialog(onDismiss: () -> Unit, onCreate: (Event) -> Unit) {
-    var type by remember { mutableStateOf("Wedding") }
+    val typeWedding = stringResource(R.string.event_type_wedding)
+    val typeBirthday = stringResource(R.string.event_type_birthday)
+    val typeFuneral = stringResource(R.string.event_type_funeral)
+    val typeOther = stringResource(R.string.event_type_other)
+    
+    val amountFixed = stringResource(R.string.amount_type_fixed)
+    val amountFlexible = stringResource(R.string.amount_type_flexible)
+
+    var type by remember { mutableStateOf(typeWedding) }
     var title by remember { mutableStateOf("") }
     var date by remember { mutableStateOf("") }
-    var amountType by remember { mutableStateOf("Fixed") }
+    var amountType by remember { mutableStateOf(amountFixed) }
     var amount by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     
@@ -228,10 +243,10 @@ fun CreateEventDialog(onDismiss: () -> Unit, onCreate: (Event) -> Unit) {
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Create Event", fontWeight = Bold) },
+        title = { Text(stringResource(R.string.create_event_title), fontWeight = Bold) },
         text = {
             Column(modifier = Modifier.fillMaxWidth()) {
-                Text("Event Type", fontSize = 12.sp, fontWeight = Bold)
+                Text(stringResource(R.string.event_type_label), fontSize = 12.sp, fontWeight = Bold)
                 Box {
                     OutlinedTextField(
                         value = type,
@@ -240,17 +255,17 @@ fun CreateEventDialog(onDismiss: () -> Unit, onCreate: (Event) -> Unit) {
                         modifier = Modifier.fillMaxWidth().clickable { typeExpanded = true }
                     )
                     DropdownMenu(expanded = typeExpanded, onDismissRequest = { typeExpanded = false }) {
-                        listOf("Wedding", "Birthday", "Funeral", "Other").forEach {
+                        listOf(typeWedding, typeBirthday, typeFuneral, typeOther).forEach {
                             DropdownMenuItem(text = { Text(it) }, onClick = { type = it; typeExpanded = false })
                         }
                     }
                 }
                 Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(value = title, onValueChange = { title = it }, label = { Text("Event Title") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(value = title, onValueChange = { title = it }, label = { Text(stringResource(R.string.event_title_label)) }, modifier = Modifier.fillMaxWidth())
                 Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(value = date, onValueChange = { date = it }, label = { Text("Date") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(value = date, onValueChange = { date = it }, label = { Text(stringResource(R.string.date_label)) }, modifier = Modifier.fillMaxWidth())
                 Spacer(modifier = Modifier.height(8.dp))
-                Text("Amount Type", fontSize = 12.sp, fontWeight = Bold)
+                Text(stringResource(R.string.amount_type_label), fontSize = 12.sp, fontWeight = Bold)
                 Box {
                     OutlinedTextField(
                         value = amountType,
@@ -259,17 +274,17 @@ fun CreateEventDialog(onDismiss: () -> Unit, onCreate: (Event) -> Unit) {
                         modifier = Modifier.fillMaxWidth().clickable { amountTypeExpanded = true }
                     )
                     DropdownMenu(expanded = amountTypeExpanded, onDismissRequest = { amountTypeExpanded = false }) {
-                        listOf("Fixed", "Flexible").forEach {
+                        listOf(amountFixed, amountFlexible).forEach {
                             DropdownMenuItem(text = { Text(it) }, onClick = { amountType = it; amountTypeExpanded = false })
                         }
                     }
                 }
-                if (amountType == "Fixed") {
+                if (amountType == amountFixed) {
                     Spacer(modifier = Modifier.height(8.dp))
-                    OutlinedTextField(value = amount, onValueChange = { amount = it }, label = { Text("Amount (MK)") }, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(value = amount, onValueChange = { amount = it }, label = { Text(stringResource(R.string.amount_mk_label)) }, modifier = Modifier.fillMaxWidth())
                 }
                 Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(value = description, onValueChange = { description = it }, label = { Text("Description") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(value = description, onValueChange = { description = it }, label = { Text(stringResource(R.string.description_label)) }, modifier = Modifier.fillMaxWidth())
             }
         },
         confirmButton = {
@@ -285,11 +300,11 @@ fun CreateEventDialog(onDismiss: () -> Unit, onCreate: (Event) -> Unit) {
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = NavyBlue)
             ) {
-                Text("Create Event", color = White)
+                Text(stringResource(R.string.create_event_title), color = White)
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel_button)) }
         }
     )
 }
