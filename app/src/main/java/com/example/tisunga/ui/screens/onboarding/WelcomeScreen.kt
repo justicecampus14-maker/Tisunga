@@ -51,7 +51,7 @@ fun WelcomeScreen(navController: NavController) {
         Spacer(modifier = Modifier.height(48.dp))
         
         Text(
-            text = "A smarter and safer way for communities to save, grow, and manage money together. Contribute securely, track your savings in real-time, apply for loans, and build financial strength as a group — all in one simple app.",
+            text = "A smarter and safer way for communities to save, grow, and manage money together. Contribute securely, track your savings in real-time, apply for loans, and build financial strength as a group.",
             fontSize = 15.sp,
             textAlign = TextAlign.Center,
             lineHeight = 24.sp,
