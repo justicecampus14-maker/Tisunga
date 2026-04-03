@@ -18,6 +18,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.compose.ui.res.stringResource
+import com.example.tisunga.R
 import com.example.tisunga.ui.components.LoanCard
 import com.example.tisunga.ui.theme.*
 import com.example.tisunga.viewmodel.LoanViewModel
@@ -25,16 +27,21 @@ import com.example.tisunga.viewmodel.LoanViewModel
 @Composable
 fun AllLoansScreen(navController: NavController, viewModel: LoanViewModel) {
     val uiState by viewModel.uiState.collectAsState()
-    var selectedTab by remember { mutableStateOf("Active") }
+    
+    val filterActive = stringResource(R.string.filter_active)
+    val filterPending = stringResource(R.string.filter_pending)
+    val filterClosed = stringResource(R.string.filter_closed)
+
+    var selectedTab by remember { mutableStateOf(filterActive) }
 
     LaunchedEffect(Unit) {
         viewModel.getMyLoans()
     }
 
     val filteredLoans = when (selectedTab) {
-        "Active" -> uiState.myLoans.filter { it.status == "active" }
-        "Pending" -> uiState.myLoans.filter { it.status == "pending" }
-        "Closed" -> uiState.myLoans.filter { it.status == "completed" }
+        filterActive -> uiState.myLoans.filter { it.status == "active" }
+        filterPending -> uiState.myLoans.filter { it.status == "pending" }
+        filterClosed -> uiState.myLoans.filter { it.status == "completed" }
         else -> uiState.myLoans
     }
 
@@ -55,7 +62,7 @@ fun AllLoansScreen(navController: NavController, viewModel: LoanViewModel) {
                 }
             }
             Spacer(modifier = Modifier.width(16.dp))
-            Text("All Loans", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+            Text(stringResource(R.string.all_loans_title), fontSize = 22.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
         }
 
         Spacer(modifier = Modifier.height(20.dp))
@@ -64,9 +71,9 @@ fun AllLoansScreen(navController: NavController, viewModel: LoanViewModel) {
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            LoanTab(label = "Active", isSelected = selectedTab == "Active", modifier = Modifier.weight(1f)) { selectedTab = "Active" }
-            LoanTab(label = "Pending", isSelected = selectedTab == "Pending", modifier = Modifier.weight(1f)) { selectedTab = "Pending" }
-            LoanTab(label = "Closed", isSelected = selectedTab == "Closed", modifier = Modifier.weight(1f)) { selectedTab = "Closed" }
+            LoanTab(label = filterActive, isSelected = selectedTab == filterActive, modifier = Modifier.weight(1f)) { selectedTab = filterActive }
+            LoanTab(label = filterPending, isSelected = selectedTab == filterPending, modifier = Modifier.weight(1f)) { selectedTab = filterPending }
+            LoanTab(label = filterClosed, isSelected = selectedTab == filterClosed, modifier = Modifier.weight(1f)) { selectedTab = filterClosed }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -75,7 +82,7 @@ fun AllLoansScreen(navController: NavController, viewModel: LoanViewModel) {
             items(filteredLoans) { loan ->
                 LoanCard(
                     groupName = loan.groupName,
-                    approvedBy = "Approved by ${loan.approvedBy ?: "N/A"}",
+                    approvedBy = stringResource(R.string.loan_approved_by_simple, loan.approvedBy ?: stringResource(R.string.not_available)),
                     totalBorrowed = loan.amount,
                     interestRate = loan.interestRate,
                     repayableAmount = loan.repayableAmount,

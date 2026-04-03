@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import androidx.compose.ui.res.stringResource
 import com.example.tisunga.R
 import com.example.tisunga.data.model.Group
 import com.example.tisunga.ui.components.BottomNavBar
@@ -106,8 +107,8 @@ fun HomeHeader(userName: String, userPhone: String, navController: NavController
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Column {
-            Text("Hi, $userName", fontWeight = FontWeight.Bold, fontSize = 18.sp)
-            Text("Good morning", fontSize = 12.sp, color = TextSecondary)
+            Text(stringResource(R.string.hi_user, userName), fontWeight = FontWeight.Bold, fontSize = 18.sp)
+            Text(stringResource(R.string.good_morning), fontSize = 12.sp, color = TextSecondary)
         }
         Surface(shape = RoundedCornerShape(20.dp), color = Color(0xFFE8E8E8)) {
             Row(
@@ -202,9 +203,9 @@ fun BannerCard(page: Int) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = when(page) {
-                        0 -> "TISUNGA"
-                        1 -> "SAVE MORE"
-                        else -> "GROW FAST"
+                        0 -> stringResource(R.string.banner_tisunga)
+                        1 -> stringResource(R.string.banner_save_more)
+                        else -> stringResource(R.string.banner_grow_fast)
                     },
                     color = Color.White,
                     fontSize = 24.sp,
@@ -213,16 +214,16 @@ fun BannerCard(page: Int) {
                 )
                 Text(
                     text = when(page) {
-                        0 -> "Save Together. Grow Together."
-                        1 -> "Your future is built today."
-                        else -> "Loans at low interest rates."
+                        0 -> stringResource(R.string.banner_desc_0)
+                        1 -> stringResource(R.string.banner_desc_1)
+                        else -> stringResource(R.string.banner_desc_2)
                     },
                     color = Color.White.copy(0.8f),
                     fontSize = 13.sp
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = if(page == 0) "My Savings: MK 12,500.00" else "Join 100+ Groups",
+                    text = if(page == 0) stringResource(R.string.banner_savings_static) else stringResource(R.string.banner_join_groups),
                     color = Color(0xFFFFEB3B),
                     fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold
@@ -247,7 +248,7 @@ private fun QuickActionsSection(navController: NavController) {
             shape=RoundedCornerShape(8.dp),
             color=Color.White
         ) {
-            Text("Quick Action",
+            Text(stringResource(R.string.quick_action_title),
                  modifier=Modifier.padding(horizontal=12.dp, vertical=6.dp),
                  fontSize=14.sp, fontWeight=FontWeight.SemiBold)
         }
@@ -258,7 +259,7 @@ private fun QuickActionsSection(navController: NavController) {
         ) {
             QuickActionCard(
                 icon = Icons.Filled.GroupAdd,
-                label = "Create Group",
+                label = stringResource(R.string.create_group_label),
                 modifier = Modifier.weight(1f),
                 onClick = {
                     navController.navigate(Routes.CREATE_GROUP_STEP1)
@@ -266,7 +267,7 @@ private fun QuickActionsSection(navController: NavController) {
             )
             QuickActionCard(
                 icon = Icons.Filled.Groups,
-                label = "Join Group",
+                label = stringResource(R.string.join_group_label),
                 modifier = Modifier.weight(1f),
                 onClick = {
                     navController.navigate(Routes.JOIN_GROUP)
@@ -274,7 +275,7 @@ private fun QuickActionsSection(navController: NavController) {
             )
             QuickActionCard(
                 icon = Icons.Filled.SwapHoriz,
-                label = "View Loans",
+                label = stringResource(R.string.view_loans_label),
                 modifier = Modifier.weight(1f),
                 onClick = {
                     navController.navigate(Routes.ALL_LOANS)
@@ -331,7 +332,7 @@ private fun MyGroupsSection(
             verticalAlignment=Alignment.CenterVertically
         ) {
             Surface(shape=RoundedCornerShape(8.dp), color=White) {
-                Text("My Groups",
+                Text(stringResource(R.string.my_groups_title),
                      modifier=Modifier.padding(horizontal=12.dp, vertical=6.dp),
                      fontWeight=FontWeight.SemiBold)
             }
@@ -339,7 +340,7 @@ private fun MyGroupsSection(
                 TextButton(onClick={
                     navController.navigate(Routes.DISCOVER_GROUPS)
                 }) {
-                    Text("Discover groups →",
+                    Text(stringResource(R.string.discover_groups_link),
                          color=GreenAccent,
                          fontWeight=FontWeight.SemiBold)
                 }
@@ -358,9 +359,9 @@ private fun MyGroupsSection(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
-                    Text("You don't belong to any group yet", color = TextSecondary, textAlign = TextAlign.Center)
+                    Text(stringResource(R.string.no_groups_msg), color = TextSecondary, textAlign = TextAlign.Center)
                     TextButton(onClick = { navController.navigate(Routes.DISCOVER_GROUPS) }) {
-                        Text("Discover groups →", color = GreenAccent)
+                        Text(stringResource(R.string.discover_groups_link), color = GreenAccent)
                     }
                 }
             }
@@ -393,8 +394,8 @@ fun GroupListItem(group: Group, navController: NavController) {
                 Spacer(modifier = Modifier.width(12.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(group.name, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                    Text("Group savings : MK ${group.totalSavings}", fontSize = 12.sp, color = TextSecondary)
-                    Text("My Savings: MK ${group.mySavings}", fontSize = 12.sp, color = TextSecondary)
+                    Text(stringResource(R.string.group_total_savings, group.totalSavings), fontSize = 12.sp, color = TextSecondary)
+                    Text(stringResource(R.string.group_my_savings, group.mySavings), fontSize = 12.sp, color = TextSecondary)
                 }
                 Surface(
                     shape = RoundedCornerShape(20.dp),
@@ -424,7 +425,7 @@ fun GroupListItem(group: Group, navController: NavController) {
                     )
                 }
                 Text(
-                    "Save Now",
+                    stringResource(R.string.save_now_link),
                     color = BlueLink,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.clickable { navController.navigate("make_contribution/${group.id}") }
@@ -438,7 +439,7 @@ fun GroupListItem(group: Group, navController: NavController) {
 fun RecentTransactionsSection(transactions: List<com.example.tisunga.data.model.Transaction>) {
     Column(modifier = Modifier.padding(horizontal = 16.dp)) {
         Surface(shape = RoundedCornerShape(8.dp), color = White) {
-            Text("Recent Transactions",
+            Text(stringResource(R.string.recent_transactions_title),
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                 fontWeight = FontWeight.SemiBold)
         }
@@ -478,7 +479,7 @@ fun TransactionListItem(transaction: com.example.tisunga.data.model.Transaction)
                 Text(transaction.timestamp, fontSize = 12.sp, color = TextSecondary)
             }
             Text(
-                "MK ${transaction.amount}",
+                stringResource(R.string.amount_mk, transaction.amount),
                 fontWeight = FontWeight.Bold,
                 color = if (transaction.type == "contribution") Color(0xFF4CAF50) else Color(0xFFF44336)
             )

@@ -16,6 +16,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.compose.ui.res.stringResource
+import com.example.tisunga.R
 import com.example.tisunga.ui.navigation.Routes
 import com.example.tisunga.ui.theme.*
 
@@ -34,15 +36,15 @@ fun CreateGroupStep2Screen(navController: NavController) {
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = { navController.popBackStack() }) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back_desc))
             }
-            Text("Create Group", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+            Text(stringResource(R.string.create_group_title), fontSize = 20.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
         }
 
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            "Upon Creation You are the Chair for the group",
+            stringResource(R.string.chair_notice),
             color = PurpleSubtitle,
             fontSize = 14.sp,
             fontWeight = FontWeight.SemiBold,
@@ -59,7 +61,7 @@ fun CreateGroupStep2Screen(navController: NavController) {
             elevation = CardDefaults.cardElevation(4.dp)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text("Start Date", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                Text(stringResource(R.string.start_date_label), fontWeight = FontWeight.Bold, fontSize = 14.sp)
                 OutlinedTextField(
                     value = startDate,
                     onValueChange = { startDate = it },
@@ -76,7 +78,7 @@ fun CreateGroupStep2Screen(navController: NavController) {
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                Text("End date", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                Text(stringResource(R.string.end_date_label), fontWeight = FontWeight.Bold, fontSize = 14.sp)
                 OutlinedTextField(
                     value = endDate,
                     onValueChange = { endDate = it },
@@ -93,12 +95,12 @@ fun CreateGroupStep2Screen(navController: NavController) {
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                Text("Meeting Day", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                Text(stringResource(R.string.meeting_day_label), fontWeight = FontWeight.Bold, fontSize = 14.sp)
                 OutlinedTextField(
                     value = meetingDay,
                     onValueChange = { meetingDay = it },
                     modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("Friday") },
+                    placeholder = { Text(stringResource(R.string.meeting_day_hint)) },
                     shape = RoundedCornerShape(10.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         unfocusedBorderColor = DividerColor,
@@ -110,12 +112,12 @@ fun CreateGroupStep2Screen(navController: NavController) {
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                Text("Time", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                Text(stringResource(R.string.meeting_time_label), fontWeight = FontWeight.Bold, fontSize = 14.sp)
                 OutlinedTextField(
                     value = meetingTime,
                     onValueChange = { meetingTime = it },
                     modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("3:00pm") },
+                    placeholder = { Text(stringResource(R.string.meeting_time_hint)) },
                     shape = RoundedCornerShape(10.dp),
                     trailingIcon = { Icon(Icons.Default.Schedule, null) },
                     colors = OutlinedTextFieldDefaults.colors(
@@ -134,7 +136,7 @@ fun CreateGroupStep2Screen(navController: NavController) {
                     shape = RoundedCornerShape(10.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = NavyBlue)
                 ) {
-                    Text("Create Group", color = White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.create_group_title), color = White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
                 }
             }
         }

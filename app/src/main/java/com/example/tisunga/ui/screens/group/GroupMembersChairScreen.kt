@@ -22,6 +22,8 @@ import androidx.compose.ui.text.font.FontWeight.Companion.SemiBold
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.compose.ui.res.stringResource
+import com.example.tisunga.R
 import com.example.tisunga.data.model.User
 import com.example.tisunga.ui.components.TisungaConfirmDialog
 import com.example.tisunga.ui.theme.*
@@ -46,10 +48,10 @@ fun GroupMembersChairScreen(navController: NavController, groupId: Int, viewMode
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = { navController.popBackStack() }) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back_desc))
             }
             Text(
-                "Doman Group Members",
+                stringResource(R.string.group_members_title_placeholder, stringResource(R.string.placeholder_group_name)),
                 modifier = Modifier.weight(1f),
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                 fontSize = 18.sp,
@@ -61,7 +63,7 @@ fun GroupMembersChairScreen(navController: NavController, groupId: Int, viewMode
                 border = androidx.compose.foundation.BorderStroke(1.dp, NavyBlue),
                 color = Color.Transparent
             ) {
-                Text("Add", modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp), color = NavyBlue, fontWeight = SemiBold)
+                Text(stringResource(R.string.add_label), modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp), color = NavyBlue, fontWeight = SemiBold)
             }
         }
 
@@ -69,10 +71,10 @@ fun GroupMembersChairScreen(navController: NavController, groupId: Int, viewMode
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            InfoCard(label = "Join request", value = "4", modifier = Modifier.weight(1f)) {
+            InfoCard(label = stringResource(R.string.join_request_label), value = "4", modifier = Modifier.weight(1f)) {
                 // Show JoinRequestsDialog
             }
-            InfoCard(label = "Group code", value = "67WEISH6", isCode = true, modifier = Modifier.weight(1f)) {
+            InfoCard(label = stringResource(R.string.group_code_label_simple), value = stringResource(R.string.placeholder_group_code), isCode = true, modifier = Modifier.weight(1f)) {
                 // Share code logic
             }
         }
@@ -117,7 +119,7 @@ private fun InfoCard(label: String, value: String, isCode: Boolean = false, modi
                         Text(value, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp), fontSize = 12.sp, fontWeight = Bold)
                     }
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Share", color = GreenAccent, fontWeight = SemiBold, fontSize = 12.sp)
+                    Text(stringResource(R.string.share_label), color = GreenAccent, fontWeight = SemiBold, fontSize = 12.sp)
                 }
             } else {
                 Text(value, fontSize = 28.sp, fontWeight = Bold, color = NavyBlue)
@@ -148,14 +150,14 @@ private fun ChairMemberCard(
         Column(modifier = Modifier.padding(16.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(if (isYou) "You" else "${member.firstName} ${member.lastName}", fontWeight = Bold, fontSize = 16.sp)
+                    Text(if (isYou) stringResource(R.string.you_label) else "${member.firstName} ${member.lastName}", fontWeight = Bold, fontSize = 16.sp)
                     Text(member.role, fontSize = 12.sp, color = TextSecondary)
                 }
                 Column(horizontalAlignment = Alignment.End) {
                     if (!isYou) {
                         Icon(if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown, null)
                     }
-                    Text("Active", fontWeight = Bold, fontSize = 14.sp)
+                    Text(stringResource(R.string.filter_active), fontWeight = Bold, fontSize = 14.sp)
                     Text(member.phone, fontSize = 13.sp, color = TextSecondary)
                 }
             }
@@ -165,14 +167,14 @@ private fun ChairMemberCard(
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            MemberActionChip("Loans") { navController.navigate("my_loans/${member.id}") }
-                            MemberActionChip("Contributions") { navController.navigate("contribution_history/${member.id}") }
+                            MemberActionChip(stringResource(R.string.loans_label)) { navController.navigate("my_loans/${member.id}") }
+                            MemberActionChip(stringResource(R.string.contributions_label)) { navController.navigate("contribution_history/${member.id}") }
                             Box {
-                                MemberActionChip("Actions") { showMenu = true }
+                                MemberActionChip(stringResource(R.string.actions_label)) { showMenu = true }
                                 DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
-                                    DropdownMenuItem(text = { Text("Change Role") }, onClick = { showMenu = false })
-                                    DropdownMenuItem(text = { Text("Remove Member") }, onClick = { showMenu = false; showConfirmRemove = true })
-                                    DropdownMenuItem(text = { Text("Deactivate Member") }, onClick = { showMenu = false })
+                                    DropdownMenuItem(text = { Text(stringResource(R.string.change_role_option)) }, onClick = { showMenu = false })
+                                    DropdownMenuItem(text = { Text(stringResource(R.string.remove_member_option)) }, onClick = { showMenu = false; showConfirmRemove = true })
+                                    DropdownMenuItem(text = { Text(stringResource(R.string.deactivate_member_option)) }, onClick = { showMenu = false })
                                 }
                             }
                         }
@@ -184,9 +186,9 @@ private fun ChairMemberCard(
 
     if (showConfirmRemove) {
         TisungaConfirmDialog(
-            title = "Remove Member",
-            message = "Are you sure you want to remove this member from the group?",
-            confirmText = "Remove",
+            title = stringResource(R.string.remove_member_title),
+            message = stringResource(R.string.remove_member_confirm_msg),
+            confirmText = stringResource(R.string.remove_button),
             isDestructive = true,
             onConfirm = { showConfirmRemove = false },
             onDismiss = { showConfirmRemove = false }

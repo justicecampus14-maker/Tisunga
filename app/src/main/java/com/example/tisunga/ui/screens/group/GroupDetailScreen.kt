@@ -18,6 +18,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.compose.ui.res.stringResource
+import com.example.tisunga.R
 import com.example.tisunga.data.model.Transaction
 import com.example.tisunga.ui.components.BottomNavBar
 import com.example.tisunga.ui.navigation.Routes
@@ -30,7 +32,7 @@ fun GroupDetailScreen(navController: NavController, groupId: Int, viewModel: Gro
     val uiState by viewModel.uiState.collectAsState()
     
     // Placeholder data
-    val groupName = "Doman group"
+    val groupName = stringResource(R.string.placeholder_group_name)
     val userName = "Michael"
     val userPhone = "0882752624"
     val isChair = true // This should come from SessionManager or ViewModel
@@ -92,7 +94,7 @@ fun GroupSummaryCard(groupName: String) {
             Text(groupName, fontSize = 26.sp, color = TextSecondary, fontWeight = FontWeight.Light)
             Spacer(modifier = Modifier.height(16.dp))
             
-            Text("Group saving", fontSize = 14.sp)
+            Text(stringResource(R.string.group_saving_label), fontSize = 14.sp)
             Box(
                 modifier = Modifier
                     .height(8.dp)
@@ -102,7 +104,7 @@ fun GroupSummaryCard(groupName: String) {
             
             Spacer(modifier = Modifier.height(12.dp))
             
-            Text("My Savings", fontSize = 14.sp)
+            Text(stringResource(R.string.my_savings_label), fontSize = 14.sp)
             Box(
                 modifier = Modifier
                     .height(8.dp)
@@ -120,9 +122,9 @@ fun QuickActionsHeader(navController: NavController, groupId: Int, isChair: Bool
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text("Quick actions", fontSize = 15.sp, fontWeight = FontWeight.Bold)
+        Text(stringResource(R.string.quick_actions_title), fontSize = 15.sp, fontWeight = FontWeight.Bold)
         Text(
-            "members",
+            stringResource(R.string.members_link),
             color = BlueLink,
             modifier = Modifier.clickable {
                 if (isChair) {
@@ -141,16 +143,16 @@ fun QuickActionsGrid(navController: NavController, groupId: Int, isChair: Boolea
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        ActionCard(Icons.Default.AddCard, "Save", Modifier.weight(1f)) {
+        ActionCard(Icons.Default.AddCard, stringResource(R.string.action_save), Modifier.weight(1f)) {
             navController.navigate("make_contribution/$groupId")
         }
-        ActionCard(Icons.Default.Badge, "View Savings", Modifier.weight(1f)) {
+        ActionCard(Icons.Default.Badge, stringResource(R.string.action_view_savings), Modifier.weight(1f)) {
             navController.navigate(Routes.GROUP_SAVINGS)
         }
-        ActionCard(Icons.Default.CalendarMonth, "View Events", Modifier.weight(1f)) {
+        ActionCard(Icons.Default.CalendarMonth, stringResource(R.string.action_view_events), Modifier.weight(1f)) {
             navController.navigate("events/$groupId")
         }
-        ActionCard(Icons.Default.SwapHoriz, "View Loans", Modifier.weight(1f)) {
+        ActionCard(Icons.Default.SwapHoriz, stringResource(R.string.action_view_loans), Modifier.weight(1f)) {
             if (isChair) {
                 navController.navigate("group_loans_detail/$groupId")
             } else {
@@ -187,9 +189,9 @@ fun TransactionsHeader(navController: NavController, groupId: Int) {
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text("Transactions History", fontSize = 15.sp, fontWeight = FontWeight.Bold)
+        Text(stringResource(R.string.transactions_history_title), fontSize = 15.sp, fontWeight = FontWeight.Bold)
         Text(
-            "view all",
+            stringResource(R.string.view_all_link),
             color = BlueLink,
             modifier = Modifier.clickable { navController.navigate("transactions/$groupId") }
         )
@@ -204,8 +206,8 @@ fun TransactionSummaryCard(transaction: Transaction) {
         colors = CardDefaults.cardColors(containerColor = White)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text("Member Name", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-            Text("Trans ID: ${transaction.transId} - ${transaction.type}", fontSize = 13.sp, color = TextSecondary)
+            Text(stringResource(R.string.member_name_placeholder), fontWeight = FontWeight.Bold, fontSize = 14.sp)
+            Text(stringResource(R.string.trans_id_label, transaction.transId, transaction.type), fontSize = 13.sp, color = TextSecondary)
             Text(transaction.timestamp, fontSize = 12.sp, color = TextSecondary)
         }
     }

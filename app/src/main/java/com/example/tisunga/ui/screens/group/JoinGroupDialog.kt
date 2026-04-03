@@ -17,6 +17,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.res.stringResource
+import com.example.tisunga.R
 import com.example.tisunga.ui.theme.*
 import com.example.tisunga.viewmodel.GroupViewModel
 
@@ -40,7 +42,7 @@ fun JoinGroupDialog(onDismiss: () -> Unit, viewModel: GroupViewModel) {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        "Enter Group Code",
+                        stringResource(R.string.enter_group_code_title),
                         modifier = Modifier.weight(1f),
                         textAlign = TextAlign.Center,
                         fontWeight = Bold,
@@ -63,7 +65,7 @@ fun JoinGroupDialog(onDismiss: () -> Unit, viewModel: GroupViewModel) {
                         fontWeight = Bold,
                         color = TextSecondary
                     ),
-                    placeholder = { Text("2Q12Q", modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center) },
+                    placeholder = { Text(stringResource(R.string.group_code_hint), modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center) },
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         unfocusedContainerColor = Color(0xFFFFF0F0),
@@ -74,7 +76,7 @@ fun JoinGroupDialog(onDismiss: () -> Unit, viewModel: GroupViewModel) {
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
-                Text("OR", fontWeight = Bold, fontSize = 14.sp, color = TextSecondary)
+                Text(stringResource(R.string.or_text), fontWeight = Bold, fontSize = 14.sp, color = TextSecondary)
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Box(
@@ -90,7 +92,7 @@ fun JoinGroupDialog(onDismiss: () -> Unit, viewModel: GroupViewModel) {
 
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                     Text(
-                        "OK",
+                        stringResource(R.string.ok_button),
                         modifier = Modifier.clickable { 
                             if (groupCode.isNotEmpty()) {
                                 viewModel.joinGroup(groupCode)

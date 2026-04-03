@@ -12,12 +12,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.tisunga.R
 import com.example.tisunga.data.model.Contribution
 import com.example.tisunga.ui.theme.*
 import com.example.tisunga.viewmodel.SavingsViewModel
@@ -25,9 +27,12 @@ import com.example.tisunga.viewmodel.SavingsViewModel
 @Composable
 fun MakeContributionScreen(navController: NavController, groupId: Int, viewModel: SavingsViewModel) {
     val uiState by viewModel.uiState.collectAsState()
-    var phoneNumber by remember { mutableStateOf("+256..................") }
+    var phoneNumber by remember { mutableStateOf("+265 882752624") }
     var groupName by remember { mutableStateOf("Mphatso Group") }
-    var contributionType by remember { mutableStateOf("Save") }
+    val contributionTypeSave = stringResource(R.string.contribution_type_save)
+    val contributionTypeSpecial = stringResource(R.string.contribution_type_special)
+    val contributionTypeEvent = stringResource(R.string.contribution_type_event)
+    var contributionType by remember { mutableStateOf(contributionTypeSave) }
     var amount by remember { mutableStateOf("2000") }
 
     var phoneExpanded by remember { mutableStateOf(false) }
@@ -49,15 +54,15 @@ fun MakeContributionScreen(navController: NavController, groupId: Int, viewModel
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = { navController.popBackStack() }) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back_desc))
             }
-            Text("Make Contribution", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+            Text(stringResource(R.string.make_contribution_title), fontSize = 20.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
         }
 
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            "The active number will be used for the transaction",
+            stringResource(R.string.active_number_notice),
             color = PurpleSubtitle,
             fontSize = 14.sp,
             fontWeight = FontWeight.SemiBold,
@@ -74,7 +79,7 @@ fun MakeContributionScreen(navController: NavController, groupId: Int, viewModel
             elevation = CardDefaults.cardElevation(4.dp)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text("Enter Phone_Number", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = TextSecondary)
+                Text(stringResource(R.string.enter_phone_label), fontWeight = FontWeight.Bold, fontSize = 14.sp, color = TextSecondary)
                 Box {
                     OutlinedTextField(
                         value = phoneNumber,
@@ -97,7 +102,7 @@ fun MakeContributionScreen(navController: NavController, groupId: Int, viewModel
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Text("Group Name", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = TextSecondary)
+                Text(stringResource(R.string.group_name_label_simple), fontWeight = FontWeight.Bold, fontSize = 14.sp, color = TextSecondary)
                 Box {
                     OutlinedTextField(
                         value = groupName,
@@ -120,7 +125,7 @@ fun MakeContributionScreen(navController: NavController, groupId: Int, viewModel
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Text("Contribution Type", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = TextSecondary)
+                Text(stringResource(R.string.contribution_type_label), fontWeight = FontWeight.Bold, fontSize = 14.sp, color = TextSecondary)
                 Box {
                     OutlinedTextField(
                         value = contributionType,
@@ -135,7 +140,7 @@ fun MakeContributionScreen(navController: NavController, groupId: Int, viewModel
                         )
                     )
                     DropdownMenu(expanded = typeExpanded, onDismissRequest = { typeExpanded = false }) {
-                        listOf("Save", "Special", "Event Contribution").forEach {
+                        listOf(contributionTypeSave, contributionTypeSpecial, contributionTypeEvent).forEach {
                             DropdownMenuItem(text = { Text(it) }, onClick = { contributionType = it; typeExpanded = false })
                         }
                     }
@@ -143,7 +148,7 @@ fun MakeContributionScreen(navController: NavController, groupId: Int, viewModel
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Text("Amount (MK)", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = TextSecondary)
+                Text(stringResource(R.string.amount_mk_input_label), fontWeight = FontWeight.Bold, fontSize = 14.sp, color = TextSecondary)
                 OutlinedTextField(
                     value = amount,
                     onValueChange = { amount = it },
@@ -175,13 +180,13 @@ fun MakeContributionScreen(navController: NavController, groupId: Int, viewModel
                     shape = RoundedCornerShape(10.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = NavyBlue)
                 ) {
-                    Text("Send", color = White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.send_button), color = White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
                 }
                 
                 Spacer(modifier = Modifier.height(16.dp))
                 
                 Text(
-                    "You will receive a massage to enter your pin on your phone",
+                    stringResource(R.string.receive_pin_msg),
                     color = TextPrimary,
                     fontWeight = FontWeight.Bold,
                     fontSize = 14.sp,

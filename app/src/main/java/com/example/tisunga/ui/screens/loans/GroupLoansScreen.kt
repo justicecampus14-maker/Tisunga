@@ -17,6 +17,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.compose.ui.res.stringResource
+import com.example.tisunga.R
 import com.example.tisunga.ui.components.BottomNavBar
 import com.example.tisunga.ui.components.LoanCard
 import com.example.tisunga.ui.screens.home.HomeHeader
@@ -26,8 +28,15 @@ import com.example.tisunga.viewmodel.LoanViewModel
 @Composable
 fun GroupLoansScreen(navController: NavController, groupId: Int, viewModel: LoanViewModel) {
     val uiState by viewModel.uiState.collectAsState()
-    var selectedTab by remember { mutableStateOf("Member Loans") }
-    var selectedFilter by remember { mutableStateOf("All") }
+    
+    val tabMyLoans = stringResource(R.string.tab_my_loans)
+    val tabMemberLoans = stringResource(R.string.tab_member_loans)
+    val filterAll = stringResource(R.string.filter_all)
+    val filterRequest = stringResource(R.string.filter_request)
+    val filterRejected = stringResource(R.string.filter_rejected)
+
+    var selectedTab by remember { mutableStateOf(tabMemberLoans) }
+    var selectedFilter by remember { mutableStateOf(filterAll) }
 
     LaunchedEffect(Unit) {
         viewModel.getGroupLoans(groupId)
@@ -59,8 +68,8 @@ fun GroupLoansScreen(navController: NavController, groupId: Int, viewModel: Loan
                 }
                 Spacer(modifier = Modifier.width(16.dp))
                 Column {
-                    Text("Loans", fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                    Text("Doman Group", fontSize = 12.sp, color = TextSecondary)
+                    Text(stringResource(R.string.loans_title), fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.placeholder_group_name), fontSize = 12.sp, color = TextSecondary)
                 }
             }
 
@@ -70,11 +79,11 @@ fun GroupLoansScreen(navController: NavController, groupId: Int, viewModel: Loan
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                TabButton("My Loans", selectedTab == "My Loans", Modifier.weight(1f)) { 
-                    selectedTab = "My Loans"
+                TabButton(tabMyLoans, selectedTab == tabMyLoans, Modifier.weight(1f)) { 
+                    selectedTab = tabMyLoans
                     navController.navigate("my_loans/$groupId")
                 }
-                TabButton("Member Loans", selectedTab == "Member Loans", Modifier.weight(1f)) { selectedTab = "Member Loans" }
+                TabButton(tabMemberLoans, selectedTab == tabMemberLoans, Modifier.weight(1f)) { selectedTab = tabMemberLoans }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -83,9 +92,9 @@ fun GroupLoansScreen(navController: NavController, groupId: Int, viewModel: Loan
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                FilterChip(label = "All", isSelected = selectedFilter == "All", onClick = { selectedFilter = "All" })
-                FilterChip(label = "Request", isSelected = selectedFilter == "Request", onClick = { selectedFilter = "Request" })
-                FilterChip(label = "Rejected", isSelected = selectedFilter == "Rejected", onClick = { selectedFilter = "Rejected" })
+                FilterChip(label = filterAll, isSelected = selectedFilter == filterAll, onClick = { selectedFilter = filterAll })
+                FilterChip(label = filterRequest, isSelected = selectedFilter == filterRequest, onClick = { selectedFilter = filterRequest })
+                FilterChip(label = filterRejected, isSelected = selectedFilter == filterRejected, onClick = { selectedFilter = filterRejected })
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -97,7 +106,7 @@ fun GroupLoansScreen(navController: NavController, groupId: Int, viewModel: Loan
                 items(uiState.groupLoans) { loan ->
                     LoanCard(
                         groupName = loan.groupName,
-                        approvedBy = "Aproved by ${loan.approvedBy ?: "N/A"}",
+                        approvedBy = stringResource(R.string.loan_approved_by_simple, loan.approvedBy ?: stringResource(R.string.not_available)),
                         totalBorrowed = loan.amount,
                         interestRate = loan.interestRate,
                         repayableAmount = loan.repayableAmount,

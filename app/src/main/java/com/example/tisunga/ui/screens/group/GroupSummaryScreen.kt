@@ -11,6 +11,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.compose.ui.res.stringResource
+import com.example.tisunga.R
 import com.example.tisunga.data.model.Group
 import com.example.tisunga.ui.navigation.Routes
 import com.example.tisunga.ui.theme.*
@@ -48,17 +50,17 @@ fun GroupSummaryScreen(navController: NavController, viewModel: GroupViewModel) 
             elevation = CardDefaults.cardElevation(4.dp)
         ) {
             Column(modifier = Modifier.padding(24.dp)) {
-                Text("Group Summary", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+                Text(stringResource(R.string.group_summary_title), fontSize = 24.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
                 Spacer(modifier = Modifier.height(24.dp))
 
-                SummaryRow("Group Name", group.name)
-                SummaryRow("Location", group.location)
-                SummaryRow("Minimum Contribution", "MK ${group.minContribution}")
-                SummaryRow("Saving Period", "${group.savingPeriod} Months")
-                SummaryRow("Max Members", "${group.maxMembers}")
-                SummaryRow("Visibility", group.visibility)
-                SummaryRow("Meeting Day", group.meetingDay)
-                SummaryRow("Meeting Time", group.meetingTime)
+                SummaryRow(stringResource(R.string.group_name_label_simple), group.name)
+                SummaryRow(stringResource(R.string.location_label), group.location)
+                SummaryRow(stringResource(R.string.min_contribution_label), stringResource(R.string.amount_mk, group.minContribution.toString()))
+                SummaryRow(stringResource(R.string.saving_period_label), stringResource(R.string.saving_period_months, group.savingPeriod))
+                SummaryRow(stringResource(R.string.max_members_label), "${group.maxMembers}")
+                SummaryRow(stringResource(R.string.visibility_label), group.visibility)
+                SummaryRow(stringResource(R.string.meeting_day_label), group.meetingDay)
+                SummaryRow(stringResource(R.string.meeting_time_label), group.meetingTime)
 
                 Spacer(modifier = Modifier.weight(1f))
 
@@ -73,7 +75,7 @@ fun GroupSummaryScreen(navController: NavController, viewModel: GroupViewModel) 
                     shape = RoundedCornerShape(10.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = NavyBlue)
                 ) {
-                    Text("Edit", color = White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.edit_button), color = White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
                 }
                 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -87,7 +89,7 @@ fun GroupSummaryScreen(navController: NavController, viewModel: GroupViewModel) 
                     if (uiState.isLoading) {
                         CircularProgressIndicator(color = White, modifier = Modifier.size(24.dp))
                     } else {
-                        Text("Confirm", color = White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                        Text(stringResource(R.string.confirm_button), color = White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
                     }
                 }
             }
@@ -98,6 +100,6 @@ fun GroupSummaryScreen(navController: NavController, viewModel: GroupViewModel) 
 @Composable
 fun SummaryRow(label: String, value: String) {
     Column(modifier = Modifier.padding(vertical = 8.dp)) {
-        Text("$label: $value", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+        Text(stringResource(R.string.summary_row_label_value, label, value), fontWeight = FontWeight.Bold, fontSize = 16.sp)
     }
 }

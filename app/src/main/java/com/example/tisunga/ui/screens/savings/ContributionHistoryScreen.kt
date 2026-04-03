@@ -11,10 +11,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight.Companion.Bold
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.tisunga.R
 import com.example.tisunga.data.model.Contribution
 import com.example.tisunga.ui.theme.*
 import com.example.tisunga.viewmodel.SavingsViewModel
@@ -37,9 +39,9 @@ fun ContributionHistoryScreen(navController: NavController, groupId: Int, viewMo
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = { navController.popBackStack() }) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back_desc))
             }
-            Text("Contribution History", fontSize = 20.sp, fontWeight = Bold, color = TextPrimary)
+            Text(stringResource(R.string.contribution_history_title), fontSize = 20.sp, fontWeight = Bold, color = TextPrimary)
         }
 
         LazyColumn(
@@ -72,7 +74,7 @@ fun ContributionHistoryCard(contribution: Contribution) {
                 Text(contribution.timestamp, fontSize = 12.sp, color = TextSecondary)
             }
             Text(
-                "MK ${com.example.tisunga.utils.FormatUtils.formatNumber(contribution.amount)}",
+                stringResource(R.string.amount_mk, com.example.tisunga.utils.FormatUtils.formatNumber(contribution.amount)),
                 fontWeight = Bold,
                 fontSize = 16.sp,
                 color = GreenAccent

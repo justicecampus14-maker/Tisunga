@@ -21,6 +21,8 @@ import androidx.compose.ui.text.font.FontWeight.Companion.Bold
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.compose.ui.res.stringResource
+import com.example.tisunga.R
 import com.example.tisunga.data.model.Group
 import com.example.tisunga.ui.theme.*
 import com.example.tisunga.viewmodel.GroupViewModel
@@ -43,9 +45,9 @@ fun DiscoverGroupScreen(navController: NavController, viewModel: GroupViewModel)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = { navController.popBackStack() }) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back_desc))
             }
-            Text("Discover", fontSize = 22.sp, fontWeight = Bold, color = TextPrimary)
+            Text(stringResource(R.string.discover_title), fontSize = 22.sp, fontWeight = Bold, color = TextPrimary)
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -54,7 +56,7 @@ fun DiscoverGroupScreen(navController: NavController, viewModel: GroupViewModel)
             value = searchQuery,
             onValueChange = { searchQuery = it },
             modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text("search by name or location") },
+            placeholder = { Text(stringResource(R.string.search_placeholder)) },
             leadingIcon = { Icon(Icons.Default.Search, null) },
             shape = RoundedCornerShape(24.dp),
             colors = OutlinedTextFieldDefaults.colors(
@@ -67,8 +69,13 @@ fun DiscoverGroupScreen(navController: NavController, viewModel: GroupViewModel)
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        val filters = listOf(
+            stringResource(R.string.filter_all),
+            stringResource(R.string.filter_open),
+            stringResource(R.string.filter_short_period),
+            stringResource(R.string.filter_popular)
+        )
         LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            val filters = listOf("All", "Open", "Short period", "Popular")
             items(filters) { filter ->
                 FilterChip(
                     label = filter,
@@ -124,7 +131,7 @@ fun DiscoverGroupCard(group: Group, onJoinClick: () -> Unit) {
                     color = Color(0xFFD4E6B5)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
-                        Text("Group\nlogo", textAlign = androidx.compose.ui.text.style.TextAlign.Center, fontSize = 12.sp, color = TextSecondary)
+                        Text(stringResource(R.string.group_logo_placeholder), textAlign = androidx.compose.ui.text.style.TextAlign.Center, fontSize = 12.sp, color = TextSecondary)
                     }
                 }
                 Spacer(modifier = Modifier.width(12.dp))
@@ -136,14 +143,14 @@ fun DiscoverGroupCard(group: Group, onJoinClick: () -> Unit) {
                     }
                     Spacer(modifier = Modifier.height(4.dp))
                     Surface(color = Color(0xFFEEEEEE), shape = RoundedCornerShape(4.dp)) {
-                        Text("description placeholder", modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp), fontSize = 11.sp, color = TextSecondary)
+                        Text(stringResource(R.string.description_placeholder), modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp), fontSize = 11.sp, color = TextSecondary)
                     }
                 }
                 Column(horizontalAlignment = Alignment.End) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(modifier = Modifier.size(8.dp).background(GreenAccent, CircleShape))
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("Open", fontSize = 12.sp, color = GreenAccent)
+                        Text(stringResource(R.string.filter_open), fontSize = 12.sp, color = GreenAccent)
                     }
                 }
             }
@@ -157,7 +164,7 @@ fun DiscoverGroupCard(group: Group, onJoinClick: () -> Unit) {
                 shape = RoundedCornerShape(20.dp),
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp)
             ) {
-                Text("View and Join", color = White, fontSize = 12.sp)
+                Text(stringResource(R.string.view_and_join_button), color = White, fontSize = 12.sp)
             }
         }
     }
