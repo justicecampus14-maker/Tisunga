@@ -26,27 +26,67 @@ class HomeViewModel(private val sessionManager: SessionManager) : ViewModel() {
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
     private val apiService = ApiClient.getClient()
+    
+    // Flag to track if we should show mock data (after creation) or stay empty (initial sign-in)
+    private var hasCreatedGroupInSession = false
+    private var lastCreatedGroupName: String? = null
 
     fun loadHomeData() {
+        // If we just created a group in this session, don't let loadHomeData 
+        // reset the state to empty or loading.
+        if (hasCreatedGroupInSession && _uiState.value.myGroups.isNotEmpty()) {
+            return
+        }
+
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(
-                isLoading = true,
+                isLoading = _uiState.value.myGroups.isEmpty(),
                 userName = sessionManager.getUserName().ifEmpty { "Michael" },
                 userPhone = sessionManager.getUserPhone().ifEmpty { "0882752624" }
             )
+            
             try {
                 val groups = apiService.getMyGroups()
-                _uiState.value = _uiState.value.copy(isLoading = false, myGroups = groups)
+                if (groups.isNotEmpty()) {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false, 
+                        myGroups = groups,
+                        recentTransactions = MockDataProvider.getMockTransactions()
+                    )
+                } else if (hasCreatedGroupInSession) {
+                    showMockData()
+                } else {
+                    _uiState.value = _uiState.value.copy(isLoading = false, myGroups = emptyList())
+                }
             } catch (e: Exception) {
-                // If the user belongs to no groups, the API might fail or return empty.
-                // For development/mocking, we should respect the scenario where a user might have 0 groups.
-                // If you want to TEST the disabled buttons, set myGroups to emptyList() here.
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    myGroups = emptyList(), // Changed from MockDataProvider.getMockGroups() to test the disabled state
-                    recentTransactions = emptyList() // Also clearing transactions for consistency
-                )
+                if (hasCreatedGroupInSession) {
+                    showMockData()
+                } else {
+                    _uiState.value = _uiState.value.copy(isLoading = false, myGroups = emptyList())
+                }
             }
         }
+    }
+    
+    private fun showMockData() {
+        val mockGroups = MockDataProvider.getMockGroups()
+        // Override the first group's name with the one from creation if available
+        val displayGroups = if (lastCreatedGroupName != null) {
+            listOf(mockGroups.first().copy(name = lastCreatedGroupName!!)) + mockGroups.drop(1)
+        } else {
+            mockGroups
+        }
+
+        _uiState.value = _uiState.value.copy(
+            isLoading = false,
+            myGroups = displayGroups,
+            recentTransactions = MockDataProvider.getMockTransactions()
+        )
+    }
+
+    fun refreshAfterCreation(groupName: String?) {
+        hasCreatedGroupInSession = true
+        lastCreatedGroupName = groupName
+        showMockData()
     }
 }

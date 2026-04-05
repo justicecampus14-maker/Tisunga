@@ -111,7 +111,7 @@ fun AppNavGraph(
             arguments = listOf(navArgument("groupId") { type = NavType.IntType })
         ) { backStackEntry ->
             val groupId = backStackEntry.arguments?.getInt("groupId") ?: 0
-            AddMembersScreen(navController, groupId, groupViewModel)
+            AddMembersScreen(navController, groupId, groupViewModel, homeViewModel)
         }
         
         composable(Routes.DISCOVER_GROUPS) { DiscoverGroupScreen(navController, groupViewModel) }

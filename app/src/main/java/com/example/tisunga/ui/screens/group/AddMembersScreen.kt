@@ -22,8 +22,10 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.compose.ui.res.stringResource
 import com.example.tisunga.R
+import com.example.tisunga.ui.navigation.Routes
 import com.example.tisunga.ui.theme.*
 import com.example.tisunga.viewmodel.GroupViewModel
+import com.example.tisunga.viewmodel.HomeViewModel
 
 // Holds only the members added during this screen session
 data class SessionMember(
@@ -33,7 +35,12 @@ data class SessionMember(
 )
 
 @Composable
-fun AddMembersScreen(navController: NavController, groupId: Int, viewModel: GroupViewModel) {
+fun AddMembersScreen(
+    navController: NavController, 
+    groupId: Int, 
+    viewModel: GroupViewModel,
+    homeViewModel: HomeViewModel
+) {
     val uiState by viewModel.uiState.collectAsState()
 
     var phoneSearch by remember { mutableStateOf("") }
@@ -50,7 +57,15 @@ fun AddMembersScreen(navController: NavController, groupId: Int, viewModel: Grou
         bottomBar = {
             Column(modifier = Modifier.padding(16.dp)) {
                 Button(
-                    onClick = { navController.navigate("group_detail/$groupId") },
+                    onClick = { 
+                        // Simulate data refresh so HomeScreen shows the new group
+                        // We pass the name of the group we just created
+                        homeViewModel.refreshAfterCreation(uiState.selectedGroup?.name)
+                        
+                        navController.navigate(Routes.HOME) {
+                            popUpTo(Routes.HOME) { inclusive = true }
+                        }
+                    },
                     modifier = Modifier.fillMaxWidth().height(56.dp),
                     shape = RoundedCornerShape(16.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = NavyBlue)
@@ -98,7 +113,7 @@ fun AddMembersScreen(navController: NavController, groupId: Int, viewModel: Grou
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(stringResource(R.string.placeholder_group_code), fontWeight = FontWeight.Bold, fontSize = 24.sp, color = TextPrimary)
+                            Text(uiState.selectedGroup?.groupCode ?: stringResource(R.string.placeholder_group_code), fontWeight = FontWeight.Bold, fontSize = 24.sp, color = TextPrimary)
                             OutlinedButton(
                                 onClick = { /* Share logic */ },
                                 shape = RoundedCornerShape(20.dp),
