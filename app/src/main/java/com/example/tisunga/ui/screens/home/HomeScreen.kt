@@ -48,9 +48,6 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel) {
         viewModel.loadHomeData()
     }
 
-    // Determine if user has groups
-    val hasGroups = uiState.myGroups.isNotEmpty()
-
     Scaffold(
         bottomBar = { BottomNavBar(navController, type = "C") },
         containerColor = BackgroundGray
@@ -82,35 +79,49 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel) {
             // Quick Actions
             QuickActionsSection(navController)
 
-            // My Groups
-            MyGroupsSection(
-                navController = navController,
-                groups = uiState.myGroups,
-                hasGroups = hasGroups
-            )
-
-            // Recent Transactions (only if has groups)
-            if (hasGroups) {
-                RecentTransactionsSection(
-                    transactions = uiState.recentTransactions
-                )
-            }
+            // Recent Transactions
+            RecentTransactionsSection()
         }
     }
 }
 
 @Composable
 fun HomeHeader(userName: String, userPhone: String, navController: NavController) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Column {
-            Text(stringResource(R.string.hi_user, userName), fontWeight = FontWeight.Bold, fontSize = 18.sp)
-            Text(stringResource(R.string.good_morning), fontSize = 12.sp, color = TextSecondary)
+    val initials = if (userName.isNotEmpty()) {
+        userName.split(" ").filter { it.isNotEmpty() }.let { parts ->
+            if (parts.size >= 2) {
+                "${parts[0][0]}${parts[1][0]}".uppercase()
+            } else if (parts.isNotEmpty()) {
+                parts[0][0].toString().uppercase()
+            } else ""
         }
-        Surface(shape = RoundedCornerShape(20.dp), color = Color(0xFFE8E8E8)) {
+    } else ""
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .background(NavyBlue, CircleShape)
+                .align(Alignment.CenterStart),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = initials,
+                color = Color.White,
+                fontWeight = FontWeight.Bold,
+                fontSize = 16.sp
+            )
+        }
+
+        Surface(
+            modifier = Modifier.align(Alignment.Center),
+            shape = RoundedCornerShape(20.dp),
+            color = Color(0xFFE8E8E8)
+        ) {
             Row(
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                 verticalAlignment = Alignment.CenterVertically
@@ -119,13 +130,21 @@ fun HomeHeader(userName: String, userPhone: String, navController: NavController
                 Icon(Icons.Filled.KeyboardArrowDown, null, Modifier.size(16.dp))
             }
         }
-        Box {
+
+        Box(modifier = Modifier.align(Alignment.CenterEnd)) {
             Icon(
                 Icons.Filled.Notifications,
                 null,
-                modifier = Modifier.size(28.dp).clickable { navController.navigate(Routes.NOTIFICATIONS) }
+                modifier = Modifier
+                    .size(28.dp)
+                    .clickable { navController.navigate(Routes.NOTIFICATIONS) }
             )
-            Box(modifier = Modifier.size(10.dp).background(Color.Red, CircleShape).align(Alignment.TopEnd))
+            Box(
+                modifier = Modifier
+                    .size(10.dp)
+                    .background(Color.Red, CircleShape)
+                    .align(Alignment.TopEnd)
+            )
         }
     }
 }
@@ -255,7 +274,7 @@ private fun QuickActionsSection(navController: NavController) {
         Spacer(modifier = Modifier.height(12.dp))
         Row(
             modifier=Modifier.fillMaxWidth(),
-            horizontalArrangement=Arrangement.spacedBy(10.dp)
+            horizontalArrangement=Arrangement.spacedBy(8.dp)
         ) {
             QuickActionCard(
                 icon = Icons.Filled.GroupAdd,
@@ -266,11 +285,20 @@ private fun QuickActionsSection(navController: NavController) {
                 }
             )
             QuickActionCard(
-                icon = Icons.Filled.Groups,
-                label = stringResource(R.string.join_group_label),
+                icon = Icons.Filled.AccountBalanceWallet,
+                label = stringResource(R.string.save_label),
                 modifier = Modifier.weight(1f),
                 onClick = {
-                    navController.navigate(Routes.JOIN_GROUP)
+                    navController.navigate(Routes.GROUP_SAVINGS)
+                }
+            )
+            QuickActionCard(
+                icon = Icons.Filled.Event,
+                label = stringResource(R.string.events_label),
+                modifier = Modifier.weight(1f),
+                onClick = {
+                    // Navigate to events - using groupId 1 as default since it's a quick action
+                    navController.navigate(Routes.EVENTS.replace("{groupId}", "1"))
                 }
             )
             QuickActionCard(
@@ -320,169 +348,37 @@ private fun QuickActionCard(
 }
 
 @Composable
-private fun MyGroupsSection(
-    navController: NavController,
-    groups: List<Group>,
-    hasGroups: Boolean
-) {
-    Column(modifier=Modifier.padding(horizontal=16.dp)) {
-        Row(
-            modifier=Modifier.fillMaxWidth(),
-            horizontalArrangement=Arrangement.SpaceBetween,
-            verticalAlignment=Alignment.CenterVertically
-        ) {
-            Surface(shape=RoundedCornerShape(8.dp), color=White) {
-                Text(stringResource(R.string.my_groups_title),
-                     modifier=Modifier.padding(horizontal=12.dp, vertical=6.dp),
-                     fontWeight=FontWeight.SemiBold)
-            }
-            if (hasGroups) {
-                TextButton(onClick={
-                    navController.navigate(Routes.DISCOVER_GROUPS)
-                }) {
-                    Text(stringResource(R.string.discover_groups_link),
-                         color=GreenAccent,
-                         fontWeight=FontWeight.SemiBold)
-                }
-            }
-        }
-        Spacer(modifier = Modifier.height(12.dp))
-
-        if (!hasGroups) {
-            Card(
-                modifier=Modifier.fillMaxWidth().height(160.dp),
-                shape=RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = BackgroundLightGray)
-            ) {
-                Column(
-                    modifier = Modifier.fillMaxSize().padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Text(stringResource(R.string.no_groups_msg), color = TextSecondary, textAlign = TextAlign.Center)
-                    TextButton(onClick = { navController.navigate(Routes.DISCOVER_GROUPS) }) {
-                        Text(stringResource(R.string.discover_groups_link), color = GreenAccent)
-                    }
-                }
-            }
-        } else {
-            groups.forEach { group ->
-                GroupListItem(group, navController)
-                Spacer(modifier = Modifier.height(12.dp))
-            }
-        }
-    }
-}
-
-@Composable
-fun GroupListItem(group: Group, navController: NavController) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { navController.navigate("group_detail/${group.id}") },
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = White),
-        elevation = CardDefaults.cardElevation(2.dp)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(modifier = Modifier.fillMaxWidth()) {
-                Surface(
-                    modifier = Modifier.size(60.dp),
-                    shape = RoundedCornerShape(10.dp),
-                    color = Color(0xFFD4E6B5)
-                ) {}
-                Spacer(modifier = Modifier.width(12.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(group.name, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                    Text(stringResource(R.string.group_total_savings, group.totalSavings), fontSize = 12.sp, color = TextSecondary)
-                    Text(stringResource(R.string.group_my_savings, group.mySavings), fontSize = 12.sp, color = TextSecondary)
-                }
-                Surface(
-                    shape = RoundedCornerShape(20.dp),
-                    border = BorderStroke(1.dp, NavyBlue),
-                    color = Color.Transparent
-                ) {
-                    Text(
-                        group.status,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                        color = NavyBlue,
-                        fontSize = 12.sp
-                    )
-                }
-            }
-            Spacer(modifier = Modifier.height(12.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Surface(color = BackgroundGray, shape = RoundedCornerShape(20.dp)) {
-                    Text(
-                        group.description,
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-                        fontSize = 12.sp,
-                        color = TextSecondary
-                    )
-                }
-                Text(
-                    stringResource(R.string.save_now_link),
-                    color = BlueLink,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.clickable { navController.navigate("make_contribution/${group.id}") }
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun RecentTransactionsSection(transactions: List<com.example.tisunga.data.model.Transaction>) {
+fun RecentTransactionsSection() {
     Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-        Surface(shape = RoundedCornerShape(8.dp), color = White) {
-            Text(stringResource(R.string.recent_transactions_title),
+        Surface(
+            shape = RoundedCornerShape(8.dp),
+            color = Color.White
+        ) {
+            Text(
+                text = stringResource(R.string.recent_transactions_title),
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                fontWeight = FontWeight.SemiBold)
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold
+            )
         }
         Spacer(modifier = Modifier.height(12.dp))
-        transactions.forEach { transaction ->
-            TransactionListItem(transaction)
-            Spacer(modifier = Modifier.height(8.dp))
-        }
-    }
-}
-
-@Composable
-fun TransactionListItem(transaction: com.example.tisunga.data.model.Transaction) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = White),
-        elevation = CardDefaults.cardElevation(1.dp)
-    ) {
-        Row(
-            modifier = Modifier.padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
+        Card(
+            modifier = Modifier.fillMaxWidth().height(160.dp),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = White),
+            elevation = CardDefaults.cardElevation(2.dp)
         ) {
             Box(
-                modifier = Modifier.size(40.dp).background(Color(0xFFE3F2FD), CircleShape),
+                modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = if (transaction.type == "contribution") Icons.Default.Add else Icons.Default.Remove,
-                    contentDescription = null,
-                    tint = if (transaction.type == "contribution") Color(0xFF4CAF50) else Color(0xFFF44336)
+                Text(
+                    text = stringResource(R.string.no_groups_msg),
+                    color = TextSecondary,
+                    textAlign = TextAlign.Center,
+                    fontSize = 14.sp
                 )
             }
-            Spacer(modifier = Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(transaction.type.replaceFirstChar { it.uppercase() }, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                Text(transaction.timestamp, fontSize = 12.sp, color = TextSecondary)
-            }
-            Text(
-                stringResource(R.string.amount_mk, transaction.amount),
-                fontWeight = FontWeight.Bold,
-                color = if (transaction.type == "contribution") Color(0xFF4CAF50) else Color(0xFFF44336)
-            )
         }
     }
 }

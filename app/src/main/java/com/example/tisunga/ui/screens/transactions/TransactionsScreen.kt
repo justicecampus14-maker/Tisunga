@@ -75,7 +75,7 @@ fun TransactionsScreen(navController: NavController, groupId: Int, viewModel: Gr
         ) {
             item {
                 Text(
-                    "Friday, March 19, 2026 9:00am",
+                    stringResource(R.string.transaction_date_placeholder),
                     modifier = Modifier.fillMaxWidth().padding(12.dp),
                     textAlign = TextAlign.Center,
                     fontWeight = FontWeight.Bold,
@@ -127,7 +127,7 @@ fun TransactionBubble(transaction: Transaction) {
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "5:00PM", // Should come from timestamp in real app
+                text = stringResource(R.string.transaction_time_placeholder), // Should come from timestamp in real app
                 modifier = Modifier.fillMaxWidth(),
                 textAlign = TextAlign.End,
                 fontSize = 11.sp,
