@@ -144,7 +144,7 @@ fun AppNavGraph(
             DisbursementScreen(navController, groupId, savingsViewModel)
         }
         
-        composable(Routes.ALL_LOANS) { AllLoansScreen(navController, loanViewModel) }
+        composable(Routes.ALL_LOANS) { AllLoansScreen(navController, loanViewModel, homeViewModel) }
         
         composable(
             Routes.MY_LOANS,
