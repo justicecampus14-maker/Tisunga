@@ -83,7 +83,7 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel) {
             }
 
             // Quick Actions
-            QuickActionsSection(navController, hasGroups = uiState.myGroups.isNotEmpty())
+            QuickActionsSection(navController, uiState.myGroups.firstOrNull())
 
             // Recent Transactions
             RecentTransactionsSection(uiState.recentTransactions)
@@ -344,7 +344,8 @@ fun BannerCard(page: Int) {
 }
 
 @Composable
-private fun QuickActionsSection(navController: NavController, hasGroups: Boolean) {
+private fun QuickActionsSection(navController: NavController, group: Group?) {
+    val hasGroups = group != null
     Column(modifier=Modifier.padding(horizontal=16.dp)) {
         Surface(
             shape=RoundedCornerShape(8.dp),
@@ -373,7 +374,7 @@ private fun QuickActionsSection(navController: NavController, hasGroups: Boolean
                 modifier = Modifier.weight(1f),
                 enabled = hasGroups,
                 onClick = {
-                    navController.navigate(Routes.GROUP_SAVINGS)
+                    navController.navigate(Routes.MAKE_CONTRIBUTION.replace("{groupId}", group?.id.toString()))
                 }
             )
             QuickActionCard(
@@ -382,8 +383,8 @@ private fun QuickActionsSection(navController: NavController, hasGroups: Boolean
                 modifier = Modifier.weight(1f),
                 enabled = hasGroups,
                 onClick = {
-                    // Navigate to events - using groupId 1 as default since it's a quick action
-                    navController.navigate(Routes.EVENTS.replace("{groupId}", "1"))
+                    // Navigate to events
+                    navController.navigate(Routes.EVENTS.replace("{groupId}", group?.id.toString()))
                 }
             )
             QuickActionCard(
