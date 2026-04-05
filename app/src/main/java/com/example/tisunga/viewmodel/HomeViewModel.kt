@@ -38,10 +38,13 @@ class HomeViewModel(private val sessionManager: SessionManager) : ViewModel() {
                 val groups = apiService.getMyGroups()
                 _uiState.value = _uiState.value.copy(isLoading = false, myGroups = groups)
             } catch (e: Exception) {
+                // If the user belongs to no groups, the API might fail or return empty.
+                // For development/mocking, we should respect the scenario where a user might have 0 groups.
+                // If you want to TEST the disabled buttons, set myGroups to emptyList() here.
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    myGroups = MockDataProvider.getMockGroups(),
-                    recentTransactions = MockDataProvider.getMockTransactions().take(2)
+                    myGroups = emptyList(), // Changed from MockDataProvider.getMockGroups() to test the disabled state
+                    recentTransactions = emptyList() // Also clearing transactions for consistency
                 )
             }
         }

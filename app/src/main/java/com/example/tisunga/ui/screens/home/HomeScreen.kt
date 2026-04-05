@@ -77,7 +77,7 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel) {
             BannerSection()
 
             // Quick Actions
-            QuickActionsSection(navController)
+            QuickActionsSection(navController, hasGroups = uiState.myGroups.isNotEmpty())
 
             // Recent Transactions
             RecentTransactionsSection()
@@ -261,7 +261,7 @@ fun BannerCard(page: Int) {
 }
 
 @Composable
-private fun QuickActionsSection(navController: NavController) {
+private fun QuickActionsSection(navController: NavController, hasGroups: Boolean) {
     Column(modifier=Modifier.padding(horizontal=16.dp)) {
         Surface(
             shape=RoundedCornerShape(8.dp),
@@ -288,6 +288,7 @@ private fun QuickActionsSection(navController: NavController) {
                 icon = Icons.Filled.AccountBalanceWallet,
                 label = stringResource(R.string.save_label),
                 modifier = Modifier.weight(1f),
+                enabled = hasGroups,
                 onClick = {
                     navController.navigate(Routes.GROUP_SAVINGS)
                 }
@@ -296,6 +297,7 @@ private fun QuickActionsSection(navController: NavController) {
                 icon = Icons.Filled.Event,
                 label = stringResource(R.string.events_label),
                 modifier = Modifier.weight(1f),
+                enabled = hasGroups,
                 onClick = {
                     // Navigate to events - using groupId 1 as default since it's a quick action
                     navController.navigate(Routes.EVENTS.replace("{groupId}", "1"))
@@ -305,6 +307,7 @@ private fun QuickActionsSection(navController: NavController) {
                 icon = Icons.Filled.SwapHoriz,
                 label = stringResource(R.string.view_loans_label),
                 modifier = Modifier.weight(1f),
+                enabled = hasGroups,
                 onClick = {
                     navController.navigate(Routes.ALL_LOANS)
                 }
@@ -319,6 +322,7 @@ private fun QuickActionCard(
     icon: ImageVector,
     label: String,
     modifier: Modifier,
+    enabled: Boolean = true,
     onClick: () -> Unit
 ) {
     Column(
@@ -328,22 +332,25 @@ private fun QuickActionCard(
         Card(
             modifier = Modifier
                 .size(85.dp)
-                .clickable { onClick() },
+                .clickable(enabled = enabled) { onClick() },
             shape = RoundedCornerShape(14.dp),
-            colors = CardDefaults.cardColors(containerColor = White),
-            elevation = CardDefaults.cardElevation(2.dp)
+            colors = CardDefaults.cardColors(
+                containerColor = White,
+                disabledContainerColor = White.copy(alpha = 0.6f)
+            ),
+            elevation = CardDefaults.cardElevation(if (enabled) 2.dp else 0.dp)
         ) {
             Box(Modifier.fillMaxSize(),
                 contentAlignment=Alignment.Center) {
                 Icon(icon, null,
-                     modifier=Modifier.size(32.dp),
+                     modifier=Modifier.size(32.dp).alpha(if (enabled) 1f else 0.3f),
                      tint=NavyBlue)
             }
         }
         Spacer(modifier = Modifier.height(6.dp))
         Text(label, fontSize=11.sp,
              textAlign=TextAlign.Center,
-             color=TextPrimary)
+             color=if (enabled) TextPrimary else TextSecondary.copy(alpha = 0.5f))
     }
 }
 
