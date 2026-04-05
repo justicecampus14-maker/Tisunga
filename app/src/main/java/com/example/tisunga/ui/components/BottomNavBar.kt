@@ -3,7 +3,7 @@ package com.example.tisunga.ui.components
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -39,7 +39,7 @@ fun BottomNavBar(
             Icons.Filled.AccountBalance, 
             Routes.GROUP_SAVINGS
         ),
-        BottomNavItem("Me", Icons.Filled.Person, "me")
+        BottomNavItem("Loans", Icons.Filled.SwapHoriz, Routes.ALL_LOANS)
     )
 
     NavigationBar(
@@ -69,16 +69,12 @@ fun BottomNavBar(
                 selected = isSelected,
                 onClick = {
                     if (currentRoute != item.route) {
-                        if (item.route == "me") {
-                            // TODO: Navigate to profile
-                        } else {
-                            navController.navigate(item.route) {
-                                popUpTo(Routes.HOME) {
-                                    saveState = true
-                                }
-                                launchSingleTop = true
-                                restoreState = true
+                        navController.navigate(item.route) {
+                            popUpTo(Routes.HOME) {
+                                saveState = true
                             }
+                            launchSingleTop = true
+                            restoreState = true
                         }
                     }
                 },

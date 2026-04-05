@@ -17,6 +17,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.compose.ui.res.stringResource
+import com.example.tisunga.R
 import com.example.tisunga.ui.navigation.Routes
 import com.example.tisunga.ui.theme.*
 import com.example.tisunga.viewmodel.AuthViewModel
@@ -44,14 +46,14 @@ fun VerificationScreen(navController: NavController, viewModel: AuthViewModel) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = { navController.navigateUp() }) {
-                Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.back_desc))
             }
         }
         
         Spacer(modifier = Modifier.height(24.dp))
         
-        Text(text = "Enter Verification Code", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
-        Text(text = "Enter code we sent to your phone number", fontSize = 14.sp, color = TextSecondary)
+        Text(text = stringResource(R.string.verification_title), fontSize = 24.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+        Text(text = stringResource(R.string.verification_subtitle), fontSize = 14.sp, color = TextSecondary)
         
         Spacer(modifier = Modifier.height(32.dp))
         
@@ -97,7 +99,7 @@ fun VerificationScreen(navController: NavController, viewModel: AuthViewModel) {
             if (uiState.isLoading) {
                 CircularProgressIndicator(color = White, modifier = Modifier.size(24.dp))
             } else {
-                Text("Velify", color = White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                Text(stringResource(R.string.verify_button), color = White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
             }
         }
         
@@ -105,7 +107,7 @@ fun VerificationScreen(navController: NavController, viewModel: AuthViewModel) {
             onClick = { viewModel.sendOtp(uiState.userPhone) },
             modifier = Modifier.align(Alignment.CenterHorizontally)
         ) {
-            Text("Resend Code", color = TextPrimary, fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.resend_code_link), color = TextPrimary, fontWeight = FontWeight.Bold)
         }
 
         if (uiState.errorMessage.isNotEmpty()) {

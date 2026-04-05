@@ -22,18 +22,38 @@ import com.example.tisunga.ui.theme.TextSecondary
 
 @Composable
 fun TopBar(userName: String, userPhone: String, onNotificationsClick: () -> Unit) {
-    Row(
+    val initials = if (userName.isNotEmpty()) {
+        userName.split(" ").filter { it.isNotEmpty() }.let { parts ->
+            if (parts.size >= 2) {
+                "${parts[0][0]}${parts[1][0]}".uppercase()
+            } else if (parts.isNotEmpty()) {
+                parts[0][0].toString().uppercase()
+            } else ""
+        }
+    } else ""
+
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
+            .padding(16.dp)
     ) {
-        Column {
-            Text("Hi, $userName", fontWeight = Bold, fontSize = 18.sp)
-            Text("Good morning", fontSize = 12.sp, color = TextSecondary)
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .background(Color(0xFF1B3A5C), CircleShape)
+                .align(Alignment.CenterStart),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = initials,
+                color = Color.White,
+                fontWeight = Bold,
+                fontSize = 16.sp
+            )
         }
+
         Surface(
+            modifier = Modifier.align(Alignment.Center),
             shape = RoundedCornerShape(20.dp),
             color = Color(0xFFE8E8E8)
         ) {
@@ -45,7 +65,8 @@ fun TopBar(userName: String, userPhone: String, onNotificationsClick: () -> Unit
                 Icon(Icons.Filled.KeyboardArrowDown, null, Modifier.size(16.dp))
             }
         }
-        Box {
+
+        Box(modifier = Modifier.align(Alignment.CenterEnd)) {
             Icon(
                 Icons.Filled.Notifications,
                 null,

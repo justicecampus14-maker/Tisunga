@@ -20,6 +20,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.compose.ui.res.stringResource
+import com.example.tisunga.R
 import com.example.tisunga.ui.navigation.Routes
 import com.example.tisunga.ui.theme.*
 
@@ -34,14 +36,14 @@ fun WelcomeScreen(navController: NavController) {
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = "WELCOME TO",
+            text = stringResource(R.string.welcome_to),
             fontSize = 26.sp,
             fontWeight = FontWeight.Light,
             letterSpacing = 4.sp,
             color = TextPrimary
         )
         Text(
-            text = "TISUNGA",
+            text = stringResource(R.string.welcome_tisunga),
             fontSize = 22.sp,
             fontWeight = FontWeight.Medium,
             letterSpacing = 2.sp,
@@ -51,7 +53,7 @@ fun WelcomeScreen(navController: NavController) {
         Spacer(modifier = Modifier.height(48.dp))
         
         Text(
-            text = "A smarter and safer way for communities to save, grow, and manage money together. Contribute securely, track your savings in real-time, apply for loans, and build financial strength as a group — all in one simple app.",
+            text = stringResource(R.string.welcome_description),
             fontSize = 15.sp,
             textAlign = TextAlign.Center,
             lineHeight = 24.sp,
@@ -78,7 +80,7 @@ fun WelcomeScreen(navController: NavController) {
                 shape = RoundedCornerShape(topStart = 28.dp, bottomStart = 28.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32))
             ) {
-                Text("GET STARTED", color = White, fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.get_started_button), color = White, fontWeight = FontWeight.Bold)
             }
             Button(
                 onClick = { navController.navigate(Routes.SIGN_IN) },

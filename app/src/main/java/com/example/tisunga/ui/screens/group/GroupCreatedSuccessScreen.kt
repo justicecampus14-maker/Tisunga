@@ -13,6 +13,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.compose.ui.res.stringResource
+import com.example.tisunga.R
 import com.example.tisunga.ui.theme.*
 
 @Composable
@@ -39,7 +41,7 @@ fun GroupCreatedSuccessScreen(navController: NavController, groupId: Int) {
                 verticalArrangement = Arrangement.Center
             ) {
                 Text(
-                    text = "Your Have\nSuccessfuly Created\nthe Group",
+                    text = stringResource(R.string.group_created_success_msg),
                     color = White,
                     fontWeight = FontWeight.Bold,
                     fontSize = 22.sp,
@@ -56,7 +58,7 @@ fun GroupCreatedSuccessScreen(navController: NavController, groupId: Int) {
                     border = androidx.compose.foundation.BorderStroke(1.dp, White),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = White)
                 ) {
-                    Text("Go to Add Members", color = White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.go_to_add_members_button), color = White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
                 }
             }
         }

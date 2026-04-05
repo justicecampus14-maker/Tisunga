@@ -19,6 +19,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.compose.ui.res.stringResource
+import com.example.tisunga.R
 import com.example.tisunga.ui.navigation.Routes
 import com.example.tisunga.ui.theme.*
 import com.example.tisunga.viewmodel.GroupViewModel
@@ -38,13 +40,13 @@ fun AddMembersScreen(navController: NavController, groupId: Int, viewModel: Grou
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = { navController.popBackStack() }) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back_desc))
             }
-            Text("Add Members", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+            Text(stringResource(R.string.add_members_title), fontSize = 20.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
         }
         
         Text(
-            "Add members and assign roles to your group",
+            stringResource(R.string.add_members_subtitle),
             fontSize = 14.sp,
             color = TextSecondary,
             modifier = Modifier.fillMaxWidth(),
@@ -59,19 +61,19 @@ fun AddMembersScreen(navController: NavController, groupId: Int, viewModel: Grou
             colors = CardDefaults.cardColors(containerColor = White)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text("Group Code", fontSize = 12.sp, color = TextSecondary)
+                Text(stringResource(R.string.group_code_label), fontSize = 12.sp, color = TextSecondary)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("67WEISH6", fontWeight = FontWeight.Bold, fontSize = 22.sp, color = NavyBlue)
+                    Text(stringResource(R.string.placeholder_group_code), fontWeight = FontWeight.Bold, fontSize = 22.sp, color = NavyBlue)
                     OutlinedButton(
                         onClick = { /* Share logic */ },
                         shape = RoundedCornerShape(20.dp),
                         border = androidx.compose.foundation.BorderStroke(1.dp, GreenAccent)
                     ) {
-                        Text("Share Code", color = GreenAccent)
+                        Text(stringResource(R.string.share_code_button), color = GreenAccent)
                     }
                 }
             }
@@ -92,7 +94,7 @@ fun AddMembersScreen(navController: NavController, groupId: Int, viewModel: Grou
                         if (it.length >= 10) viewModel.searchMemberByPhone(it)
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("Search by phone number") },
+                    placeholder = { Text(stringResource(R.string.search_by_phone_hint)) },
                     leadingIcon = { Icon(Icons.Default.Search, null) },
                     shape = RoundedCornerShape(10.dp),
                     colors = OutlinedTextFieldDefaults.colors(
@@ -110,15 +112,15 @@ fun AddMembersScreen(navController: NavController, groupId: Int, viewModel: Grou
                     ) {
                         Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                             Column(modifier = Modifier.weight(1f)) {
-                                Text("Search Result Name", fontWeight = FontWeight.Bold)
+                                Text(stringResource(R.string.placeholder_member_name), fontWeight = FontWeight.Bold)
                                 Text(phoneSearch, fontSize = 12.sp)
                             }
                             Box {
                                 Text(selectedRole, modifier = Modifier.clickable { roleExpanded = true }.padding(8.dp), color = NavyBlue)
                                 DropdownMenu(expanded = roleExpanded, onDismissRequest = { roleExpanded = false }) {
-                                    DropdownMenuItem(text = { Text("Member") }, onClick = { selectedRole = "Member"; roleExpanded = false })
-                                    DropdownMenuItem(text = { Text("Secretary") }, onClick = { selectedRole = "Secretary"; roleExpanded = false })
-                                    DropdownMenuItem(text = { Text("Treasurer") }, onClick = { selectedRole = "Treasurer"; roleExpanded = false })
+                                    DropdownMenuItem(text = { Text(stringResource(R.string.role_member)) }, onClick = { selectedRole = "Member"; roleExpanded = false })
+                                    DropdownMenuItem(text = { Text(stringResource(R.string.role_secretary)) }, onClick = { selectedRole = "Secretary"; roleExpanded = false })
+                                    DropdownMenuItem(text = { Text(stringResource(R.string.role_treasurer)) }, onClick = { selectedRole = "Treasurer"; roleExpanded = false })
                                 }
                             }
                             Button(
@@ -126,7 +128,7 @@ fun AddMembersScreen(navController: NavController, groupId: Int, viewModel: Grou
                                 colors = ButtonDefaults.buttonColors(containerColor = GreenAccent),
                                 shape = RoundedCornerShape(10.dp)
                             ) {
-                                Text("Add", color = White)
+                                Text(stringResource(R.string.add_button), color = White)
                             }
                         }
                     }
@@ -136,7 +138,7 @@ fun AddMembersScreen(navController: NavController, groupId: Int, viewModel: Grou
         
         Spacer(modifier = Modifier.height(16.dp))
         
-        Text("Members Added", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+        Text(stringResource(R.string.members_added_title), fontWeight = FontWeight.Bold, fontSize = 16.sp)
         
         LazyColumn(modifier = Modifier.weight(1f)) {
             items(uiState.members) { member ->
@@ -165,7 +167,7 @@ fun AddMembersScreen(navController: NavController, groupId: Int, viewModel: Grou
             shape = RoundedCornerShape(10.dp),
             colors = ButtonDefaults.buttonColors(containerColor = NavyBlue)
         ) {
-            Text("Done", color = White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+            Text(stringResource(R.string.done_button), color = White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
         }
     }
 }

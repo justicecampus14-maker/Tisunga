@@ -1,3 +1,275 @@
 <resources>
     <string name="app_name">Tisunga</string>
+
+    <!-- Auth Screens -->
+    <string name="signin_title">Sign in</string>
+    <string name="signin_subtitle">Welcome back! Please enter your details.</string>
+    <string name="phone_number_label">Phone number</string>
+    <string name="phone_number_placeholder">Enter Phone number</string>
+    <string name="password_label">Password</string>
+    <string name="forgot_password_link">Forgot your password?</string>
+    <string name="no_account_text">Don\'t have an account? </string>
+    <string name="signup_link">Sign up</string>
+    <string name="create_account_title">Create Account</string>
+    <string name="create_account_subtitle">Join us today and get started</string>
+    <string name="first_name_label">First Name</string>
+    <string name="middle_name_label">Middle Name (Optional)</string>
+    <string name="last_name_label">Last Name</string>
+    <string name="error_fill_all_fields">Please fill all required fields</string>
+    <string name="continue_button">Continue</string>
+    <string name="already_have_account_text">Already have an account? </string>
+    <string name="signin_link">Sign In</string>
+    <string name="terms_and_privacy">By continuing, you agree to our Terms of Service and Privacy Policy</string>
+    <string name="back_desc">Back</string>
+    <string name="verification_title">Enter Verification Code</string>
+    <string name="verification_subtitle">Enter code we sent to your phone number</string>
+    <string name="verify_button">Verify</string>
+    <string name="resend_code_link">Resend Code</string>
+    <string name="create_password_title">Create Password</string>
+    <string name="enter_password_label">Enter Password</string>
+    <string name="reenter_password_label">Re-Enter password</string>
+    <string name="error_passwords_dont_match">Passwords do not match</string>
+    <string name="error_password_length">Password must be between 8 and 64 characters</string>
+    <string name="error_password_uppercase">Password must include at least one capital letter</string>
+    <string name="error_password_symbol">Password must include at least one symbol</string>
+    <string name="forgot_password_title">Forget Password</string>
+    <string name="enter_phone_subtitle">Enter your phone number</string>
+    <string name="phone_placeholder">0882752624</string>
+    <string name="send_button">Send</string>
+
+    <!-- Home Screen -->
+    <string name="hi_user">Hi, %1$s</string>
+    <string name="good_morning">Good morning</string>
+    <string name="banner_tisunga">TISUNGA</string>
+    <string name="banner_save_more">SAVE MORE</string>
+    <string name="banner_grow_fast">GROW FAST</string>
+    <string name="banner_desc_0">Save Together. Grow Together.</string>
+    <string name="banner_desc_1">Your future is built today.</string>
+    <string name="banner_desc_2">Loans at low interest rates.</string>
+    <string name="banner_savings_static">My Savings: MK 12,500.00</string>
+    <string name="banner_join_groups">Join 100+ Groups</string>
+    <string name="quick_action_title">Quick Action</string>
+    <string name="create_group_label">Create Group</string>
+    <string name="save_label">Save</string>
+    <string name="events_label">Events</string>
+    <string name="join_group_label">Join Group</string>
+    <string name="view_loans_label">Loans</string>
+    <string name="my_groups_title">My Groups</string>
+    <string name="discover_groups_link">Discover groups →</string>
+    <string name="no_groups_msg">You don\'t belong to any group yet</string>
+    <string name="group_total_savings">Group savings : MK %1$s</string>
+    <string name="group_my_savings">My Savings: MK %1$s</string>
+    <string name="save_now_link">Save Now</string>
+    <string name="recent_transactions_title">Transactions</string>
+    <string name="amount_mk">MK %1$s</string>
+
+    <!-- Group Screens -->
+    <string name="discover_title">Discover</string>
+    <string name="search_placeholder">search by name or location</string>
+    <string name="filter_all">All</string>
+    <string name="filter_open">Open</string>
+    <string name="filter_short_period">Short period</string>
+    <string name="filter_popular">Popular</string>
+    <string name="group_logo_placeholder">Group\nlogo</string>
+    <string name="description_placeholder">description placeholder</string>
+    <string name="view_and_join_button">View and Join</string>
+    <string name="create_group_title">Create Group</string>
+    <string name="chair_notice">Upon Creation You are the Chair for the group</string>
+    <string name="group_name_label">Group Name*</string>
+    <string name="group_name_hint">eg, Mphatsso Group</string>
+    <string name="description_label">Description</string>
+    <string name="description_hint">Mphatso group is a group that saves a minimum of k2000 each week .......</string>
+    <string name="location_label">Location</string>
+    <string name="location_hint">e.g Zomba, Chikanda</string>
+    <string name="min_contribution_label">Minimun Contribtuion (MK 2,000)</string>
+    <string name="saving_period_label">Saving Period (Months)</string>
+    <string name="max_members_label">Max Members</string>
+    <string name="visibility_label">Vissibility</string>
+    <string name="visibility_public">Public</string>
+    <string name="visibility_private">Private</string>
+    <string name="start_date_label">Start Date</string>
+    <string name="end_date_label">End date</string>
+    <string name="meeting_day_label">Meeting Day</string>
+    <string name="meeting_day_hint">Friday</string>
+    <string name="meeting_time_label">Time</string>
+    <string name="meeting_time_hint">3:00pm</string>
+    <string name="group_created_success_msg">Your Have\nSuccessfuly Created\nthe Group</string>
+    <string name="add_members_title">Add Members</string>
+    <string name="add_members_subtitle">Add members and assign roles to your group</string>
+    <string name="group_code_label">Group Code</string>
+    <string name="share_code_button">Share Code</string>
+    <string name="search_by_phone_hint">Search by phone number</string>
+    <string name="add_button">Add</string>
+    <string name="members_added_title">Members Added</string>
+    <string name="role_member">Member</string>
+    <string name="role_secretary">Secretary</string>
+    <string name="role_treasurer">Treasurer</string>
+    <string name="done_button">Done</string>
+    <string name="placeholder_member_name">Search Result Name</string>
+    <string name="placeholder_group_code">67WEISH6</string>
+    <string name="group_members_title_placeholder">%1$s Members</string>
+    <string name="add_label">Add</string>
+    <string name="join_request_label">Join request</string>
+    <string name="group_code_label_simple">Group code</string>
+    <string name="share_label">Share</string>
+    <string name="you_label">You</string>
+    <string name="loans_label">Loans</string>
+    <string name="contributions_label">Contributions</string>
+    <string name="actions_label">Actions</string>
+    <string name="change_role_option">Change Role</string>
+    <string name="remove_member_option">Remove Member</string>
+    <string name="deactivate_member_option">Deactivate Member</string>
+    <string name="remove_member_title">Remove Member</string>
+    <string name="remove_member_confirm_msg">Are you sure you want to remove this member from the group?</string>
+    <string name="remove_button">Remove</string>
+    <string name="group_summary_title">Group Summary</string>
+    <string name="edit_button">Edit</string>
+    <string name="confirm_button">Confirm</string>
+    <string name="summary_row_label_value">%1$s: %2$s</string>
+    <string name="saving_period_months">%1$d Months</string>
+    <string name="go_to_add_members_button">Go to Add Members</string>
+
+    <!-- Group Detail Screen -->
+    <string name="group_saving_label">Group saving</string>
+    <string name="my_savings_label">My Savings</string>
+    <string name="quick_actions_title">Quick actions</string>
+    <string name="members_link">members</string>
+    <string name="action_save">Save</string>
+    <string name="action_view_savings">View Savings</string>
+    <string name="action_view_events">View Events</string>
+    <string name="action_view_loans">View Loans</string>
+    <string name="transactions_history_title">Transactions History</string>
+    <string name="view_all_link">view all</string>
+    <string name="member_name_placeholder">Member Name</string>
+    <string name="trans_id_label">Trans ID: %1$s - %2$s</string>
+
+    <!-- Join Group Dialog -->
+    <string name="enter_group_code_title">Enter Group Code</string>
+    <string name="group_code_hint">2Q12Q</string>
+    <string name="or_text">OR</string>
+    <string name="ok_button">OK</string>
+
+    <!-- Onboarding -->
+    <string name="welcome_to">WELCOME TO</string>
+    <string name="welcome_tisunga">TISUNGA</string>
+    <string name="welcome_description">A smarter and safer way for communities to save, grow, and manage money together. Contribute securely, track your savings in real-time, apply for loans, and build financial strength as a group.</string>
+    <string name="get_started_button">GET STARTED</string>
+
+    <!-- Common Filters -->
+    <string name="filter_active">Active</string>
+    <string name="filter_upcoming">Upcoming</string>
+    <string name="filter_closed">Closed</string>
+    <string name="filter_pending">Pending</string>
+    <string name="filter_history">History</string>
+
+    <!-- Events Screen -->
+    <string name="events_title">Events</string>
+    <string name="filter_all_events">All events</string>
+    <string name="active_events_count">Active Events(%1$d)</string>
+    <string name="create_link">Create</string>
+    <string name="closed_events_title">Closed Events</string>
+    <string name="close_event_button">Close Event</string>
+    <string name="close_event_confirm_msg">Are you sure you want to close this event?</string>
+    <string name="create_event_title">Create Event</string>
+    <string name="event_type_label">Event Type</string>
+    <string name="event_type_wedding">Wedding</string>
+    <string name="event_type_birthday">Birthday</string>
+    <string name="event_type_funeral">Funeral</string>
+    <string name="event_type_other">Other</string>
+    <string name="event_title_label">Event Title</string>
+    <string name="date_label">Date</string>
+    <string name="amount_type_label">Amount Type</string>
+    <string name="amount_type_fixed">Fixed</string>
+    <string name="amount_type_flexible">Flexible</string>
+    <string name="amount_mk_label">Amount (MK)</string>
+    <string name="cancel_button">Cancel</string>
+
+    <!-- Loans Screen -->
+    <string name="loans_title">Loans</string>
+    <string name="all_loans_title">All Loans</string>
+    <string name="tab_my_loans">My Loans</string>
+    <string name="tab_member_loans">Member Loans</string>
+    <string name="apply_loan_button">Apply Loan</string>
+    <string name="repay_now_link">Repay Now →</string>
+    <string name="loan_group_name_label">%1$s Loan</string>
+    <string name="loan_status_active">active</string>
+    <string name="loan_approved_by">Approved by %1$s\n%2$s. %3$s</string>
+    <string name="loan_approved_by_simple">Approved by %1$s</string>
+    <string name="not_available">N/A</string>
+    <string name="loan_repaid_percent">%1$d%% repaid</string>
+    <string name="loan_remaining_amount">Remaining: MK %1$s</string>
+    <string name="loan_due_date">Due %1$s</string>
+    <string name="placeholder_group_name">Doman Group</string>
+
+    <!-- Apply Loan Screen -->
+    <string name="apply_loan_title">Apply Loan</string>
+    <string name="loan_notice">The requested loan will be repayed with an interest of 5%.\nAnd the interest will increase by 5% if not paid on time.</string>
+    <string name="loan_amount_label">Loan Amount</string>
+    <string name="loan_amount_placeholder">Mk 20,000</string>
+    <string name="interest_label">Interest</string>
+    <string name="total_repayable_label">Total Repayable</string>
+    <string name="loan_period_label">Loan Period</string>
+    <string name="purpose_label">Purpose</string>
+    <string name="purpose_placeholder">Friday</string>
+    <string name="apply_now_button">Apply Now</string>
+    <string name="period_1_month">1 Month</string>
+    <string name="period_2_months">2 Months</string>
+    <string name="period_3_months">3 Months</string>
+    <string name="period_6_months">6 Months</string>
+    <string name="period_12_months">12 Months</string>
+
+    <!-- Group Loans Screen -->
+    <string name="filter_request">Request</string>
+    <string name="filter_rejected">Rejected</string>
+    <!-- Savings Screen -->
+    <string name="savings_title">Savings</string>
+    <string name="total_savings_label">Total Savings:</string>
+    <string name="group_savings_title">Group Savings</string>
+    <string name="last_saved_label">Last saved: %1$s</string>
+    <string name="saving_groups_count">%1$d saving groups</string>
+    <string name="withdraw_date_label">Withdraw date: %1$s</string>
+    <string name="members_count">%1$d members</string>
+
+    <!-- Disbursement Screen -->
+    <string name="disburse_funds_title">Disburse Funds</string>
+    <string name="savings_cycle_ended_warning">⚠️ Savings cycle ended %1$s</string>
+    <string name="total_to_disburse_label">Total to Disburse</string>
+    <string name="member_shares_title">Member Shares</string>
+    <string name="request_disbursement_button">Request Disbursement</string>
+    <string name="approve_disbursement_button">Approve Disbursement</string>
+    <string name="reject_button">Reject</string>
+    <string name="request_disbursement_confirm_msg">Request disbursement of MK %1$s to %2$d members? Treasurer must approve before funds are sent.</string>
+    <string name="approve_disbursement_confirm_msg">Send MK %1$s to all %2$d members mobile wallets? This cannot be undone.</string>
+
+    <!-- Make Contribution Screen -->
+    <string name="make_contribution_title">Make Contribution</string>
+    <string name="active_number_notice">The active number will be used for the transaction</string>
+    <string name="enter_phone_label">Enter Phone_Number</string>
+    <string name="group_name_label_simple">Group Name</string>
+    <string name="contribution_type_label">Contribution Type</string>
+    <string name="contribution_type_save">Save</string>
+    <string name="contribution_type_special">Special</string>
+    <string name="contribution_type_event">Event Contribution</string>
+    <string name="amount_mk_input_label">Amount (MK)</string>
+    <string name="receive_pin_msg">You will receive a massage to enter your pin on your phone</string>
+
+    <!-- Contribution History Screen -->
+    <string name="contribution_history_title">Contribution History</string>
+
+    <!-- Transactions Screen -->
+    <string name="tab_all">All</string>
+    <string name="tab_contributions">Contributions</string>
+    <string name="tab_loans">Loans</string>
+    <string name="tab_joins">Joins</string>
+    <string name="transaction_date_placeholder">Friday, March 19, 2026 9:00am</string>
+    <string name="transaction_time_placeholder">5:00PM</string>
+    <string name="my_loan_title">My Loan</string>
+    <string name="group_loans_title">Group Loans</string>
+    <string name="requests_link">Requests</string>
+    <string name="loan_approved_by_full">Approved by %1$s\n%2$s. %3$s</string>
+    <string name="total_borrowed_label">Total borrowed: MK %1$s</string>
+    <string name="repay_now_label">Repay Now</string>
+
+    <!-- Notifications Screen -->
+    <string name="notifications_title">Notification</string>
 </resources>

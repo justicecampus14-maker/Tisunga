@@ -14,6 +14,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.compose.ui.res.stringResource
+import com.example.tisunga.R
 import com.example.tisunga.data.model.User
 import com.example.tisunga.ui.theme.*
 import com.example.tisunga.viewmodel.GroupViewModel
@@ -36,10 +38,10 @@ fun GroupMembersScreen(navController: NavController, groupId: Int, viewModel: Gr
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = { navController.popBackStack() }) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back_desc))
             }
             Text(
-                "Doman Group Members",
+                stringResource(R.string.group_members_title_placeholder, stringResource(R.string.placeholder_group_name)),
                 modifier = Modifier.weight(1f),
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                 fontSize = 18.sp,
@@ -75,7 +77,7 @@ fun MemberRowItem(member: User) {
             }
             Column(horizontalAlignment = Alignment.End) {
                 Text(
-                    "Active", // Placeholder status
+                    stringResource(R.string.filter_active), // Use "Active" from Common Filters
                     fontWeight = FontWeight.Bold,
                     fontSize = 14.sp,
                     color = TextPrimary

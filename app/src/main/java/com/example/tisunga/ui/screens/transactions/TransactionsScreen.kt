@@ -13,11 +13,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.tisunga.R
 import com.example.tisunga.data.model.Transaction
 import com.example.tisunga.ui.theme.*
 import com.example.tisunga.viewmodel.GroupViewModel
@@ -25,16 +27,20 @@ import com.example.tisunga.viewmodel.GroupViewModel
 @Composable
 fun TransactionsScreen(navController: NavController, groupId: Int, viewModel: GroupViewModel) {
     val uiState by viewModel.uiState.collectAsState()
-    var selectedTab by remember { mutableStateOf("All") }
+    val tabAll = stringResource(R.string.tab_all)
+    val tabContributions = stringResource(R.string.tab_contributions)
+    val tabLoans = stringResource(R.string.tab_loans)
+    val tabJoins = stringResource(R.string.tab_joins)
+    var selectedTab by remember { mutableStateOf(tabAll) }
 
     LaunchedEffect(Unit) {
         viewModel.getGroupTransactions(groupId)
     }
 
     val filteredTransactions = when (selectedTab) {
-        "Contributions" -> uiState.transactions.filter { it.type.contains("Contribution", ignoreCase = true) }
-        "Loans" -> uiState.transactions.filter { it.type.contains("Loan", ignoreCase = true) }
-        "Joins" -> uiState.transactions.filter { it.type.contains("Join", ignoreCase = true) }
+        tabContributions -> uiState.transactions.filter { it.type.contains("Contribution", ignoreCase = true) }
+        tabLoans -> uiState.transactions.filter { it.type.contains("Loan", ignoreCase = true) }
+        tabJoins -> uiState.transactions.filter { it.type.contains("Join", ignoreCase = true) }
         else -> uiState.transactions
     }
 
@@ -48,19 +54,19 @@ fun TransactionsScreen(navController: NavController, groupId: Int, viewModel: Gr
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = { navController.popBackStack() }) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back_desc))
             }
-            Text("Doman Group", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+            Text(stringResource(R.string.placeholder_group_name), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
         }
 
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            TransactionTabItem("All", selectedTab == "All") { selectedTab = "All" }
-            TransactionTabItem("Contributions", selectedTab == "Contributions") { selectedTab = "Contributions" }
-            TransactionTabItem("Loans", selectedTab == "Loans") { selectedTab = "Loans" }
-            TransactionTabItem("Joins", selectedTab == "Joins") { selectedTab = "Joins" }
+            TransactionTabItem(tabAll, selectedTab == tabAll) { selectedTab = tabAll }
+            TransactionTabItem(tabContributions, selectedTab == tabContributions) { selectedTab = tabContributions }
+            TransactionTabItem(tabLoans, selectedTab == tabLoans) { selectedTab = tabLoans }
+            TransactionTabItem(tabJoins, selectedTab == tabJoins) { selectedTab = tabJoins }
         }
 
         LazyColumn(
@@ -69,7 +75,7 @@ fun TransactionsScreen(navController: NavController, groupId: Int, viewModel: Gr
         ) {
             item {
                 Text(
-                    "Friday, March 19, 2026 9:00am",
+                    stringResource(R.string.transaction_date_placeholder),
                     modifier = Modifier.fillMaxWidth().padding(12.dp),
                     textAlign = TextAlign.Center,
                     fontWeight = FontWeight.Bold,
@@ -121,7 +127,7 @@ fun TransactionBubble(transaction: Transaction) {
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "5:00PM", // Should come from timestamp in real app
+                text = stringResource(R.string.transaction_time_placeholder), // Should come from timestamp in real app
                 modifier = Modifier.fillMaxWidth(),
                 textAlign = TextAlign.End,
                 fontSize = 11.sp,

@@ -12,12 +12,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.font.FontWeight.Companion.Bold
 import androidx.compose.ui.text.font.FontWeight.Companion.SemiBold
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.tisunga.R
 import com.example.tisunga.ui.components.TisungaConfirmDialog
 import com.example.tisunga.ui.theme.*
 import com.example.tisunga.viewmodel.SavingsViewModel
@@ -39,9 +41,9 @@ fun DisbursementScreen(navController: NavController, groupId: Int, viewModel: Sa
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = { navController.popBackStack() }) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back_desc))
             }
-            Text("Disburse Funds", fontSize = 20.sp, fontWeight = Bold, color = TextPrimary)
+            Text(stringResource(R.string.disburse_funds_title), fontSize = 20.sp, fontWeight = Bold, color = TextPrimary)
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -53,7 +55,7 @@ fun DisbursementScreen(navController: NavController, groupId: Int, viewModel: Sa
             colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF8E1))
         ) {
             Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text("⚠️ Savings cycle ended 21st May 2027", fontWeight = Bold, fontSize = 14.sp)
+                Text(stringResource(R.string.savings_cycle_ended_warning, "21st May 2027"), fontWeight = Bold, fontSize = 14.sp)
             }
         }
 
@@ -65,14 +67,14 @@ fun DisbursementScreen(navController: NavController, groupId: Int, viewModel: Sa
             colors = CardDefaults.cardColors(containerColor = White)
         ) {
             Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("Total to Disburse", fontSize = 14.sp, color = TextSecondary)
-                Text("MK 2,000,000.00", fontSize = 32.sp, fontWeight = Bold, color = NavyBlue)
+                Text(stringResource(R.string.total_to_disburse_label), fontSize = 14.sp, color = TextSecondary)
+                Text(stringResource(R.string.amount_mk, "2,000,000.00"), fontSize = 32.sp, fontWeight = Bold, color = NavyBlue)
             }
         }
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        Text("Member Shares", fontWeight = Bold, fontSize = 16.sp)
+        Text(stringResource(R.string.member_shares_title), fontWeight = Bold, fontSize = 16.sp)
         
         Card(
             modifier = Modifier.fillMaxWidth().weight(1f),
@@ -86,7 +88,7 @@ fun DisbursementScreen(navController: NavController, groupId: Int, viewModel: Sa
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(share.userName)
-                        Text("MK ${com.example.tisunga.utils.FormatUtils.formatNumber(share.shareAmount)}", fontWeight = Bold)
+                        Text(stringResource(R.string.amount_mk, com.example.tisunga.utils.FormatUtils.formatNumber(share.shareAmount)), fontWeight = Bold)
                     }
                     HorizontalDivider(color = DividerColor)
                 }
@@ -105,7 +107,7 @@ fun DisbursementScreen(navController: NavController, groupId: Int, viewModel: Sa
                 shape = RoundedCornerShape(10.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = NavyBlue)
             ) {
-                Text("Request Disbursement", color = White, fontSize = 16.sp, fontWeight = SemiBold)
+                Text(stringResource(R.string.request_disbursement_button), color = White, fontSize = 16.sp, fontWeight = SemiBold)
             }
         } else if (userRole == "treasurer") {
             Column {
@@ -118,7 +120,7 @@ fun DisbursementScreen(navController: NavController, groupId: Int, viewModel: Sa
                     shape = RoundedCornerShape(10.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = GreenAccent)
                 ) {
-                    Text("Approve Disbursement", color = White, fontSize = 16.sp, fontWeight = SemiBold)
+                    Text(stringResource(R.string.approve_disbursement_button), color = White, fontSize = 16.sp, fontWeight = SemiBold)
                 }
                 Spacer(modifier = Modifier.height(8.dp))
                 OutlinedButton(
@@ -127,7 +129,7 @@ fun DisbursementScreen(navController: NavController, groupId: Int, viewModel: Sa
                     shape = RoundedCornerShape(10.dp),
                     border = androidx.compose.foundation.BorderStroke(1.dp, RedAccent)
                 ) {
-                    Text("Reject", color = RedAccent, fontSize = 16.sp, fontWeight = SemiBold)
+                    Text(stringResource(R.string.reject_button), color = RedAccent, fontSize = 16.sp, fontWeight = SemiBold)
                 }
             }
         }
@@ -136,8 +138,8 @@ fun DisbursementScreen(navController: NavController, groupId: Int, viewModel: Sa
     if (showConfirmDialog) {
         if (dialogType == "request") {
             TisungaConfirmDialog(
-                title = "Request Disbursement",
-                message = "Request disbursement of MK 2,000,000.00 to 6 members? Treasurer must approve before funds are sent.",
+                title = stringResource(R.string.request_disbursement_button),
+                message = stringResource(R.string.request_disbursement_confirm_msg, "2,000,000.00", 6),
                 onConfirm = {
                     viewModel.requestDisbursement(groupId)
                     showConfirmDialog = false
@@ -146,8 +148,8 @@ fun DisbursementScreen(navController: NavController, groupId: Int, viewModel: Sa
             )
         } else {
             TisungaConfirmDialog(
-                title = "Approve Disbursement",
-                message = "Send MK 333,333.33 to all 6 members mobile wallets? This cannot be undone.",
+                title = stringResource(R.string.approve_disbursement_button),
+                message = stringResource(R.string.approve_disbursement_confirm_msg, "333,333.33", 6),
                 onConfirm = {
                     viewModel.approveDisbursement(groupId)
                     showConfirmDialog = false

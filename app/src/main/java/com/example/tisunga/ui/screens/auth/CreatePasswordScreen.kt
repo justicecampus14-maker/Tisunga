@@ -19,12 +19,16 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import com.example.tisunga.R
 import com.example.tisunga.ui.navigation.Routes
 import com.example.tisunga.ui.theme.*
 import com.example.tisunga.viewmodel.AuthViewModel
 
 @Composable
 fun CreatePasswordScreen(navController: NavController, viewModel: AuthViewModel) {
+    val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
@@ -47,16 +51,16 @@ fun CreatePasswordScreen(navController: NavController, viewModel: AuthViewModel)
             .padding(16.dp)
     ) {
         IconButton(onClick = { navController.popBackStack() }) {
-            Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+            Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.back_desc))
         }
         
         Spacer(modifier = Modifier.height(24.dp))
         
-        Text(text = "Create Password", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+        Text(text = stringResource(R.string.create_password_title), fontSize = 24.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
         
         Spacer(modifier = Modifier.height(32.dp))
         
-        Text(text = "Enter Password", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+        Text(text = stringResource(R.string.enter_password_label), fontWeight = FontWeight.Bold, fontSize = 14.sp)
         Spacer(modifier = Modifier.height(8.dp))
         OutlinedTextField(
             value = password,
@@ -75,7 +79,7 @@ fun CreatePasswordScreen(navController: NavController, viewModel: AuthViewModel)
         
         Spacer(modifier = Modifier.height(16.dp))
         
-        Text(text = "Re-Enter password", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+        Text(text = stringResource(R.string.reenter_password_label), fontWeight = FontWeight.Bold, fontSize = 14.sp)
         Spacer(modifier = Modifier.height(8.dp))
         OutlinedTextField(
             value = confirmPassword,
@@ -112,13 +116,13 @@ fun CreatePasswordScreen(navController: NavController, viewModel: AuthViewModel)
                 val hasSymbol = password.any { !it.isLetterOrDigit() }
 
                 if (password != confirmPassword) {
-                    error = "Passwords do not match"
+                    error = context.getString(R.string.error_passwords_dont_match)
                 } else if (password.length < 8 || password.length > 64) {
-                    error = "Password must be between 8 and 64 characters"
+                    error = context.getString(R.string.error_password_length)
                 } else if (!hasUpperCase) {
-                    error = "Password must include at least one capital letter"
+                    error = context.getString(R.string.error_password_uppercase)
                 } else if (!hasSymbol) {
-                    error = "Password must include at least one symbol"
+                    error = context.getString(R.string.error_password_symbol)
                 } else {
                     error = ""
                     viewModel.createPassword(uiState.userPhone, password)
@@ -131,7 +135,7 @@ fun CreatePasswordScreen(navController: NavController, viewModel: AuthViewModel)
             if (uiState.isLoading) {
                 CircularProgressIndicator(color = White, modifier = Modifier.size(24.dp))
             } else {
-                Text("Create Password", color = White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                Text(stringResource(R.string.create_password_title), color = White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
             }
         }
     }

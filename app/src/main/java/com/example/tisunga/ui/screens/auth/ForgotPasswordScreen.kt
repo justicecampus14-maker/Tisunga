@@ -15,6 +15,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.compose.ui.res.stringResource
+import com.example.tisunga.R
 import com.example.tisunga.ui.navigation.Routes
 import com.example.tisunga.ui.theme.*
 import com.example.tisunga.viewmodel.AuthViewModel
@@ -30,13 +32,13 @@ fun ForgotPasswordScreen(navController: NavController, viewModel: AuthViewModel)
             .padding(16.dp)
     ) {
         IconButton(onClick = { navController.popBackStack() }) {
-            Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+            Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.back_desc))
         }
         
         Spacer(modifier = Modifier.height(24.dp))
         
-        Text(text = "Forget Password", fontSize = 26.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
-        Text(text = "Enter your phone number", fontSize = 14.sp, color = TextSecondary)
+        Text(text = stringResource(R.string.forgot_password_title), fontSize = 26.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+        Text(text = stringResource(R.string.enter_phone_subtitle), fontSize = 14.sp, color = TextSecondary)
         
         Spacer(modifier = Modifier.height(32.dp))
         
@@ -45,7 +47,7 @@ fun ForgotPasswordScreen(navController: NavController, viewModel: AuthViewModel)
             onValueChange = { phone = it },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(10.dp),
-            placeholder = { Text("0882752624") },
+            placeholder = { Text(stringResource(R.string.phone_placeholder)) },
             leadingIcon = { 
                 Row(modifier = Modifier.padding(start = 8.dp)) {
                     Text("🇲🇼")
@@ -75,7 +77,7 @@ fun ForgotPasswordScreen(navController: NavController, viewModel: AuthViewModel)
             shape = RoundedCornerShape(10.dp),
             colors = ButtonDefaults.buttonColors(containerColor = NavyBlue)
         ) {
-            Text("Send", color = White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+            Text(stringResource(R.string.send_button), color = White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
         }
     }
 }
