@@ -50,15 +50,17 @@
     <string name="banner_join_groups">Join 100+ Groups</string>
     <string name="quick_action_title">Quick Action</string>
     <string name="create_group_label">Create Group</string>
+    <string name="save_label">Save</string>
+    <string name="events_label">Events</string>
     <string name="join_group_label">Join Group</string>
-    <string name="view_loans_label">View Loans</string>
+    <string name="view_loans_label">Loans</string>
     <string name="my_groups_title">My Groups</string>
     <string name="discover_groups_link">Discover groups →</string>
     <string name="no_groups_msg">You don\'t belong to any group yet</string>
     <string name="group_total_savings">Group savings : MK %1$s</string>
     <string name="group_my_savings">My Savings: MK %1$s</string>
     <string name="save_now_link">Save Now</string>
-    <string name="recent_transactions_title">Recent Transactions</string>
+    <string name="recent_transactions_title">Transactions</string>
     <string name="amount_mk">MK %1$s</string>
 
     <!-- Group Screens -->
@@ -259,6 +261,14 @@
     <string name="tab_contributions">Contributions</string>
     <string name="tab_loans">Loans</string>
     <string name="tab_joins">Joins</string>
+    <string name="transaction_date_placeholder">Friday, March 19, 2026 9:00am</string>
+    <string name="transaction_time_placeholder">5:00PM</string>
+    <string name="my_loan_title">My Loan</string>
+    <string name="group_loans_title">Group Loans</string>
+    <string name="requests_link">Requests</string>
+    <string name="loan_approved_by_full">Approved by %1$s\n%2$s. %3$s</string>
+    <string name="total_borrowed_label">Total borrowed: MK %1$s</string>
+    <string name="repay_now_label">Repay Now</string>
 
     <!-- Notifications Screen -->
     <string name="notifications_title">Notification</string>
