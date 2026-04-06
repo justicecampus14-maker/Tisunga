@@ -12,12 +12,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.compose.ui.res.stringResource
 import com.example.tisunga.R
 import com.example.tisunga.data.model.Transaction
 import com.example.tisunga.ui.components.BottomNavBar
@@ -25,14 +24,17 @@ import com.example.tisunga.ui.navigation.Routes
 import com.example.tisunga.ui.screens.home.HomeHeader
 import com.example.tisunga.ui.theme.*
 import com.example.tisunga.viewmodel.GroupViewModel
-import java.util.Locale
 
 @Composable
 fun GroupDetailScreen(navController: NavController, groupId: Int, viewModel: GroupViewModel) {
     val uiState by viewModel.uiState.collectAsState()
     
+    // In a real app, these would come from the uiState/SessionManager
     val groupName = uiState.selectedGroup?.name ?: stringResource(R.string.placeholder_group_name)
-    val userPhone = "0882752624" 
+    val userPhone = uiState.currentUserRole.let { role -> 
+        // Example logic, replace with actual user data if available in uiState
+        "0882752624" 
+    }
     val isChair = uiState.currentUserRole.equals("chairperson", ignoreCase = true)
 
     LaunchedEffect(Unit) {
@@ -48,7 +50,11 @@ fun GroupDetailScreen(navController: NavController, groupId: Int, viewModel: Gro
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            HomeHeader(userPhone, navController, onMenuClick = { })
+            HomeHeader(
+                userPhone = userPhone, 
+                navController = navController, 
+                onMenuClick = { /* Handle if drawer is needed */ }
+            )
             
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
@@ -181,7 +187,7 @@ fun ActionCard(icon: ImageVector, label: String, modifier: Modifier, onClick: ()
         ) {
             Icon(icon, null, tint = NavyBlue, modifier = Modifier.size(24.dp))
             Spacer(modifier = Modifier.height(4.dp))
-            Text(label, fontSize = 10.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+            Text(label, fontSize = 10.sp, fontWeight = FontWeight.Bold, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
         }
     }
 }
@@ -217,7 +223,7 @@ fun TransactionSummaryCard(transaction: Transaction) {
             ) {
                 Text(transaction.description.ifEmpty { stringResource(R.string.member_name_placeholder) }, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                 Text(
-                    text = String.format(Locale.US, "MK %,.0f", transaction.amount),
+                    text = "MK ${String.format("%,.0f", transaction.amount)}",
                     fontWeight = FontWeight.Bold,
                     fontSize = 14.sp,
                     color = if (transaction.type.lowercase().contains("contribution")) GreenAccent else RedAccent
