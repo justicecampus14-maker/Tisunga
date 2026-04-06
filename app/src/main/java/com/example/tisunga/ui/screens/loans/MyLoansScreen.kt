@@ -1,13 +1,13 @@
 package com.example.tisunga.ui.screens.loans
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.ui.draw.clip
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -20,8 +20,7 @@ import androidx.navigation.NavController
 import androidx.compose.ui.res.stringResource
 import com.example.tisunga.R
 import com.example.tisunga.ui.components.BottomNavBar
-import com.example.tisunga.ui.components.LoanCard
-import com.example.tisunga.ui.navigation.Routes
+import com.example.tisunga.ui.components.GroupLoansSummaryCard
 import com.example.tisunga.ui.screens.home.HomeHeader
 import com.example.tisunga.ui.theme.*
 import com.example.tisunga.viewmodel.LoanViewModel
@@ -105,6 +104,9 @@ fun MyLoansScreen(navController: NavController, groupId: Int, viewModel: LoanVie
                     modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
+                    item {
+                        GroupLoansSummaryCard()
+                    }
                     // Featured Loan Card placeholder as per PDF page 2
                     item {
                         FeaturedLoanCard(onRepayClick = { /* Repay dialog */ })
@@ -160,45 +162,117 @@ fun MyLoanFilterChip(label: String, isSelected: Boolean, onClick: () -> Unit) {
 
 @Composable
 fun FeaturedLoanCard(onRepayClick: () -> Unit) {
-    Card(
-        modifier = Modifier.fillMaxWidth().height(240.dp),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = White),
-        elevation = CardDefaults.cardElevation(4.dp)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(stringResource(R.string.loan_group_name_label, stringResource(R.string.placeholder_group_name)), fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                Surface(color = Color(0xFFFCE4EC), shape = RoundedCornerShape(4.dp)) {
-                    Text(stringResource(R.string.loan_status_active), modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp), color = Color(0xFFE91E63), fontSize = 12.sp)
+    Column {
+        Text(
+            text = "My loan",
+            fontWeight = FontWeight.Bold,
+            fontSize = 18.sp,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+            colors = CardDefaults.cardColors(containerColor = White),
+            elevation = CardDefaults.cardElevation(2.dp),
+            border = androidx.compose.foundation.BorderStroke(1.dp, DividerColor)
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                // Amount Section
+                Text("Amount", fontSize = 14.sp, color = TextPrimary, fontWeight = FontWeight.Medium)
+                Spacer(modifier = Modifier.height(4.dp))
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(8.dp),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color.LightGray),
+                    color = BackgroundGray
+                ) {
+                    Text(
+                        text = stringResource(R.string.amount_mk, "10,000"),
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Approved By Section
+                Text("Approved by : Laston Mzumala", fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                Text("chairperson", fontSize = 12.sp, color = TextSecondary)
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Repayable & Interest Section
+                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Repayable", fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Surface(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(8.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, Color.LightGray),
+                            color = BackgroundGray
+                        ) {
+                            Text(
+                                text = stringResource(R.string.amount_mk, "10,500"),
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.width(24.dp))
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text("Interest", fontSize = 14.sp)
+                        Text("5%", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = NavyBlue)
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // Progress Bar
+                LinearProgressIndicator(
+                    progress = { 0.5f },
+                    modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)),
+                    color = NavyBlue,
+                    trackColor = DividerColor
+                )
+                
+                Text(
+                    text = "Remaining: MK 5,250",
+                    modifier = Modifier.align(Alignment.End).padding(top = 4.dp),
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = NavyBlue
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Footer
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Due : Nov 04, 2026", fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                    
+                    Surface(
+                        modifier = Modifier.clickable { onRepayClick() },
+                        shape = RoundedCornerShape(8.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, NavyBlue),
+                        color = Color.Transparent
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("Clear", color = NavyBlue, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Icon(Icons.AutoMirrored.Filled.ArrowForward, null, tint = NavyBlue, modifier = Modifier.size(16.dp))
+                        }
+                    }
                 }
             }
-            Text(stringResource(R.string.loan_approved_by, "Laston Mzumala", "chairperson", "Feb 01 2026"), fontSize = 12.sp, color = TextSecondary)
-            
-            Spacer(modifier = Modifier.weight(1f))
-            
-            Text(stringResource(R.string.amount_mk, "650,000"), fontWeight = FontWeight.Bold, fontSize = 32.sp)
-            
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Bottom) {
-                Column {
-                    Text(stringResource(R.string.loan_repaid_percent, 50), fontSize = 12.sp, color = TextSecondary)
-                    LinearProgressIndicator(progress = { 0.5f }, color = PurpleProgress, trackColor = DividerColor, modifier = Modifier.width(100.dp).height(6.dp))
-                }
-                Column(horizontalAlignment = Alignment.End) {
-                    Text(stringResource(R.string.loan_remaining_amount, "50,000"), fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                    Text(stringResource(R.string.loan_due_date, "nov 04, 2026"), color = RedAccent, fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                }
-            }
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            Text(
-                stringResource(R.string.repay_now_link),
-                modifier = Modifier.align(Alignment.End).clickable { onRepayClick() },
-                fontWeight = FontWeight.Bold,
-                fontSize = 14.sp,
-                color = TextPrimary
-            )
         }
     }
 }
