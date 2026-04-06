@@ -124,11 +124,6 @@ fun GroupInfoCard(group: Group) {
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Bold
                     )
-                    Text(
-                        text = "Group Code: ${group.groupCode}",
-                        color = Color.White.copy(alpha = 0.7f),
-                        fontSize = 12.sp
-                    )
                 }
 
                 Row(
@@ -364,6 +359,7 @@ private fun QuickActionsSection(navController: NavController, group: Group?) {
                 icon = Icons.Filled.GroupAdd,
                 label = stringResource(R.string.create_group_label),
                 modifier = Modifier.weight(1f),
+                enabled = !hasGroups,
                 onClick = {
                     navController.navigate(Routes.CREATE_GROUP_STEP1)
                 }

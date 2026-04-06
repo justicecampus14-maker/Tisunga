@@ -20,11 +20,13 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.compose.ui.res.stringResource
 import com.example.tisunga.R
+import com.example.tisunga.data.model.Group
 import com.example.tisunga.ui.navigation.Routes
 import com.example.tisunga.ui.theme.*
+import com.example.tisunga.viewmodel.GroupViewModel
 
 @Composable
-fun CreateGroupStep1Screen(navController: NavController) {
+fun CreateGroupStep1Screen(navController: NavController, viewModel: GroupViewModel) {
     var groupName by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var savingPeriod by remember { mutableStateOf("6") }
@@ -42,6 +44,22 @@ fun CreateGroupStep1Screen(navController: NavController) {
                 Button(
                     onClick = {
                         if (groupName.isNotEmpty()) {
+                            viewModel.updatePendingGroup(
+                                Group(
+                                    id = 0,
+                                    name = groupName,
+                                    description = description,
+                                    savingPeriod = savingPeriod.toIntOrNull() ?: 6,
+                                    location = "", // To be filled/merged if needed
+                                    minContribution = 2000.0,
+                                    maxMembers = 0,
+                                    visibility = "Public",
+                                    startDate = "",
+                                    endDate = "",
+                                    meetingDay = "",
+                                    meetingTime = ""
+                                )
+                            )
                             navController.navigate(Routes.CREATE_GROUP_STEP2)
                         }
                     },
