@@ -37,81 +37,89 @@ fun GroupLoansDetailScreen(navController: NavController, groupId: Int, viewModel
         bottomBar = { BottomNavBar(navController, type = "C") },
         containerColor = BackgroundLightGray
     ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-        ) {
-            HomeHeader("Michael", "0882752624", navController)
-
-            Row(
-                modifier = Modifier.padding(horizontal = 16.dp),
-                verticalAlignment = Alignment.CenterVertically
+        Box(modifier = Modifier.fillMaxSize().padding(padding)) {
+            Column(
+                modifier = Modifier.fillMaxSize()
             ) {
-                Surface(
-                    modifier = Modifier.size(40.dp).clickable { navController.popBackStack() },
-                    shape = RoundedCornerShape(8.dp),
-                    color = White
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, null, modifier = Modifier.size(20.dp))
-                    }
-                }
-                Spacer(modifier = Modifier.width(16.dp))
-                Column {
-                    Text("Loans", fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                    Text("Doman Group", fontSize = 12.sp, color = TextSecondary)
-                }
-            }
+                HomeHeader(userPhone = "0882752624", navController = navController, onMenuClick = { })
 
-            Spacer(modifier = Modifier.height(20.dp))
-
-            LazyColumn(
-                modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                item {
-                    Text("My Loan", fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    CompactMyLoanCard()
-                }
-
-                item {
+                Column(modifier = Modifier.padding(horizontal = 8.dp)) {
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier.padding(vertical = 4.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("Group Loans", fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                        Text(
-                            "Requests",
-                            color = BlueLink,
-                            fontSize = 14.sp,
-                            modifier = Modifier.clickable { navController.navigate("group_loans/$groupId") }
-                        )
+                        Surface(
+                            modifier = Modifier.size(40.dp).clickable { navController.popBackStack() },
+                            shape = RoundedCornerShape(8.dp),
+                            color = White
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(Icons.AutoMirrored.Filled.ArrowBack, null, modifier = Modifier.size(20.dp))
+                            }
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column {
+                            Text("Loans", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                            Text("Doman Group", fontSize = 12.sp, color = TextSecondary)
+                        }
                     }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        FilterChip(label = "Active", isSelected = selectedFilter == "Active", onClick = { selectedFilter = "Active" })
-                        FilterChip(label = "Pending", isSelected = selectedFilter == "Pending", onClick = { selectedFilter = "Pending" })
-                        FilterChip(label = "History", isSelected = selectedFilter == "History", onClick = { selectedFilter = "History" })
-                    }
+                    HorizontalDivider(modifier = Modifier.padding(top = 4.dp), thickness = 1.dp, color = DividerColor)
                 }
 
-                items(uiState.groupLoans) { loan ->
-                    MemberLoanCard(loan)
+                Spacer(modifier = Modifier.height(16.dp))
+
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    item {
+                        Text("My Loan", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        CompactMyLoanCard()
+                    }
+
+                    item {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("Group Loans", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                            Text(
+                                "Requests",
+                                color = BlueLink,
+                                fontSize = 14.sp,
+                                modifier = Modifier.clickable { navController.navigate("group_loans/$groupId") }
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            TisungaFilterChip(label = "Active", isSelected = selectedFilter == "Active", onClick = { selectedFilter = "Active" })
+                            TisungaFilterChip(label = "Pending", isSelected = selectedFilter == "Pending", onClick = { selectedFilter = "Pending" })
+                            TisungaFilterChip(label = "History", isSelected = selectedFilter == "History", onClick = { selectedFilter = "History" })
+                        }
+                    }
+
+                    items(uiState.groupLoans) { loan ->
+                        MemberLoanCard(loan)
+                    }
+                    
+                    // Add extra space at bottom for the button
+                    item {
+                        Spacer(modifier = Modifier.height(70.dp))
+                    }
                 }
             }
-        }
 
-        Box(modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp), contentAlignment = Alignment.BottomCenter) {
-            Button(
-                onClick = { navController.navigate("apply_loan/$groupId") },
-                modifier = Modifier.fillMaxWidth().height(52.dp),
-                shape = RoundedCornerShape(10.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = NavyBlue)
-            ) {
-                Text("Apply Loan", color = White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+            Box(modifier = Modifier.fillMaxSize().padding(16.dp), contentAlignment = Alignment.BottomCenter) {
+                Button(
+                    onClick = { navController.navigate("apply_loan/$groupId") },
+                    modifier = Modifier.fillMaxWidth().height(52.dp),
+                    shape = RoundedCornerShape(10.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = NavyBlue)
+                ) {
+                    Text("Apply Loan", color = White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                }
             }
         }
     }
@@ -174,5 +182,22 @@ fun MemberLoanCard(loan: com.example.tisunga.data.model.Loan) {
             Spacer(modifier = Modifier.height(4.dp))
             Text("Due ${loan.dueDate}", color = RedAccent, fontWeight = FontWeight.Bold, fontSize = 13.sp)
         }
+    }
+}
+
+@Composable
+fun TisungaFilterChip(label: String, isSelected: Boolean, onClick: () -> Unit) {
+    Surface(
+        modifier = Modifier.clickable { onClick() },
+        color = if (isSelected) White else Color(0xFFDDDDDD),
+        shape = RoundedCornerShape(20.dp)
+    ) {
+        Text(
+            text = label,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            fontSize = 14.sp,
+            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+            color = if (isSelected) NavyBlue else TextSecondary
+        )
     }
 }

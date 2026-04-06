@@ -11,18 +11,17 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.font.FontWeight.Companion.Bold
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.compose.ui.res.stringResource
 import com.example.tisunga.R
 import com.example.tisunga.data.model.Event
 import com.example.tisunga.ui.components.BottomNavBar
@@ -55,7 +54,7 @@ fun EventsScreen(navController: NavController, groupId: Int, viewModel: EventVie
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            HomeHeader("Michael", "0882752624", navController)
+            HomeHeader(userPhone = "0882752624", navController = navController, onMenuClick = { })
 
             Row(
                 modifier = Modifier.padding(horizontal = 16.dp),
@@ -288,23 +287,29 @@ fun CreateEventDialog(onDismiss: () -> Unit, onCreate: (Event) -> Unit) {
             }
         },
         confirmButton = {
-            Button(
-                onClick = {
-                    onCreate(
-                        Event(
-                            id = 0, groupId = 0, type = type, title = title, date = date,
-                            amountType = amountType, amount = amount.toDoubleOrNull(),
-                            description = description, status = "active"
-                        )
+            Button(onClick = {
+                onCreate(
+                    Event(
+                        id = 0,
+                        groupId = 0,
+                        type = type,
+                        title = title,
+                        date = date,
+                        amountType = amountType,
+                        amount = amount.toDoubleOrNull(),
+                        description = description,
+                        status = "active",
+                        raisedAmount = 0.0
                     )
-                },
-                colors = ButtonDefaults.buttonColors(containerColor = NavyBlue)
-            ) {
-                Text(stringResource(R.string.create_event_title), color = White)
+                )
+            }) {
+                Text(stringResource(R.string.ok_button))
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel_button)) }
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.cancel_button))
+            }
         }
     )
 }
