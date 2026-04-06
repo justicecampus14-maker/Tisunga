@@ -33,7 +33,6 @@ fun GroupDetailScreen(navController: NavController, groupId: Int, viewModel: Gro
     
     // Placeholder data
     val groupName = stringResource(R.string.placeholder_group_name)
-    val userName = "Michael"
     val userPhone = "0882752624"
     val isChair = true // This should come from SessionManager or ViewModel
 
@@ -50,7 +49,7 @@ fun GroupDetailScreen(navController: NavController, groupId: Int, viewModel: Gro
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            HomeHeader(userName, userPhone, navController)
+            HomeHeader(userPhone, navController, onMenuClick = { })
             
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),

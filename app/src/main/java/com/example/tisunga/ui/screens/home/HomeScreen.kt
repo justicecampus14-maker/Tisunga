@@ -9,6 +9,7 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -39,54 +40,120 @@ import com.example.tisunga.viewmodel.HomeViewModel
 import com.example.tisunga.utils.SessionManager
 import com.example.tisunga.utils.MockDataProvider
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.util.Locale
 
 @Composable
 fun HomeScreen(navController: NavController, viewModel: HomeViewModel) {
     val uiState by viewModel.uiState.collectAsState()
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
 
     // Load data on first composition
     LaunchedEffect(Unit) {
         viewModel.loadHomeData()
     }
 
-    Scaffold(
-        bottomBar = { BottomNavBar(navController, type = "C") },
-        containerColor = BackgroundGray
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .verticalScroll(rememberScrollState())
-        ) {
-            // Header
-            HomeHeader(
-                userName = uiState.userName,
-                userPhone = uiState.userPhone,
-                navController = navController
-            )
-
-            // Loading state
-            if (uiState.isLoading && uiState.myGroups.isEmpty()) {
-                Box(Modifier.fillMaxWidth().height(200.dp),
-                    contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = NavyBlue)
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            ModalDrawerSheet(
+                modifier = Modifier.width(260.dp),
+                drawerContainerColor = BackgroundGray,
+                drawerShape = RoundedCornerShape(topEnd = 16.dp, bottomEnd = 16.dp)
+            ) {
+                // Hamburger menu to close the drawer
+                IconButton(
+                    onClick = { scope.launch { drawerState.close() } },
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Menu,
+                        contentDescription = "Close Menu",
+                        tint = NavyBlue,
+                        modifier = Modifier.size(32.dp)
+                    )
                 }
+                
+                HorizontalDivider(modifier = Modifier.padding(bottom = 8.dp), color = DividerColor)
+                
+                NavigationDrawerItem(
+                    icon = { Icon(Icons.Default.Person, contentDescription = null) },
+                    label = { Text("User Profile") },
+                    selected = false,
+                    onClick = { /* Navigate to profile */ },
+                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
+                    colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
+                )
+                
+                NavigationDrawerItem(
+                    icon = { Icon(Icons.Default.Settings, contentDescription = null) },
+                    label = { Text("Settings") },
+                    selected = false,
+                    onClick = { /* Navigate to settings */ },
+                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
+                    colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
+                )
+                
+                NavigationDrawerItem(
+                    icon = { Icon(Icons.Default.Palette, contentDescription = null) },
+                    label = { Text("Theme") },
+                    selected = false,
+                    onClick = { /* Toggle theme */ },
+                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
+                    colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
+                )
+
+                NavigationDrawerItem(
+                    icon = { Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null, tint = RedAccent) },
+                    label = { Text("Logout", color = RedAccent) },
+                    selected = false,
+                    onClick = { 
+                        viewModel.logout()
+                        navController.navigate(Routes.SIGN_IN) {
+                            popUpTo(Routes.HOME) { inclusive = true }
+                        }
+                    },
+                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
+                    colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
+                )
+                
+                Spacer(Modifier.weight(1f))
             }
+        }
+    ) {
+        Scaffold(
+            bottomBar = { BottomNavBar(navController, type = "C") },
+            containerColor = BackgroundGray
+        ) { padding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .verticalScroll(rememberScrollState())
+            ) {
+                // Header
+                HomeHeader(
+                    userPhone = uiState.userPhone,
+                    navController = navController,
+                    onMenuClick = {
+                        scope.launch { drawerState.open() }
+                    }
+                )
 
-            // Sliding Banner Cards or Beautiful Group Card
-            if (uiState.myGroups.isEmpty()) {
-                BannerSection()
-            } else {
-                GroupInfoCard(uiState.myGroups.first())
+                // Sliding Banner Cards or Beautiful Group Card
+                if (uiState.myGroups.isEmpty()) {
+                    BannerSection()
+                } else {
+                    GroupInfoCard(uiState.myGroups.first())
+                }
+
+                // Quick Actions
+                QuickActionsSection(navController, uiState.myGroups.firstOrNull())
+
+                // Recent Transactions
+                RecentTransactionsSection(uiState.recentTransactions)
             }
-
-            // Quick Actions
-            QuickActionsSection(navController, uiState.myGroups.firstOrNull())
-
-            // Recent Transactions
-            RecentTransactionsSection(uiState.recentTransactions)
         }
     }
 }
@@ -108,7 +175,7 @@ fun GroupInfoCard(group: Group) {
                 modifier = Modifier
                     .size(150.dp)
                     .offset(x = 220.dp, y = (-50).dp)
-                    .background(White.copy(alpha = 0.1f), CircleShape)
+                    .background(Color.White.copy(alpha = 0.1f), CircleShape)
             )
 
             Column(
@@ -164,34 +231,21 @@ fun GroupInfoCard(group: Group) {
 }
 
 @Composable
-fun HomeHeader(userName: String, userPhone: String, navController: NavController) {
-    val initials = if (userName.isNotEmpty()) {
-        userName.split(" ").filter { it.isNotEmpty() }.let { parts ->
-            if (parts.size >= 2) {
-                "${parts[0][0]}${parts[1][0]}".uppercase()
-            } else if (parts.isNotEmpty()) {
-                parts[0][0].toString().uppercase()
-            } else ""
-        }
-    } else ""
-
+fun HomeHeader(userPhone: String, navController: NavController, onMenuClick: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .padding(16.dp)
     ) {
-        Box(
-            modifier = Modifier
-                .size(40.dp)
-                .background(NavyBlue, CircleShape)
-                .align(Alignment.CenterStart),
-            contentAlignment = Alignment.Center
+        IconButton(
+            onClick = onMenuClick,
+            modifier = Modifier.align(Alignment.CenterStart)
         ) {
-            Text(
-                text = initials,
-                color = Color.White,
-                fontWeight = FontWeight.Bold,
-                fontSize = 16.sp
+            Icon(
+                Icons.Default.Menu,
+                contentDescription = "Menu",
+                tint = NavyBlue,
+                modifier = Modifier.size(32.dp)
             )
         }
 
@@ -415,8 +469,8 @@ private fun QuickActionCard(
                 .clickable(enabled = enabled) { onClick() },
             shape = RoundedCornerShape(14.dp),
             colors = CardDefaults.cardColors(
-                containerColor = White,
-                disabledContainerColor = White.copy(alpha = 0.6f)
+                containerColor = Color.White,
+                disabledContainerColor = Color.White.copy(alpha = 0.6f)
             ),
             elevation = CardDefaults.cardElevation(if (enabled) 2.dp else 0.dp)
         ) {
@@ -454,7 +508,7 @@ fun RecentTransactionsSection(transactions: List<Transaction>) {
             Card(
                 modifier = Modifier.fillMaxWidth().height(160.dp),
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = White),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
                 elevation = CardDefaults.cardElevation(2.dp)
             ) {
                 Box(
@@ -473,7 +527,7 @@ fun RecentTransactionsSection(transactions: List<Transaction>) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = White),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
                 elevation = CardDefaults.cardElevation(2.dp)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {

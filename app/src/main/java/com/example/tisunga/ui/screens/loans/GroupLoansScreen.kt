@@ -1,5 +1,6 @@
 package com.example.tisunga.ui.screens.loans
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -51,7 +52,7 @@ fun GroupLoansScreen(navController: NavController, groupId: Int, viewModel: Loan
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            HomeHeader("Michael", "0882752624", navController)
+            HomeHeader(userPhone = "0882752624", navController = navController, onMenuClick = { })
 
             Row(
                 modifier = Modifier.padding(horizontal = 16.dp),
@@ -79,11 +80,11 @@ fun GroupLoansScreen(navController: NavController, groupId: Int, viewModel: Loan
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                TabButton(tabMyLoans, selectedTab == tabMyLoans, Modifier.weight(1f)) { 
+                GroupLoanTabButton(tabMyLoans, selectedTab == tabMyLoans, Modifier.weight(1f)) { 
                     selectedTab = tabMyLoans
                     navController.navigate("my_loans/$groupId")
                 }
-                TabButton(tabMemberLoans, selectedTab == tabMemberLoans, Modifier.weight(1f)) { selectedTab = tabMemberLoans }
+                GroupLoanTabButton(tabMemberLoans, selectedTab == tabMemberLoans, Modifier.weight(1f)) { selectedTab = tabMemberLoans }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -92,9 +93,9 @@ fun GroupLoansScreen(navController: NavController, groupId: Int, viewModel: Loan
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                FilterChip(label = filterAll, isSelected = selectedFilter == filterAll, onClick = { selectedFilter = filterAll })
-                FilterChip(label = filterRequest, isSelected = selectedFilter == filterRequest, onClick = { selectedFilter = filterRequest })
-                FilterChip(label = filterRejected, isSelected = selectedFilter == filterRejected, onClick = { selectedFilter = filterRejected })
+                GroupLoanFilterChip(label = filterAll, isSelected = selectedFilter == filterAll, onClick = { selectedFilter = filterAll })
+                GroupLoanFilterChip(label = filterRequest, isSelected = selectedFilter == filterRequest, onClick = { selectedFilter = filterRequest })
+                GroupLoanFilterChip(label = filterRejected, isSelected = selectedFilter == filterRejected, onClick = { selectedFilter = filterRejected })
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -121,5 +122,39 @@ fun GroupLoansScreen(navController: NavController, groupId: Int, viewModel: Loan
                 }
             }
         }
+    }
+}
+
+@Composable
+fun GroupLoanTabButton(text: String, isSelected: Boolean, modifier: Modifier, onClick: () -> Unit) {
+    Button(
+        onClick = onClick,
+        modifier = modifier.height(48.dp),
+        shape = RoundedCornerShape(12.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = if (isSelected) NavyBlue else White,
+            contentColor = if (isSelected) White else TextPrimary
+        ),
+        elevation = ButtonDefaults.buttonElevation(if (isSelected) 4.dp else 0.dp)
+    ) {
+        Text(text, fontSize = 14.sp, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal)
+    }
+}
+
+@Composable
+fun GroupLoanFilterChip(label: String, isSelected: Boolean, onClick: () -> Unit) {
+    Surface(
+        modifier = Modifier.clickable { onClick() },
+        shape = RoundedCornerShape(20.dp),
+        color = if (isSelected) NavyBlue else White,
+        border = if (isSelected) null else BorderStroke(1.dp, DividerColor)
+    ) {
+        Text(
+            text = label,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            fontSize = 12.sp,
+            color = if (isSelected) White else TextSecondary,
+            fontWeight = if (isSelected) FontWeight.Medium else FontWeight.Normal
+        )
     }
 }

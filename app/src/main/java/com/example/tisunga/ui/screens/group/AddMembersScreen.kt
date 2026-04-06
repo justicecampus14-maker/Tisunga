@@ -1,5 +1,9 @@
 package com.example.tisunga.ui.screens.group
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -9,6 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -16,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -26,12 +32,14 @@ import com.example.tisunga.ui.navigation.Routes
 import com.example.tisunga.ui.theme.*
 import com.example.tisunga.viewmodel.GroupViewModel
 import com.example.tisunga.viewmodel.HomeViewModel
+import java.util.*
 
 // Holds only the members added during this screen session
 data class SessionMember(
     val fullName: String,
     val phone: String,
-    val role: String
+    val role: String,
+    val password: String
 )
 
 @Composable
@@ -42,6 +50,7 @@ fun AddMembersScreen(
     homeViewModel: HomeViewModel
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
 
     var phoneSearch by remember { mutableStateOf("") }
     var fullName by remember { mutableStateOf("") }
@@ -51,6 +60,13 @@ fun AddMembersScreen(
 
     // LOCAL list — only members added in this session, never reads from uiState.members
     val sessionMembers = remember { mutableStateListOf<SessionMember>() }
+
+    fun generateRandomPassword(): String {
+        val chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*"
+        return (1..8)
+            .map { chars.random() }
+            .joinToString("")
+    }
 
     Scaffold(
         containerColor = BackgroundGray,
@@ -97,33 +113,6 @@ fun AddMembersScreen(
                     modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center
                 )
-            }
-
-            item {
-                // Group Code Card
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = White)
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text(stringResource(R.string.group_code_label), fontSize = 12.sp, color = TextSecondary)
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(uiState.selectedGroup?.groupCode ?: stringResource(R.string.placeholder_group_code), fontWeight = FontWeight.Bold, fontSize = 24.sp, color = TextPrimary)
-                            OutlinedButton(
-                                onClick = { /* Share logic */ },
-                                shape = RoundedCornerShape(20.dp),
-                                border = androidx.compose.foundation.BorderStroke(1.dp, Color.LightGray)
-                            ) {
-                                Text(stringResource(R.string.share_code_button), color = TextPrimary, fontSize = 12.sp)
-                            }
-                        }
-                    }
-                }
             }
 
             item {
@@ -256,15 +245,19 @@ fun AddMembersScreen(
                         Button(
                             onClick = {
                                 if (fullName.isNotEmpty() && manualPhone.isNotEmpty()) {
+                                    val generatedPassword = generateRandomPassword()
                                     // Persist to DB
+                                    // Note: In a real scenario, the backend should handle password generation or hashing.
+                                    // Here we are passing phone and role as per existing API, but we'll show the password to the user.
                                     viewModel.addMemberWithRole(groupId, manualPhone, selectedRole)
 
                                     // Add to local session list for immediate display
                                     sessionMembers.add(
                                         SessionMember(
                                             fullName = fullName,
-                                            phone = manualPhone,
-                                            role = selectedRole
+                                            phone = "+265$manualPhone",
+                                            role = selectedRole,
+                                            password = generatedPassword
                                         )
                                     )
 
@@ -272,6 +265,8 @@ fun AddMembersScreen(
                                     fullName = ""
                                     manualPhone = ""
                                     selectedRole = "Member"
+                                    
+                                    Toast.makeText(context, "Member added with password: $generatedPassword", Toast.LENGTH_LONG).show()
                                 }
                             },
                             modifier = Modifier.fillMaxWidth().height(48.dp),
@@ -291,63 +286,97 @@ fun AddMembersScreen(
 
 @Composable
 fun SessionMemberRow(member: SessionMember, onRemove: () -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
-            val initials = member.fullName
-                .split(" ")
-                .filter { it.isNotEmpty() }
-                .take(2)
-                .joinToString("") { it.take(1) }
-                .uppercase()
-                .ifEmpty { "U" }
+    val context = LocalContext.current
+    
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                val initials = member.fullName
+                    .split(" ")
+                    .filter { it.isNotEmpty() }
+                    .take(2)
+                    .joinToString("") { it.take(1) }
+                    .uppercase()
+                    .ifEmpty { "U" }
 
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .background(
-                        when (member.role.lowercase()) {
-                            "treasurer" -> Color(0xFF00C853)
-                            "secretary" -> Color(0xFF7C4DFF)
-                            else -> Color(0xFF00BFA5)
-                        },
-                        RoundedCornerShape(8.dp)
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(initials, color = White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .background(
+                            when (member.role.lowercase()) {
+                                "treasurer" -> Color(0xFF00C853)
+                                "secretary" -> Color(0xFF7C4DFF)
+                                else -> Color(0xFF00BFA5)
+                            },
+                            RoundedCornerShape(8.dp)
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(initials, color = White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                }
+
+                Spacer(modifier = Modifier.width(12.dp))
+                Column {
+                    Text(member.fullName, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = TextPrimary)
+                    Text(member.phone, fontSize = 12.sp, color = TextSecondary)
+                }
             }
 
-            Spacer(modifier = Modifier.width(12.dp))
-            Text(member.fullName, fontWeight = FontWeight.Medium, fontSize = 15.sp, color = TextPrimary)
-        }
+            Surface(
+                color = when (member.role.lowercase()) {
+                    "treasurer" -> Color(0xFFE8F5E9)
+                    "secretary" -> Color(0xFFFFF3E0)
+                    else -> Color(0xFFF5F5F5)
+                },
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text(
+                    member.role,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                    fontSize = 12.sp,
+                    color = when (member.role.lowercase()) {
+                        "treasurer" -> Color(0xFF2E7D32)
+                        "secretary" -> Color(0xFFE65100)
+                        else -> TextSecondary
+                    },
+                    fontWeight = FontWeight.Medium
+                )
+            }
 
-        Surface(
-            color = when (member.role.lowercase()) {
-                "treasurer" -> Color(0xFFE8F5E9)
-                "secretary" -> Color(0xFFFFF3E0)
-                else -> Color(0xFFF5F5F5)
-            },
-            shape = RoundedCornerShape(12.dp)
+            IconButton(onClick = onRemove) {
+                Icon(Icons.Default.Close, null, tint = RedAccent)
+            }
+        }
+        
+        // Show the generated password
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 52.dp, top = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
-                member.role,
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-                fontSize = 12.sp,
-                color = when (member.role.lowercase()) {
-                    "treasurer" -> Color(0xFF2E7D32)
-                    "secretary" -> Color(0xFFE65100)
-                    else -> TextSecondary
-                },
-                fontWeight = FontWeight.Medium
+                text = "Temp Password: ${member.password}",
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Medium,
+                color = NavyBlue
             )
-        }
-
-        IconButton(onClick = onRemove) {
-            Icon(Icons.Default.Close, null, tint = RedAccent)
+            IconButton(
+                onClick = {
+                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                    val clip = ClipData.newPlainText("password", member.password)
+                    clipboard.setPrimaryClip(clip)
+                    Toast.makeText(context, "Password copied!", Toast.LENGTH_SHORT).show()
+                },
+                modifier = Modifier.size(24.dp)
+            ) {
+                Icon(Icons.Default.ContentCopy, null, tint = TextSecondary, modifier = Modifier.size(16.dp))
+            }
         }
     }
 }

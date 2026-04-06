@@ -14,7 +14,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -31,7 +30,6 @@ import com.example.tisunga.viewmodel.AuthViewModel
 
 @Composable
 fun SignInScreen(navController: NavController, viewModel: AuthViewModel) {
-    val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
     var phone by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -40,6 +38,7 @@ fun SignInScreen(navController: NavController, viewModel: AuthViewModel) {
 
     LaunchedEffect(uiState.isSuccess) {
         if (uiState.isSuccess) {
+            // Explicitly navigating to HOME, which is the main dashboard screen
             navController.navigate(Routes.HOME) {
                 popUpTo(Routes.SIGN_IN) { inclusive = true }
             }
@@ -146,22 +145,10 @@ fun SignInScreen(navController: NavController, viewModel: AuthViewModel) {
                 
                 Button(
                     onClick = { 
-                        val hasUpperCase = password.any { it.isUpperCase() }
-                        val hasNumber = password.any { it.isDigit() }
-                        val hasSymbol = password.any { !it.isLetterOrDigit() }
-
                         if (phone.length !in 9..10) {
                             validationError = "Phone number must be 9 or 10 digits"
                         } else if (password.isEmpty()) {
                             validationError = "Password is required"
-                        } else if (password.length < 8) {
-                            validationError = context.getString(R.string.error_password_length)
-                        } else if (!hasUpperCase) {
-                            validationError = context.getString(R.string.error_password_uppercase)
-                        } else if (!hasNumber) {
-                            validationError = context.getString(R.string.error_password_number)
-                        } else if (!hasSymbol) {
-                            validationError = context.getString(R.string.error_password_symbol)
                         } else {
                             validationError = ""
                             viewModel.login(phone, password)
