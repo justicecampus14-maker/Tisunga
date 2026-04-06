@@ -1,5 +1,6 @@
 package com.example.tisunga.ui.screens.group
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -11,13 +12,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.compose.ui.res.stringResource
 import com.example.tisunga.R
 import com.example.tisunga.data.model.Transaction
 import com.example.tisunga.ui.components.BottomNavBar
@@ -25,15 +26,15 @@ import com.example.tisunga.ui.navigation.Routes
 import com.example.tisunga.ui.screens.home.HomeHeader
 import com.example.tisunga.ui.theme.*
 import com.example.tisunga.viewmodel.GroupViewModel
-import java.util.Locale
 
 @Composable
 fun GroupDetailScreen(navController: NavController, groupId: Int, viewModel: GroupViewModel) {
     val uiState by viewModel.uiState.collectAsState()
     
-    val groupName = uiState.selectedGroup?.name ?: stringResource(R.string.placeholder_group_name)
-    val userPhone = "0882752624" 
-    val isChair = uiState.currentUserRole.equals("chairperson", ignoreCase = true)
+    // Placeholder data
+    val groupName = stringResource(R.string.placeholder_group_name)
+    val userPhone = "0882752624"
+    val isChair = true // This should come from SessionManager or ViewModel
 
     LaunchedEffect(Unit) {
         viewModel.getGroupTransactions(groupId)
@@ -71,7 +72,7 @@ fun GroupDetailScreen(navController: NavController, groupId: Int, viewModel: Gro
                     Spacer(modifier = Modifier.height(12.dp))
                 }
                 
-                items(uiState.transactions.take(5)) { transaction ->
+                items(uiState.transactions.take(2)) { transaction ->
                     TransactionSummaryCard(transaction)
                     Spacer(modifier = Modifier.height(12.dp))
                 }
@@ -93,27 +94,21 @@ fun GroupSummaryCard(groupName: String) {
             Spacer(modifier = Modifier.height(16.dp))
             
             Text(stringResource(R.string.group_saving_label), fontSize = 14.sp)
-            LinearProgressIndicator(
-                progress = { 0.6f },
+            Box(
                 modifier = Modifier
                     .height(8.dp)
-                    .width(180.dp),
-                color = NavyBlue,
-                trackColor = DividerColor,
-                strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
+                    .width(180.dp)
+                    .background(Color(0xFFDDDDDD), RoundedCornerShape(4.dp))
             )
             
             Spacer(modifier = Modifier.height(12.dp))
             
             Text(stringResource(R.string.my_savings_label), fontSize = 14.sp)
-            LinearProgressIndicator(
-                progress = { 0.4f },
+            Box(
                 modifier = Modifier
                     .height(8.dp)
-                    .width(140.dp),
-                color = NavyBlue,
-                trackColor = DividerColor,
-                strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
+                    .width(140.dp)
+                    .background(Color(0xFFDDDDDD), RoundedCornerShape(4.dp))
             )
         }
     }
@@ -181,7 +176,7 @@ fun ActionCard(icon: ImageVector, label: String, modifier: Modifier, onClick: ()
         ) {
             Icon(icon, null, tint = NavyBlue, modifier = Modifier.size(24.dp))
             Spacer(modifier = Modifier.height(4.dp))
-            Text(label, fontSize = 10.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+            Text(label, fontSize = 10.sp, fontWeight = FontWeight.Bold, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
         }
     }
 }
@@ -207,24 +202,12 @@ fun TransactionSummaryCard(transaction: Transaction) {
     Card(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = White),
-        elevation = CardDefaults.cardElevation(1.dp)
+        colors = CardDefaults.cardColors(containerColor = White)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(transaction.description.ifEmpty { stringResource(R.string.member_name_placeholder) }, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                Text(
-                    text = String.format(Locale.US, "MK %,.0f", transaction.amount),
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp,
-                    color = if (transaction.type.lowercase().contains("contribution")) GreenAccent else RedAccent
-                )
-            }
-            Text(stringResource(R.string.trans_id_label, transaction.transId, transaction.type), fontSize = 12.sp, color = TextSecondary)
-            Text(transaction.timestamp, fontSize = 11.sp, color = TextSecondary)
+            Text(stringResource(R.string.member_name_placeholder), fontWeight = FontWeight.Bold, fontSize = 14.sp)
+            Text(stringResource(R.string.trans_id_label, transaction.transId, transaction.type), fontSize = 13.sp, color = TextSecondary)
+            Text(transaction.timestamp, fontSize = 12.sp, color = TextSecondary)
         }
     }
 }
