@@ -31,6 +31,7 @@ import androidx.navigation.NavController
 import androidx.compose.ui.res.stringResource
 import com.example.tisunga.R
 import com.example.tisunga.data.model.Group
+import com.example.tisunga.data.model.Transaction
 import com.example.tisunga.ui.components.BottomNavBar
 import com.example.tisunga.ui.navigation.Routes
 import com.example.tisunga.ui.theme.*
@@ -38,6 +39,7 @@ import com.example.tisunga.viewmodel.HomeViewModel
 import com.example.tisunga.utils.SessionManager
 import com.example.tisunga.utils.MockDataProvider
 import kotlinx.coroutines.delay
+import java.util.Locale
 
 @Composable
 fun HomeScreen(navController: NavController, viewModel: HomeViewModel) {
@@ -73,14 +75,95 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel) {
                 }
             }
 
-            // Sliding Banner Cards
-            BannerSection()
+            // Sliding Banner Cards or Beautiful Group Card
+            if (uiState.myGroups.isEmpty()) {
+                BannerSection()
+            } else {
+                GroupInfoCard(uiState.myGroups.first())
+            }
 
             // Quick Actions
-            QuickActionsSection(navController)
+            QuickActionsSection(navController, uiState.myGroups.firstOrNull())
 
             // Recent Transactions
-            RecentTransactionsSection()
+            RecentTransactionsSection(uiState.recentTransactions)
+        }
+    }
+}
+
+@Composable
+fun GroupInfoCard(group: Group) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .height(200.dp),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = NavyBlue),
+        elevation = CardDefaults.cardElevation(8.dp)
+    ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            // Decorative background element
+            Box(
+                modifier = Modifier
+                    .size(150.dp)
+                    .offset(x = 220.dp, y = (-50).dp)
+                    .background(White.copy(alpha = 0.1f), CircleShape)
+            )
+
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(24.dp),
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column {
+                    Text(
+                        text = group.name,
+                        color = Color.White,
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "Group Code: ${group.groupCode}",
+                        color = Color.White.copy(alpha = 0.7f),
+                        fontSize = 12.sp
+                    )
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Bottom
+                ) {
+                    Column {
+                        Text(
+                            text = "Group Wallet",
+                            color = Color.White.copy(alpha = 0.7f),
+                            fontSize = 12.sp
+                        )
+                        Text(
+                            text = String.format(Locale.US, "MK %,.2f", group.totalSavings),
+                            color = Color.White,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text(
+                            text = "Your Balance",
+                            color = Color.White.copy(alpha = 0.7f),
+                            fontSize = 12.sp
+                        )
+                        Text(
+                            text = String.format(Locale.US, "MK %,.2f", group.mySavings),
+                            color = Color(0xFFFFEB3B),
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
         }
     }
 }
@@ -261,7 +344,8 @@ fun BannerCard(page: Int) {
 }
 
 @Composable
-private fun QuickActionsSection(navController: NavController) {
+private fun QuickActionsSection(navController: NavController, group: Group?) {
+    val hasGroups = group != null
     Column(modifier=Modifier.padding(horizontal=16.dp)) {
         Surface(
             shape=RoundedCornerShape(8.dp),
@@ -288,23 +372,26 @@ private fun QuickActionsSection(navController: NavController) {
                 icon = Icons.Filled.AccountBalanceWallet,
                 label = stringResource(R.string.save_label),
                 modifier = Modifier.weight(1f),
+                enabled = hasGroups,
                 onClick = {
-                    navController.navigate(Routes.GROUP_SAVINGS)
+                    navController.navigate(Routes.MAKE_CONTRIBUTION.replace("{groupId}", group?.id.toString()))
                 }
             )
             QuickActionCard(
                 icon = Icons.Filled.Event,
                 label = stringResource(R.string.events_label),
                 modifier = Modifier.weight(1f),
+                enabled = hasGroups,
                 onClick = {
-                    // Navigate to events - using groupId 1 as default since it's a quick action
-                    navController.navigate(Routes.EVENTS.replace("{groupId}", "1"))
+                    // Navigate to events
+                    navController.navigate(Routes.EVENTS.replace("{groupId}", group?.id.toString()))
                 }
             )
             QuickActionCard(
                 icon = Icons.Filled.SwapHoriz,
                 label = stringResource(R.string.view_loans_label),
                 modifier = Modifier.weight(1f),
+                enabled = hasGroups,
                 onClick = {
                     navController.navigate(Routes.ALL_LOANS)
                 }
@@ -319,6 +406,7 @@ private fun QuickActionCard(
     icon: ImageVector,
     label: String,
     modifier: Modifier,
+    enabled: Boolean = true,
     onClick: () -> Unit
 ) {
     Column(
@@ -328,27 +416,30 @@ private fun QuickActionCard(
         Card(
             modifier = Modifier
                 .size(85.dp)
-                .clickable { onClick() },
+                .clickable(enabled = enabled) { onClick() },
             shape = RoundedCornerShape(14.dp),
-            colors = CardDefaults.cardColors(containerColor = White),
-            elevation = CardDefaults.cardElevation(2.dp)
+            colors = CardDefaults.cardColors(
+                containerColor = White,
+                disabledContainerColor = White.copy(alpha = 0.6f)
+            ),
+            elevation = CardDefaults.cardElevation(if (enabled) 2.dp else 0.dp)
         ) {
             Box(Modifier.fillMaxSize(),
                 contentAlignment=Alignment.Center) {
                 Icon(icon, null,
-                     modifier=Modifier.size(32.dp),
+                     modifier=Modifier.size(32.dp).alpha(if (enabled) 1f else 0.3f),
                      tint=NavyBlue)
             }
         }
         Spacer(modifier = Modifier.height(6.dp))
         Text(label, fontSize=11.sp,
              textAlign=TextAlign.Center,
-             color=TextPrimary)
+             color=if (enabled) TextPrimary else TextSecondary.copy(alpha = 0.5f))
     }
 }
 
 @Composable
-fun RecentTransactionsSection() {
+fun RecentTransactionsSection(transactions: List<Transaction>) {
     Column(modifier = Modifier.padding(horizontal = 16.dp)) {
         Surface(
             shape = RoundedCornerShape(8.dp),
@@ -362,23 +453,94 @@ fun RecentTransactionsSection() {
             )
         }
         Spacer(modifier = Modifier.height(12.dp))
-        Card(
-            modifier = Modifier.fillMaxWidth().height(160.dp),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = White),
-            elevation = CardDefaults.cardElevation(2.dp)
-        ) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
+        
+        if (transactions.isEmpty()) {
+            Card(
+                modifier = Modifier.fillMaxWidth().height(160.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = White),
+                elevation = CardDefaults.cardElevation(2.dp)
             ) {
-                Text(
-                    text = stringResource(R.string.no_groups_msg),
-                    color = TextSecondary,
-                    textAlign = TextAlign.Center,
-                    fontSize = 14.sp
-                )
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = stringResource(R.string.no_groups_msg),
+                        color = TextSecondary,
+                        textAlign = TextAlign.Center,
+                        fontSize = 14.sp
+                    )
+                }
+            }
+        } else {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = White),
+                elevation = CardDefaults.cardElevation(2.dp)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    transactions.forEach { transaction ->
+                        TransactionRow(transaction)
+                        if (transaction != transactions.last()) {
+                            HorizontalDivider(
+                                modifier = Modifier.padding(vertical = 12.dp),
+                                thickness = 0.5.dp,
+                                color = Color.LightGray.copy(alpha = 0.5f)
+                            )
+                        }
+                    }
+                }
             }
         }
+    }
+}
+
+@Composable
+fun TransactionRow(transaction: Transaction) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        val (icon, color) = when (transaction.type.lowercase()) {
+            "contribution" -> Icons.Default.AddCircle to Color(0xFF4CAF50)
+            "loan_withdrawal" -> Icons.Default.RemoveCircle to Color(0xFFF44336)
+            "loan_repayment" -> Icons.Default.KeyboardArrowUp to Color(0xFF2196F3)
+            else -> Icons.Default.SwapHoriz to Color(0xFF757575)
+        }
+        
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .background(color.copy(alpha = 0.1f), CircleShape),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(icon, null, modifier = Modifier.size(20.dp), tint = color)
+        }
+        
+        Spacer(modifier = Modifier.width(12.dp))
+        
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = transaction.type.replace("_", " ").uppercase(),
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                color = color
+            )
+            Text(
+                text = transaction.description,
+                fontSize = 11.sp,
+                color = TextSecondary,
+                maxLines = 1
+            )
+        }
+        
+        Text(
+            text = String.format(Locale.US, "MK %,.0f", transaction.amount),
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Bold,
+            color = TextPrimary
+        )
     }
 }

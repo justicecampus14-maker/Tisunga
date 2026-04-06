@@ -111,7 +111,7 @@ fun AppNavGraph(
             arguments = listOf(navArgument("groupId") { type = NavType.IntType })
         ) { backStackEntry ->
             val groupId = backStackEntry.arguments?.getInt("groupId") ?: 0
-            AddMembersScreen(navController, groupId, groupViewModel)
+            AddMembersScreen(navController, groupId, groupViewModel, homeViewModel)
         }
         
         composable(Routes.DISCOVER_GROUPS) { DiscoverGroupScreen(navController, groupViewModel) }
@@ -144,7 +144,7 @@ fun AppNavGraph(
             DisbursementScreen(navController, groupId, savingsViewModel)
         }
         
-        composable(Routes.ALL_LOANS) { AllLoansScreen(navController, loanViewModel) }
+        composable(Routes.ALL_LOANS) { AllLoansScreen(navController, loanViewModel, homeViewModel) }
         
         composable(
             Routes.MY_LOANS,
