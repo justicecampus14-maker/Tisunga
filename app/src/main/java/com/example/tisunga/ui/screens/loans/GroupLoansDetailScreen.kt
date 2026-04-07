@@ -92,8 +92,8 @@ fun GroupLoansDetailScreen(navController: NavController, groupId: Int, viewModel
                     }
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        FilterChip(label = "Active", isSelected = selectedFilter == "Active", onClick = { selectedFilter = "Active" })
-                        FilterChip(label = "Pending", isSelected = selectedFilter == "Pending", onClick = { selectedFilter = "Pending" })
+                        FilterChip(label = "Active", isSelected = selectedFilter == "Request", onClick = { selectedFilter = "Active" })
+                        FilterChip(label = "Pending", isSelected = selectedFilter == "Active", onClick = { selectedFilter = "Pending" })
                         FilterChip(label = "History", isSelected = selectedFilter == "History", onClick = { selectedFilter = "History" })
                     }
                 }
