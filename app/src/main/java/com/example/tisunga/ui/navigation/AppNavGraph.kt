@@ -30,9 +30,6 @@ object Routes {
     const val GROUP_MEMBERS = "group_members/{groupId}"
     const val GROUP_MEMBERS_CHAIR = "group_members_chair/{groupId}"
     const val CREATE_GROUP_STEP1 = "create_group_step1"
-    const val CREATE_GROUP_STEP2 = "create_group_step2"
-    const val GROUP_SUMMARY = "group_summary"
-    const val GROUP_CREATED_SUCCESS = "group_created_success/{groupId}"
     const val ADD_MEMBERS = "add_members/{groupId}"
     const val DISCOVER_GROUPS = "discover_groups"
     const val JOIN_GROUP = "join_group"
@@ -95,16 +92,6 @@ fun AppNavGraph(
         }
         
         composable(Routes.CREATE_GROUP_STEP1) { CreateGroupStep1Screen(navController, groupViewModel) }
-        composable(Routes.CREATE_GROUP_STEP2) { CreateGroupStep2Screen(navController, groupViewModel) }
-        composable(Routes.GROUP_SUMMARY) { GroupSummaryScreen(navController, groupViewModel) }
-        
-        composable(
-            Routes.GROUP_CREATED_SUCCESS,
-            arguments = listOf(navArgument("groupId") { type = NavType.IntType })
-        ) { backStackEntry ->
-            val groupId = backStackEntry.arguments?.getInt("groupId") ?: 0
-            GroupCreatedSuccessScreen(navController, groupId)
-        }
         
         composable(
             Routes.ADD_MEMBERS,
@@ -113,8 +100,6 @@ fun AppNavGraph(
             val groupId = backStackEntry.arguments?.getInt("groupId") ?: 0
             AddMembersScreen(navController, groupId, groupViewModel, homeViewModel)
         }
-        
-        composable(Routes.DISCOVER_GROUPS) { DiscoverGroupScreen(navController, groupViewModel) }
         
         dialog(Routes.JOIN_GROUP) { JoinGroupDialog({ navController.popBackStack() }, groupViewModel) }
         
@@ -144,30 +129,32 @@ fun AppNavGraph(
             DisbursementScreen(navController, groupId, savingsViewModel)
         }
         
-        composable(Routes.ALL_LOANS) { AllLoansScreen(navController, loanViewModel, homeViewModel) }
-        
+        composable(Routes.ALL_LOANS) {
+            AllLoansScreen(navController, loanViewModel, homeViewModel)
+        }
+
         composable(
             Routes.MY_LOANS,
             arguments = listOf(navArgument("groupId") { type = NavType.IntType })
         ) { backStackEntry ->
-            val groupId = backStackEntry.arguments?.getInt("groupId") ?: 0
-            MyLoansScreen(navController, groupId, loanViewModel)
+            val groupId = backStackEntry.arguments?.getInt("groupId")
+            AllLoansScreen(navController, loanViewModel, homeViewModel, groupId)
         }
         
         composable(
             Routes.GROUP_LOANS,
             arguments = listOf(navArgument("groupId") { type = NavType.IntType })
         ) { backStackEntry ->
-            val groupId = backStackEntry.arguments?.getInt("groupId") ?: 0
-            GroupLoansScreen(navController, groupId, loanViewModel)
+            val groupId = backStackEntry.arguments?.getInt("groupId")
+            AllLoansScreen(navController, loanViewModel, homeViewModel, groupId)
         }
         
         composable(
             Routes.GROUP_LOANS_DETAIL,
             arguments = listOf(navArgument("groupId") { type = NavType.IntType })
         ) { backStackEntry ->
-            val groupId = backStackEntry.arguments?.getInt("groupId") ?: 0
-            GroupLoansDetailScreen(navController, groupId, loanViewModel)
+            val groupId = backStackEntry.arguments?.getInt("groupId")
+            AllLoansScreen(navController, loanViewModel, homeViewModel, groupId)
         }
         
         composable(

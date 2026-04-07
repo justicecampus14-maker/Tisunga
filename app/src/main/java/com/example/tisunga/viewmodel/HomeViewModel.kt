@@ -93,4 +93,8 @@ class HomeViewModel(private val sessionManager: SessionManager) : ViewModel() {
     fun logout() {
         sessionManager.clearSession()
     }
+
+    fun getUserGroupRole(groupId: Int): String {
+        return sessionManager.getGroupRole(groupId) ?: "member"
+    }
 }

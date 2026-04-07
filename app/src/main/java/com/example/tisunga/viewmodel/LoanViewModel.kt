@@ -39,8 +39,7 @@ class LoanViewModel(private val sessionManager: SessionManager) : ViewModel() {
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    myLoans = MockDataProvider.getMockLoans(),
-                    groupLoans = MockDataProvider.getMockPendingLoans()
+                    myLoans = MockDataProvider.getMockLoans()
                 )
             }
         }
@@ -53,9 +52,11 @@ class LoanViewModel(private val sessionManager: SessionManager) : ViewModel() {
                 val loans = apiService.getGroupLoans(groupId)
                 _uiState.value = _uiState.value.copy(isLoading = false, groupLoans = loans)
             } catch (e: Exception) {
+                val mockLoans = (MockDataProvider.getMockLoans() + MockDataProvider.getMockPendingLoans())
+                    .filter { it.groupId == groupId }
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    groupLoans = MockDataProvider.getMockLoans() + MockDataProvider.getMockPendingLoans()
+                    groupLoans = mockLoans
                 )
             }
         }
