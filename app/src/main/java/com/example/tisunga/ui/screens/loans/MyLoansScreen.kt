@@ -51,7 +51,7 @@ fun MyLoansScreen(navController: NavController, groupId: Int, viewModel: LoanVie
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            HomeHeader("Michael", "0882752624", navController)
+            HomeHeader(userPhone = "0882752624", navController = navController, onMenuClick = { })
             
             Row(
                 modifier = Modifier.padding(horizontal = 16.dp),
@@ -79,8 +79,8 @@ fun MyLoansScreen(navController: NavController, groupId: Int, viewModel: LoanVie
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                TabButton(tabMyLoans, selectedTab == tabMyLoans, Modifier.weight(1f)) { selectedTab = tabMyLoans }
-                TabButton(tabMemberLoans, selectedTab == tabMemberLoans, Modifier.weight(1f)) { 
+                MyLoanTabButton(tabMyLoans, selectedTab == tabMyLoans, Modifier.weight(1f)) { selectedTab = tabMyLoans }
+                MyLoanTabButton(tabMemberLoans, selectedTab == tabMemberLoans, Modifier.weight(1f)) { 
                     selectedTab = tabMemberLoans
                     navController.navigate("group_loans/$groupId")
                 }
@@ -93,9 +93,9 @@ fun MyLoansScreen(navController: NavController, groupId: Int, viewModel: LoanVie
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    FilterChip(label = filterActive, isSelected = selectedFilter == filterActive, onClick = { selectedFilter = filterActive })
-                    FilterChip(label = filterPending, isSelected = selectedFilter == filterPending, onClick = { selectedFilter = filterPending })
-                    FilterChip(label = filterHistory, isSelected = selectedFilter == filterHistory, onClick = { selectedFilter = filterHistory })
+                    MyLoanFilterChip(label = filterActive, isSelected = selectedFilter == filterActive, onClick = { selectedFilter = filterActive })
+                    MyLoanFilterChip(label = filterPending, isSelected = selectedFilter == filterPending, onClick = { selectedFilter = filterPending })
+                    MyLoanFilterChip(label = filterHistory, isSelected = selectedFilter == filterHistory, onClick = { selectedFilter = filterHistory })
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -129,7 +129,7 @@ fun MyLoansScreen(navController: NavController, groupId: Int, viewModel: LoanVie
 }
 
 @Composable
-fun TabButton(label: String, isSelected: Boolean, modifier: Modifier, onClick: () -> Unit) {
+fun MyLoanTabButton(label: String, isSelected: Boolean, modifier: Modifier, onClick: () -> Unit) {
     Card(
         modifier = modifier.height(48.dp).clickable { onClick() },
         shape = RoundedCornerShape(10.dp),
@@ -143,7 +143,7 @@ fun TabButton(label: String, isSelected: Boolean, modifier: Modifier, onClick: (
 }
 
 @Composable
-fun FilterChip(label: String, isSelected: Boolean, onClick: () -> Unit) {
+fun MyLoanFilterChip(label: String, isSelected: Boolean, onClick: () -> Unit) {
     Surface(
         modifier = Modifier.clickable { onClick() },
         color = if (isSelected) White else Color.Transparent,

@@ -29,8 +29,9 @@
     <string name="enter_password_label">Enter Password</string>
     <string name="reenter_password_label">Re-Enter password</string>
     <string name="error_passwords_dont_match">Passwords do not match</string>
-    <string name="error_password_length">Password must be between 8 and 64 characters</string>
+    <string name="error_password_length">Password must be at least 8 characters</string>
     <string name="error_password_uppercase">Password must include at least one capital letter</string>
+    <string name="error_password_number">Password must include at least one number</string>
     <string name="error_password_symbol">Password must include at least one symbol</string>
     <string name="forgot_password_title">Forget Password</string>
     <string name="enter_phone_subtitle">Enter your phone number</string>

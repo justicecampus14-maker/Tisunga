@@ -113,14 +113,17 @@ fun CreatePasswordScreen(navController: NavController, viewModel: AuthViewModel)
         Button(
             onClick = { 
                 val hasUpperCase = password.any { it.isUpperCase() }
+                val hasNumber = password.any { it.isDigit() }
                 val hasSymbol = password.any { !it.isLetterOrDigit() }
 
                 if (password != confirmPassword) {
                     error = context.getString(R.string.error_passwords_dont_match)
-                } else if (password.length < 8 || password.length > 64) {
+                } else if (password.length < 8) {
                     error = context.getString(R.string.error_password_length)
                 } else if (!hasUpperCase) {
                     error = context.getString(R.string.error_password_uppercase)
+                } else if (!hasNumber) {
+                    error = context.getString(R.string.error_password_number)
                 } else if (!hasSymbol) {
                     error = context.getString(R.string.error_password_symbol)
                 } else {

@@ -18,6 +18,7 @@ data class GroupUiState(
     val groups: List<Group> = emptyList(),
     val allGroups: List<Group> = emptyList(),
     val selectedGroup: Group? = null,
+    val pendingGroup: Group? = null,
     val members: List<User> = emptyList(),
     val joinRequests: List<User> = emptyList(),
     val transactions: List<Transaction> = emptyList(),
@@ -32,6 +33,10 @@ class GroupViewModel(private val sessionManager: SessionManager) : ViewModel() {
     val uiState: StateFlow<GroupUiState> = _uiState.asStateFlow()
 
     private val apiService = ApiClient.getClient()
+
+    fun updatePendingGroup(group: Group) {
+        _uiState.value = _uiState.value.copy(pendingGroup = group)
+    }
 
     fun getMyGroups() {
         viewModelScope.launch {
@@ -64,8 +69,6 @@ class GroupViewModel(private val sessionManager: SessionManager) : ViewModel() {
                 val createdGroup = apiService.createGroup(group)
                 // Save role as chairperson for this group
                 val currentRoles = mutableMapOf<Int, String>()
-                // Note: ideally we fetch existing roles from sessionManager first
-                // but for simplicity in this generated code:
                 currentRoles[createdGroup.id] = "chairperson"
                 sessionManager.saveGroupRoles(currentRoles)
                 

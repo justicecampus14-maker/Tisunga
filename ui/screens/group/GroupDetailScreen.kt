@@ -1,6 +1,5 @@
 package com.example.tisunga.ui.screens.group
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -12,7 +11,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -31,10 +29,13 @@ import com.example.tisunga.viewmodel.GroupViewModel
 fun GroupDetailScreen(navController: NavController, groupId: Int, viewModel: GroupViewModel) {
     val uiState by viewModel.uiState.collectAsState()
     
-    // Placeholder data
-    val groupName = stringResource(R.string.placeholder_group_name)
-    val userPhone = "0882752624"
-    val isChair = true // This should come from SessionManager or ViewModel
+    // In a real app, these would come from the uiState/SessionManager
+    val groupName = uiState.selectedGroup?.name ?: stringResource(R.string.placeholder_group_name)
+    val userPhone = uiState.currentUserRole.let { role -> 
+        // Example logic, replace with actual user data if available in uiState
+        "0882752624" 
+    }
+    val isChair = uiState.currentUserRole.equals("chairperson", ignoreCase = true)
 
     LaunchedEffect(Unit) {
         viewModel.getGroupTransactions(groupId)
@@ -49,7 +50,11 @@ fun GroupDetailScreen(navController: NavController, groupId: Int, viewModel: Gro
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            HomeHeader(userPhone, navController, onMenuClick = { })
+            HomeHeader(
+                userPhone = userPhone, 
+                navController = navController, 
+                onMenuClick = { /* Handle if drawer is needed */ }
+            )
             
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
@@ -72,7 +77,7 @@ fun GroupDetailScreen(navController: NavController, groupId: Int, viewModel: Gro
                     Spacer(modifier = Modifier.height(12.dp))
                 }
                 
-                items(uiState.transactions.take(2)) { transaction ->
+                items(uiState.transactions.take(5)) { transaction ->
                     TransactionSummaryCard(transaction)
                     Spacer(modifier = Modifier.height(12.dp))
                 }
@@ -94,21 +99,27 @@ fun GroupSummaryCard(groupName: String) {
             Spacer(modifier = Modifier.height(16.dp))
             
             Text(stringResource(R.string.group_saving_label), fontSize = 14.sp)
-            Box(
+            LinearProgressIndicator(
+                progress = { 0.6f },
                 modifier = Modifier
                     .height(8.dp)
-                    .width(180.dp)
-                    .background(Color(0xFFDDDDDD), RoundedCornerShape(4.dp))
+                    .width(180.dp),
+                color = NavyBlue,
+                trackColor = DividerColor,
+                strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
             )
             
             Spacer(modifier = Modifier.height(12.dp))
             
             Text(stringResource(R.string.my_savings_label), fontSize = 14.sp)
-            Box(
+            LinearProgressIndicator(
+                progress = { 0.4f },
                 modifier = Modifier
                     .height(8.dp)
-                    .width(140.dp)
-                    .background(Color(0xFFDDDDDD), RoundedCornerShape(4.dp))
+                    .width(140.dp),
+                color = NavyBlue,
+                trackColor = DividerColor,
+                strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
             )
         }
     }
@@ -202,12 +213,24 @@ fun TransactionSummaryCard(transaction: Transaction) {
     Card(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = White)
+        colors = CardDefaults.cardColors(containerColor = White),
+        elevation = CardDefaults.cardElevation(1.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(stringResource(R.string.member_name_placeholder), fontWeight = FontWeight.Bold, fontSize = 14.sp)
-            Text(stringResource(R.string.trans_id_label, transaction.transId, transaction.type), fontSize = 13.sp, color = TextSecondary)
-            Text(transaction.timestamp, fontSize = 12.sp, color = TextSecondary)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(transaction.description.ifEmpty { stringResource(R.string.member_name_placeholder) }, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                Text(
+                    text = "MK ${String.format("%,.0f", transaction.amount)}",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp,
+                    color = if (transaction.type.lowercase().contains("contribution")) GreenAccent else RedAccent
+                )
+            }
+            Text(stringResource(R.string.trans_id_label, transaction.transId, transaction.type), fontSize = 12.sp, color = TextSecondary)
+            Text(transaction.timestamp, fontSize = 11.sp, color = TextSecondary)
         }
     }
 }

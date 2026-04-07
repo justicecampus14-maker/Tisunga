@@ -20,13 +20,18 @@ import androidx.compose.ui.res.stringResource
 import com.example.tisunga.R
 import com.example.tisunga.ui.navigation.Routes
 import com.example.tisunga.ui.theme.*
+import com.example.tisunga.viewmodel.GroupViewModel
 
 @Composable
-fun CreateGroupStep2Screen(navController: NavController) {
+fun CreateGroupStep2Screen(navController: NavController, viewModel: GroupViewModel) {
+    val uiState by viewModel.uiState.collectAsState()
+    
     var startDate by remember { mutableStateOf("20th May 2026") }
     var endDate by remember { mutableStateOf("21st May 2027") }
     var meetingDay by remember { mutableStateOf("") }
     var meetingTime by remember { mutableStateOf("") }
+    var location by remember { mutableStateOf("") }
+    var maxMembers by remember { mutableStateOf("") }
 
     Column(
         modifier = Modifier
@@ -61,13 +66,13 @@ fun CreateGroupStep2Screen(navController: NavController) {
             elevation = CardDefaults.cardElevation(4.dp)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text(stringResource(R.string.start_date_label), fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                Text(stringResource(R.string.location_label), fontWeight = FontWeight.Bold, fontSize = 14.sp)
                 OutlinedTextField(
-                    value = startDate,
-                    onValueChange = { startDate = it },
+                    value = location,
+                    onValueChange = { location = it },
                     modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text(stringResource(R.string.location_hint)) },
                     shape = RoundedCornerShape(10.dp),
-                    trailingIcon = { Icon(Icons.Default.CalendarToday, null) },
                     colors = OutlinedTextFieldDefaults.colors(
                         unfocusedBorderColor = DividerColor,
                         focusedBorderColor = NavyBlue,
@@ -78,13 +83,13 @@ fun CreateGroupStep2Screen(navController: NavController) {
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                Text(stringResource(R.string.end_date_label), fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                Text(stringResource(R.string.max_members_label), fontWeight = FontWeight.Bold, fontSize = 14.sp)
                 OutlinedTextField(
-                    value = endDate,
-                    onValueChange = { endDate = it },
+                    value = maxMembers,
+                    onValueChange = { if(it.all { c -> c.isDigit() }) maxMembers = it },
                     modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("e.g. 15") },
                     shape = RoundedCornerShape(10.dp),
-                    trailingIcon = { Icon(Icons.Default.CalendarToday, null) },
                     colors = OutlinedTextFieldDefaults.colors(
                         unfocusedBorderColor = DividerColor,
                         focusedBorderColor = NavyBlue,
@@ -92,6 +97,43 @@ fun CreateGroupStep2Screen(navController: NavController) {
                         focusedContainerColor = BackgroundGray
                     )
                 )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                   Column(modifier = Modifier.weight(1f)) {
+                       Text(stringResource(R.string.start_date_label), fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                       OutlinedTextField(
+                           value = startDate,
+                           onValueChange = { startDate = it },
+                           modifier = Modifier.fillMaxWidth(),
+                           shape = RoundedCornerShape(10.dp),
+                           trailingIcon = { Icon(Icons.Default.CalendarToday, null, modifier = Modifier.size(18.dp)) },
+                           colors = OutlinedTextFieldDefaults.colors(
+                               unfocusedBorderColor = DividerColor,
+                               focusedBorderColor = NavyBlue,
+                               unfocusedContainerColor = BackgroundGray,
+                               focusedContainerColor = BackgroundGray
+                           )
+                       )
+                   }
+                   Column(modifier = Modifier.weight(1f)) {
+                       Text(stringResource(R.string.end_date_label), fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                       OutlinedTextField(
+                           value = endDate,
+                           onValueChange = { endDate = it },
+                           modifier = Modifier.fillMaxWidth(),
+                           shape = RoundedCornerShape(10.dp),
+                           trailingIcon = { Icon(Icons.Default.CalendarToday, null, modifier = Modifier.size(18.dp)) },
+                           colors = OutlinedTextFieldDefaults.colors(
+                               unfocusedBorderColor = DividerColor,
+                               focusedBorderColor = NavyBlue,
+                               unfocusedContainerColor = BackgroundGray,
+                               focusedContainerColor = BackgroundGray
+                           )
+                       )
+                   }
+                }
 
                 Spacer(modifier = Modifier.height(12.dp))
 
@@ -131,12 +173,27 @@ fun CreateGroupStep2Screen(navController: NavController) {
                 Spacer(modifier = Modifier.height(24.dp))
 
                 Button(
-                    onClick = { navController.navigate(Routes.GROUP_SUMMARY) },
+                    onClick = { 
+                        val currentPending = uiState.pendingGroup
+                        if (currentPending != null) {
+                            viewModel.updatePendingGroup(
+                                currentPending.copy(
+                                    location = location,
+                                    maxMembers = maxMembers.toIntOrNull() ?: 15,
+                                    startDate = startDate,
+                                    endDate = endDate,
+                                    meetingDay = meetingDay,
+                                    meetingTime = meetingTime
+                                )
+                            )
+                        }
+                        navController.navigate(Routes.GROUP_SUMMARY) 
+                    },
                     modifier = Modifier.fillMaxWidth().height(52.dp),
                     shape = RoundedCornerShape(10.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = NavyBlue)
                 ) {
-                    Text(stringResource(R.string.create_group_title), color = White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.continue_button), color = White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
                 }
             }
         }

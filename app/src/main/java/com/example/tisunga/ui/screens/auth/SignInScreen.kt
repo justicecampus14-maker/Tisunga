@@ -34,9 +34,11 @@ fun SignInScreen(navController: NavController, viewModel: AuthViewModel) {
     var phone by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
+    var validationError by remember { mutableStateOf("") }
 
     LaunchedEffect(uiState.isSuccess) {
         if (uiState.isSuccess) {
+            // Explicitly navigating to HOME, which is the main dashboard screen
             navController.navigate(Routes.HOME) {
                 popUpTo(Routes.SIGN_IN) { inclusive = true }
             }
@@ -69,8 +71,9 @@ fun SignInScreen(navController: NavController, viewModel: AuthViewModel) {
                 OutlinedTextField(
                     value = phone,
                     onValueChange = { input -> 
-                        if (input.all { it.isDigit() }) {
+                        if (input.all { it.isDigit() } && input.length <= 10) {
                             phone = input
+                            validationError = ""
                         }
                     },
                     modifier = Modifier.fillMaxWidth(),
@@ -83,6 +86,7 @@ fun SignInScreen(navController: NavController, viewModel: AuthViewModel) {
                             Icon(Icons.Default.Phone, contentDescription = null, modifier = Modifier.size(20.dp))
                         }
                     },
+                    isError = validationError.isNotEmpty(),
                     colors = OutlinedTextFieldDefaults.colors(
                         unfocusedBorderColor = DividerColor,
                         focusedBorderColor = NavyBlue,
@@ -91,6 +95,15 @@ fun SignInScreen(navController: NavController, viewModel: AuthViewModel) {
                     ),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
                 )
+                
+                if (validationError.isNotEmpty()) {
+                    Text(
+                        text = validationError,
+                        color = MaterialTheme.colorScheme.error,
+                        fontSize = 12.sp,
+                        modifier = Modifier.padding(start = 4.dp, top = 4.dp)
+                    )
+                }
                 
                 Spacer(modifier = Modifier.height(16.dp))
                 
@@ -132,7 +145,12 @@ fun SignInScreen(navController: NavController, viewModel: AuthViewModel) {
                 
                 Button(
                     onClick = { 
-                        if (phone.isNotEmpty() && password.isNotEmpty()) {
+                        if (phone.length !in 9..10) {
+                            validationError = "Phone number must be 9 or 10 digits"
+                        } else if (password.isEmpty()) {
+                            validationError = "Password is required"
+                        } else {
+                            validationError = ""
                             viewModel.login(phone, password)
                         }
                     },
@@ -147,9 +165,10 @@ fun SignInScreen(navController: NavController, viewModel: AuthViewModel) {
                     }
                 }
                 
-                if (uiState.errorMessage.isNotEmpty()) {
+                val errorToShow = if (uiState.errorMessage.isNotEmpty()) uiState.errorMessage else ""
+                if (errorToShow.isNotEmpty()) {
                     Text(
-                        text = uiState.errorMessage,
+                        text = errorToShow,
                         color = RedAccent,
                         fontSize = 12.sp,
                         modifier = Modifier.padding(top = 8.dp).fillMaxWidth(),

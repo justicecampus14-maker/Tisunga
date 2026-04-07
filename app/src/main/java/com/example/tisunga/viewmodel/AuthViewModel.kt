@@ -54,7 +54,8 @@ class AuthViewModel(private val sessionManager: SessionManager) : ViewModel() {
                 
                 // Ensure session manager is updated so other ViewModels can read the data
                 sessionManager.saveAuthToken(MockDataProvider.MOCK_TOKEN)
-                sessionManager.saveUserData(mockUser.id, mockUserName, mockUser.phone, mockUser.role)
+                // Use the phone number entered by the user instead of the mock one
+                sessionManager.saveUserData(mockUser.id, mockUserName, phone, mockUser.role)
                 
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
@@ -62,7 +63,7 @@ class AuthViewModel(private val sessionManager: SessionManager) : ViewModel() {
                     token = MockDataProvider.MOCK_TOKEN,
                     userId = mockUser.id,
                     userName = mockUserName,
-                    userPhone = mockUser.phone,
+                    userPhone = phone,
                     userRole = mockUser.role
                 )
             }
@@ -113,7 +114,7 @@ class AuthViewModel(private val sessionManager: SessionManager) : ViewModel() {
             } catch (e: Exception) {
                 val mockUser = MockDataProvider.getMockUser()
                 sessionManager.saveAuthToken(MockDataProvider.MOCK_TOKEN)
-                sessionManager.saveUserData(mockUser.id, "${mockUser.firstName} ${mockUser.lastName}", mockUser.phone, mockUser.role)
+                sessionManager.saveUserData(mockUser.id, "${mockUser.firstName} ${mockUser.lastName}", phone, mockUser.role)
                 _uiState.value = _uiState.value.copy(isLoading = false, isSuccess = true)
             }
         }

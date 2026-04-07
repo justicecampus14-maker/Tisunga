@@ -94,8 +94,8 @@ fun AppNavGraph(
             GroupMembersChairScreen(navController, groupId, groupViewModel)
         }
         
-        composable(Routes.CREATE_GROUP_STEP1) { CreateGroupStep1Screen(navController) }
-        composable(Routes.CREATE_GROUP_STEP2) { CreateGroupStep2Screen(navController) }
+        composable(Routes.CREATE_GROUP_STEP1) { CreateGroupStep1Screen(navController, groupViewModel) }
+        composable(Routes.CREATE_GROUP_STEP2) { CreateGroupStep2Screen(navController, groupViewModel) }
         composable(Routes.GROUP_SUMMARY) { GroupSummaryScreen(navController, groupViewModel) }
         
         composable(

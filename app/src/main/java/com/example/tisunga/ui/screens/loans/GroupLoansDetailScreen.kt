@@ -1,6 +1,5 @@
 package com.example.tisunga.ui.screens.loans
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -19,7 +18,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.tisunga.ui.components.BottomNavBar
-import com.example.tisunga.ui.navigation.Routes
 import com.example.tisunga.ui.screens.home.HomeHeader
 import com.example.tisunga.ui.theme.*
 import com.example.tisunga.viewmodel.LoanViewModel
@@ -42,7 +40,7 @@ fun GroupLoansDetailScreen(navController: NavController, groupId: Int, viewModel
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            HomeHeader("Michael", "0882752624", navController)
+            HomeHeader(userPhone = "0882752624", navController = navController, onMenuClick = { })
 
             Row(
                 modifier = Modifier.padding(horizontal = 16.dp),
@@ -92,19 +90,23 @@ fun GroupLoansDetailScreen(navController: NavController, groupId: Int, viewModel
                     }
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        FilterChip(label = "Active", isSelected = selectedFilter == "Request", onClick = { selectedFilter = "Active" })
-                        FilterChip(label = "Pending", isSelected = selectedFilter == "Active", onClick = { selectedFilter = "Pending" })
-                        FilterChip(label = "History", isSelected = selectedFilter == "History", onClick = { selectedFilter = "History" })
+                        LoanFilterChip(label = "Active", selected = selectedFilter == "Active", onClick = { selectedFilter = "Active" })
+                        LoanFilterChip(label = "Pending", selected = selectedFilter == "Pending", onClick = { selectedFilter = "Pending" })
+                        LoanFilterChip(label = "History", selected = selectedFilter == "History", onClick = { selectedFilter = "History" })
                     }
                 }
 
                 items(uiState.groupLoans) { loan ->
                     MemberLoanCard(loan)
                 }
+                
+                item {
+                    Spacer(modifier = Modifier.height(80.dp))
+                }
             }
         }
 
-        Box(modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp), contentAlignment = Alignment.BottomCenter) {
+        Box(modifier = Modifier.fillMaxSize().padding(16.dp), contentAlignment = Alignment.BottomCenter) {
             Button(
                 onClick = { navController.navigate("apply_loan/$groupId") },
                 modifier = Modifier.fillMaxWidth().height(52.dp),
@@ -114,6 +116,24 @@ fun GroupLoansDetailScreen(navController: NavController, groupId: Int, viewModel
                 Text("Apply Loan", color = White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
             }
         }
+    }
+}
+
+@Composable
+fun LoanFilterChip(label: String, selected: Boolean, onClick: () -> Unit) {
+    Surface(
+        modifier = Modifier.clickable { onClick() },
+        color = if (selected) White else Color.Transparent,
+        shape = RoundedCornerShape(20.dp),
+        border = if (!selected) androidx.compose.foundation.BorderStroke(1.dp, DividerColor) else null
+    ) {
+        Text(
+            text = label,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+            fontSize = 12.sp,
+            fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+            color = if (selected) NavyBlue else TextSecondary
+        )
     }
 }
 

@@ -89,4 +89,8 @@ class HomeViewModel(private val sessionManager: SessionManager) : ViewModel() {
         lastCreatedGroupName = groupName
         showMockData()
     }
+
+    fun logout() {
+        sessionManager.clearSession()
+    }
 }
