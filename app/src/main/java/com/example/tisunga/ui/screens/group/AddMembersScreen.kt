@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalMaterial3Api::class)
+
 package com.example.tisunga.ui.screens.group
 
 import android.content.ClipData
@@ -5,42 +7,27 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.widget.Toast
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.compose.ui.res.stringResource
-import com.example.tisunga.R
-import com.example.tisunga.ui.navigation.Routes
+import com.example.tisunga.data.model.User
 import com.example.tisunga.ui.theme.*
 import com.example.tisunga.viewmodel.GroupViewModel
 import com.example.tisunga.viewmodel.HomeViewModel
-import java.util.*
-
-// Holds only the members added during this screen session
-data class SessionMember(
-    val fullName: String,
-    val phone: String,
-    val role: String,
-    val password: String
-)
 
 @Composable
 fun AddMembersScreen(
@@ -52,330 +39,186 @@ fun AddMembersScreen(
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
 
-    var phoneSearch by remember { mutableStateOf("") }
+    var showAddForm by remember { mutableStateOf(false) }
     var fullName by remember { mutableStateOf("") }
     var manualPhone by remember { mutableStateOf("") }
     var selectedRole by remember { mutableStateOf("Member") }
     var roleExpanded by remember { mutableStateOf(false) }
 
-    // LOCAL list — only members added in this session, never reads from uiState.members
-    val sessionMembers = remember { mutableStateListOf<SessionMember>() }
+    LaunchedEffect(groupId) {
+        viewModel.getGroupMembers(groupId)
+    }
 
     fun generateRandomPassword(): String {
-        val chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*"
-        return (1..8)
-            .map { chars.random() }
-            .joinToString("")
+        val chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+        return (1..8).map { chars.random() }.joinToString("")
     }
 
     Scaffold(
         containerColor = BackgroundGray,
-        bottomBar = {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Button(
-                    onClick = { 
-                        // Simulate data refresh so HomeScreen shows the new group
-                        // We pass the name of the group we just created
-                        homeViewModel.refreshAfterCreation(uiState.selectedGroup?.name)
-                        
-                        navController.navigate(Routes.HOME) {
-                            popUpTo(Routes.HOME) { inclusive = true }
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth().height(56.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = NavyBlue)
-                ) {
-                    Text(stringResource(R.string.done_button), color = White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
-                }
+        topBar = {
+            TopAppBar(
+                title = { Text("Members", fontWeight = FontWeight.Bold) },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = White)
+            )
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = { showAddForm = true },
+                containerColor = NavyBlue,
+                contentColor = White
+            ) {
+                Icon(Icons.Default.Add, contentDescription = "Add Member")
             }
         }
     ) { padding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            item {
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back_desc))
-                    }
-                    Text(stringResource(R.string.add_members_title), fontSize = 20.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
-                }
-                Text(
-                    stringResource(R.string.add_members_subtitle),
-                    fontSize = 14.sp,
-                    color = TextSecondary,
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                )
+        Column(modifier = Modifier.padding(padding)) {
+            if (uiState.isLoading) {
+                LinearProgressIndicator(modifier = Modifier.fillMaxWidth(), color = NavyBlue)
             }
 
-            item {
-                // Search Bar
-                Surface(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), color = White) {
-                    OutlinedTextField(
-                        value = phoneSearch,
-                        onValueChange = { input ->
-                            if (input.all { it.isDigit() }) {
-                                phoneSearch = input
-                                if (input.length >= 8) viewModel.searchMemberByPhone(input)
-                            }
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        placeholder = { Text(stringResource(R.string.search_by_phone_hint)) },
-                        leadingIcon = { Icon(Icons.Default.Search, null) },
-                        shape = RoundedCornerShape(12.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            unfocusedBorderColor = Color.Transparent,
-                            focusedBorderColor = Color.Transparent,
-                            unfocusedContainerColor = White,
-                            focusedContainerColor = White
-                        )
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                item {
+                    Text(
+                        text = "Available Members (${uiState.members.size})",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = TextSecondary,
+                        modifier = Modifier.padding(bottom = 4.dp)
                     )
                 }
-            }
 
-            // Session-added members — only appears after user clicks "+ Add Member"
-            if (sessionMembers.isNotEmpty()) {
-                item {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = White)
-                    ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Text(
-                                "ADDED (${sessionMembers.size})",
-                                fontSize = 12.sp,
-                                color = TextSecondary,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Spacer(modifier = Modifier.height(12.dp))
-                            sessionMembers.forEach { member ->
-                                SessionMemberRow(
-                                    member = member,
-                                    onRemove = { sessionMembers.remove(member) }
-                                )
-                                Spacer(modifier = Modifier.height(12.dp))
-                            }
-                        }
-                    }
+                items(uiState.members) { member ->
+                    MemberListItem(member)
                 }
+                
+                item { Spacer(modifier = Modifier.height(80.dp)) }
             }
+        }
 
-            item {
-                // Add a Member Form
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .border(1.dp, Color.LightGray, RoundedCornerShape(16.dp))
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(White)
-                        .padding(16.dp)
-                ) {
-                    Column {
-                        Text("+ Add a Member", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text("FULL NAME", fontSize = 11.sp, color = TextSecondary, fontWeight = FontWeight.Bold)
-                                OutlinedTextField(
-                                    value = fullName,
-                                    onValueChange = { fullName = it },
-                                    modifier = Modifier.fillMaxWidth(),
-                                    placeholder = { Text("e.g. Joseph Mwale", fontSize = 13.sp) },
-                                    shape = RoundedCornerShape(10.dp)
-                                )
-                            }
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text("ROLE", fontSize = 11.sp, color = TextSecondary, fontWeight = FontWeight.Bold)
-                                Box(modifier = Modifier.fillMaxWidth()) {
-                                    OutlinedTextField(
-                                        value = selectedRole,
-                                        onValueChange = {},
-                                        readOnly = true,
-                                        modifier = Modifier.fillMaxWidth(),
-                                        trailingIcon = {
-                                            IconButton(onClick = { roleExpanded = true }) {
-                                                Icon(Icons.Default.ArrowDropDown, null)
-                                            }
-                                        },
-                                        shape = RoundedCornerShape(10.dp)
-                                    )
-                                    DropdownMenu(expanded = roleExpanded, onDismissRequest = { roleExpanded = false }) {
-                                        listOf("Member", "Secretary", "Treasurer").forEach { role ->
-                                            DropdownMenuItem(
-                                                text = { Text(role) },
-                                                onClick = { selectedRole = role; roleExpanded = false }
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        Text("PHONE NUMBER", fontSize = 11.sp, color = TextSecondary, fontWeight = FontWeight.Bold)
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        if (showAddForm) {
+            AlertDialog(
+                onDismissRequest = { showAddForm = false },
+                title = { Text("Add New Member", fontWeight = FontWeight.Bold) },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        OutlinedTextField(
+                            value = fullName,
+                            onValueChange = { fullName = it },
+                            label = { Text("Full Name") },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(10.dp)
+                        )
+                        
+                        Box(modifier = Modifier.fillMaxWidth()) {
                             OutlinedTextField(
-                                value = "+265",
+                                value = selectedRole,
                                 onValueChange = {},
                                 readOnly = true,
-                                modifier = Modifier.width(80.dp),
+                                label = { Text("Role") },
+                                modifier = Modifier.fillMaxWidth(),
+                                trailingIcon = {
+                                    IconButton(onClick = { roleExpanded = true }) {
+                                        Icon(Icons.Default.ArrowDropDown, null)
+                                    }
+                                },
                                 shape = RoundedCornerShape(10.dp)
                             )
-                            OutlinedTextField(
-                                value = manualPhone,
-                                onValueChange = { if (it.all { c -> c.isDigit() }) manualPhone = it },
-                                modifier = Modifier.weight(1f),
-                                placeholder = { Text("99 999 9999", fontSize = 13.sp) },
-                                shape = RoundedCornerShape(10.dp)
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        Button(
-                            onClick = {
-                                if (fullName.isNotEmpty() && manualPhone.isNotEmpty()) {
-                                    val generatedPassword = generateRandomPassword()
-                                    // Persist to DB
-                                    // Note: In a real scenario, the backend should handle password generation or hashing.
-                                    // Here we are passing phone and role as per existing API, but we'll show the password to the user.
-                                    viewModel.addMemberWithRole(groupId, manualPhone, selectedRole)
-
-                                    // Add to local session list for immediate display
-                                    sessionMembers.add(
-                                        SessionMember(
-                                            fullName = fullName,
-                                            phone = "+265$manualPhone",
-                                            role = selectedRole,
-                                            password = generatedPassword
-                                        )
+                            DropdownMenu(expanded = roleExpanded, onDismissRequest = { roleExpanded = false }) {
+                                listOf("Member", "Secretary", "Treasurer").forEach { role ->
+                                    DropdownMenuItem(
+                                        text = { Text(role) },
+                                        onClick = { selectedRole = role; roleExpanded = false }
                                     )
-
-                                    // Reset form fields
-                                    fullName = ""
-                                    manualPhone = ""
-                                    selectedRole = "Member"
-                                    
-                                    Toast.makeText(context, "Member added with password: $generatedPassword", Toast.LENGTH_LONG).show()
                                 }
-                            },
-                            modifier = Modifier.fillMaxWidth().height(48.dp),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = NavyBlue)
-                        ) {
-                            Text("+ Add Member", color = White, fontWeight = FontWeight.Bold)
+                            }
                         }
+
+                        OutlinedTextField(
+                            value = manualPhone,
+                            onValueChange = { if (it.all { c -> c.isDigit() }) manualPhone = it },
+                            label = { Text("Phone Number") },
+                            placeholder = { Text("999999999") },
+                            modifier = Modifier.fillMaxWidth(),
+                            prefix = { Text("+265 ") },
+                            shape = RoundedCornerShape(10.dp)
+                        )
+                    }
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            if (fullName.isNotEmpty() && manualPhone.isNotEmpty()) {
+                                val password = generateRandomPassword()
+                                viewModel.addMemberWithRole(groupId, manualPhone, selectedRole)
+                                
+                                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                val clip = ClipData.newPlainText("password", password)
+                                clipboard.setPrimaryClip(clip)
+                                
+                                Toast.makeText(context, "Member added! Temp password: $password (Copied)", Toast.LENGTH_LONG).show()
+                                
+                                fullName = ""
+                                manualPhone = ""
+                                showAddForm = false
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = NavyBlue)
+                    ) {
+                        Text("Add Member")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showAddForm = false }) {
+                        Text("Cancel")
                     }
                 }
-            }
-
-            item { Spacer(modifier = Modifier.height(8.dp)) }
+            )
         }
     }
 }
 
 @Composable
-fun SessionMemberRow(member: SessionMember, onRemove: () -> Unit) {
-    val context = LocalContext.current
-    
-    Column(modifier = Modifier.fillMaxWidth()) {
+fun MemberListItem(member: User) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = White),
+        elevation = CardDefaults.cardElevation(1.dp)
+    ) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
-                val initials = member.fullName
-                    .split(" ")
-                    .filter { it.isNotEmpty() }
-                    .take(2)
-                    .joinToString("") { it.take(1) }
-                    .uppercase()
-                    .ifEmpty { "U" }
-
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .background(
-                            when (member.role.lowercase()) {
-                                "treasurer" -> Color(0xFF00C853)
-                                "secretary" -> Color(0xFF7C4DFF)
-                                else -> Color(0xFF00BFA5)
-                            },
-                            RoundedCornerShape(8.dp)
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(initials, color = White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                }
-
-                Spacer(modifier = Modifier.width(12.dp))
-                Column {
-                    Text(member.fullName, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = TextPrimary)
-                    Text(member.phone, fontSize = 12.sp, color = TextSecondary)
-                }
-            }
-
-            Surface(
-                color = when (member.role.lowercase()) {
-                    "treasurer" -> Color(0xFFE8F5E9)
-                    "secretary" -> Color(0xFFFFF3E0)
-                    else -> Color(0xFFF5F5F5)
-                },
-                shape = RoundedCornerShape(12.dp)
+            val initials = (member.firstName.take(1) + member.lastName.take(1)).uppercase()
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .background(NavyBlue.copy(alpha = 0.1f), RoundedCornerShape(10.dp)),
+                contentAlignment = Alignment.Center
             ) {
-                Text(
-                    member.role,
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-                    fontSize = 12.sp,
-                    color = when (member.role.lowercase()) {
-                        "treasurer" -> Color(0xFF2E7D32)
-                        "secretary" -> Color(0xFFE65100)
-                        else -> TextSecondary
-                    },
-                    fontWeight = FontWeight.Medium
-                )
+                Text(initials, color = NavyBlue, fontWeight = FontWeight.Bold)
             }
-
-            IconButton(onClick = onRemove) {
-                Icon(Icons.Default.Close, null, tint = RedAccent)
+            
+            Spacer(modifier = Modifier.width(16.dp))
+            
+            Column(modifier = Modifier.weight(1f)) {
+                Text("${member.firstName} ${member.lastName}", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                Text(member.role, fontSize = 12.sp, color = TextSecondary)
             }
-        }
-        
-        // Show the generated password
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 52.dp, top = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(
-                text = "Temp Password: ${member.password}",
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Medium,
-                color = NavyBlue
-            )
-            IconButton(
-                onClick = {
-                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                    val clip = ClipData.newPlainText("password", member.password)
-                    clipboard.setPrimaryClip(clip)
-                    Toast.makeText(context, "Password copied!", Toast.LENGTH_SHORT).show()
-                },
-                modifier = Modifier.size(24.dp)
-            ) {
-                Icon(Icons.Default.ContentCopy, null, tint = TextSecondary, modifier = Modifier.size(16.dp))
+            
+            Column(horizontalAlignment = Alignment.End) {
+                Text(member.phone, fontSize = 13.sp, color = TextPrimary)
+                Text("Active", fontSize = 11.sp, color = GreenAccent, fontWeight = FontWeight.Bold)
             }
         }
     }

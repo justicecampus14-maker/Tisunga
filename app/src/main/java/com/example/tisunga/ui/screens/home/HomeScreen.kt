@@ -2,8 +2,6 @@ package com.example.tisunga.ui.screens.home
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
@@ -20,16 +18,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import androidx.compose.ui.res.stringResource
 import com.example.tisunga.R
 import com.example.tisunga.data.model.Group
 import com.example.tisunga.data.model.Transaction
@@ -37,8 +31,6 @@ import com.example.tisunga.ui.components.BottomNavBar
 import com.example.tisunga.ui.navigation.Routes
 import com.example.tisunga.ui.theme.*
 import com.example.tisunga.viewmodel.HomeViewModel
-import com.example.tisunga.utils.SessionManager
-import com.example.tisunga.utils.MockDataProvider
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.Locale
@@ -49,7 +41,6 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
-    // Load data on first composition
     LaunchedEffect(Unit) {
         viewModel.loadHomeData()
     }
@@ -62,39 +53,41 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel) {
                 drawerContainerColor = BackgroundGray,
                 drawerShape = RoundedCornerShape(topEnd = 16.dp, bottomEnd = 16.dp)
             ) {
-                Spacer(Modifier.height(16.dp))
-                // Drawer Header
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                // Hamburger menu to close the drawer
+                IconButton(
+                    onClick = { scope.launch { drawerState.close() } },
+                    modifier = Modifier.padding(16.dp)
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(80.dp)
-                            .background(NavyBlue, CircleShape),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = uiState.userName.take(1).uppercase(),
-                            color = Color.White,
-                            fontSize = 32.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                    Spacer(Modifier.height(12.dp))
-                    Text(uiState.userName, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                    Text(uiState.userPhone, color = TextSecondary, fontSize = 14.sp)
+                    Icon(
+                        imageVector = Icons.Default.Menu,
+                        contentDescription = "Close Menu",
+                        tint = NavyBlue,
+                        modifier = Modifier.size(32.dp)
+                    )
                 }
                 
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = DividerColor)
+                HorizontalDivider(modifier = Modifier.padding(bottom = 8.dp), color = DividerColor)
                 
                 NavigationDrawerItem(
                     icon = { Icon(Icons.Default.Person, contentDescription = null) },
                     label = { Text("User Profile") },
                     selected = false,
                     onClick = { /* Navigate to profile */ },
+                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
+                    colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
+                )
+
+                val currentGroupId = uiState.myGroups.firstOrNull()?.id ?: 0
+                NavigationDrawerItem(
+                    icon = { Icon(Icons.Default.PersonAdd, contentDescription = null) },
+                    label = { Text("Add Members") },
+                    selected = false,
+                    onClick = {
+                        scope.launch {
+                            drawerState.close()
+                            navController.navigate(Routes.ADD_MEMBERS.replace("{groupId}", currentGroupId.toString()))
+                        }
+                    },
                     modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
                     colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
                 )
@@ -145,7 +138,7 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel) {
                     .padding(padding)
                     .verticalScroll(rememberScrollState())
             ) {
-                // Header
+                // Header with hamburger to open drawer
                 HomeHeader(
                     userPhone = uiState.userPhone,
                     navController = navController,
@@ -154,17 +147,13 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel) {
                     }
                 )
 
-                // Sliding Banner Cards or Beautiful Group Card
                 if (uiState.myGroups.isEmpty()) {
                     BannerSection()
                 } else {
                     GroupInfoCard(uiState.myGroups.first())
                 }
 
-                // Quick Actions
                 QuickActionsSection(navController, uiState.myGroups.firstOrNull())
-
-                // Recent Transactions
                 RecentTransactionsSection(uiState.recentTransactions)
             }
         }
@@ -183,7 +172,6 @@ fun GroupInfoCard(group: Group) {
         elevation = CardDefaults.cardElevation(8.dp)
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
-            // Decorative background element
             Box(
                 modifier = Modifier
                     .size(150.dp)
@@ -197,14 +185,12 @@ fun GroupInfoCard(group: Group) {
                     .padding(24.dp),
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
-                Column {
-                    Text(
-                        text = group.name,
-                        color = Color.White,
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
+                Text(
+                    text = group.name,
+                    color = Color.White,
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold
+                )
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -298,7 +284,6 @@ fun HomeHeader(userPhone: String, navController: NavController, onMenuClick: () 
 private fun BannerSection() {
     val pagerState = rememberPagerState(pageCount = { 3 })
     
-    // Auto-slide effect every 3 seconds
     LaunchedEffect(Unit) {
         while (true) {
             delay(3000)
@@ -322,7 +307,6 @@ private fun BannerSection() {
         
         Spacer(modifier = Modifier.height(12.dp))
         
-        // Pager dots
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.Center
@@ -346,7 +330,6 @@ private fun BannerSection() {
 
 @Composable
 fun BannerCard(page: Int) {
-    // Background color/brush based on page
     val brush = when (page) {
         0 -> Brush.horizontalGradient(listOf(Color(0xFF1B5E20), Color(0xFF2E7D32)))
         1 -> Brush.horizontalGradient(listOf(Color(0xFF1565C0), Color(0xFF1E88E5)))
@@ -394,7 +377,6 @@ fun BannerCard(page: Int) {
                 )
             }
             
-            // Stylized "Group of people" icon placeholder
             Icon(
                 Icons.Default.Groups,
                 contentDescription = null,
@@ -517,36 +499,28 @@ fun RecentTransactionsSection(transactions: List<Transaction>) {
         }
         Spacer(modifier = Modifier.height(12.dp))
         
-        if (transactions.isEmpty()) {
-            Card(
-                modifier = Modifier.fillMaxWidth().height(160.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(2.dp)
-            ) {
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = White),
+            elevation = CardDefaults.cardElevation(2.dp)
+        ) {
+            if (transactions.isEmpty()) {
                 Box(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier.fillMaxWidth().height(100.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = stringResource(R.string.no_groups_msg),
                         color = TextSecondary,
-                        textAlign = TextAlign.Center,
                         fontSize = 14.sp
                     )
                 }
-            }
-        } else {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(2.dp)
-            ) {
+            } else {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    transactions.forEach { transaction ->
+                    transactions.take(5).forEachIndexed { index, transaction ->
                         TransactionRow(transaction)
-                        if (transaction != transactions.last()) {
+                        if (index < transactions.take(5).size - 1) {
                             HorizontalDivider(
                                 modifier = Modifier.padding(vertical = 12.dp),
                                 thickness = 0.5.dp,
