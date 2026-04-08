@@ -74,8 +74,7 @@ fun AddMembersScreen(
             Column(modifier = Modifier.padding(16.dp)) {
                 Button(
                     onClick = { 
-                        // Simulate data refresh so HomeScreen shows the new group
-                        // We pass the name of the group we just created
+
                         homeViewModel.refreshAfterCreation(uiState.selectedGroup?.name)
                         
                         navController.navigate(Routes.HOME) {
@@ -106,39 +105,9 @@ fun AddMembersScreen(
                     }
                     Text(stringResource(R.string.add_members_title), fontSize = 20.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
                 }
-                Text(
-                    stringResource(R.string.add_members_subtitle),
-                    fontSize = 14.sp,
-                    color = TextSecondary,
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                )
+
             }
 
-            item {
-                // Search Bar
-                Surface(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), color = White) {
-                    OutlinedTextField(
-                        value = phoneSearch,
-                        onValueChange = { input ->
-                            if (input.all { it.isDigit() }) {
-                                phoneSearch = input
-                                if (input.length >= 8) viewModel.searchMemberByPhone(input)
-                            }
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        placeholder = { Text(stringResource(R.string.search_by_phone_hint)) },
-                        leadingIcon = { Icon(Icons.Default.Search, null) },
-                        shape = RoundedCornerShape(12.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            unfocusedBorderColor = Color.Transparent,
-                            focusedBorderColor = Color.Transparent,
-                            unfocusedContainerColor = White,
-                            focusedContainerColor = White
-                        )
-                    )
-                }
-            }
 
             // Session-added members — only appears after user clicks "+ Add Member"
             if (sessionMembers.isNotEmpty()) {
