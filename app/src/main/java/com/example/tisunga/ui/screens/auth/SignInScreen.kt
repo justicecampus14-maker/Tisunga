@@ -84,15 +84,6 @@ fun SignInScreen(navController: NavController, viewModel: AuthViewModel) {
             .fillMaxSize()
             .background(Brush.verticalGradient(listOf(White, BackgroundGray)))
     ) {
-        // Decorative elements
-        Box(
-            modifier = Modifier
-                .size(200.dp)
-                .offset(x = (-100).dp, y = (-50).dp)
-                .clip(CircleShape)
-                .background(NavyBlue.copy(alpha = 0.05f))
-        )
-
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -204,6 +195,10 @@ fun SignInScreen(navController: NavController, viewModel: AuthViewModel) {
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
                             keyboardActions = KeyboardActions(onDone = { handleLogin() })
                         )
+                        
+                        if (validationError.contains("Password")) {
+                            Text(text = validationError, color = RedAccent, fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp))
+                        }
 
                         Text(
                             text = stringResource(R.string.forgot_password_link),
@@ -227,25 +222,24 @@ fun SignInScreen(navController: NavController, viewModel: AuthViewModel) {
                                 Text("Sign In", color = White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                             }
                         }
+
+                        Spacer(modifier = Modifier.height(20.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(stringResource(R.string.no_account_text), fontSize = 14.sp, color = TextSecondary)
+                            Text(
+                                text = stringResource(R.string.signup_link),
+                                color = NavyBlue,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp,
+                                modifier = Modifier.clickable { navController.navigate(Routes.CREATE_ACCOUNT) }
+                            )
+                        }
                     }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            AnimatedVisibility(
-                visible = visible,
-                enter = fadeIn(animationSpec = tween(800, 400))
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(stringResource(R.string.already_have_account_text), fontSize = 14.sp, color = TextSecondary)
-                    Text(
-                        text = stringResource(R.string.signup_link),
-                        color = NavyBlue,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp,
-                        modifier = Modifier.clickable { navController.navigate(Routes.CREATE_ACCOUNT) }
-                    )
                 }
             }
 

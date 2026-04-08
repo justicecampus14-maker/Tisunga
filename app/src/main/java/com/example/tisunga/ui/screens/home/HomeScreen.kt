@@ -31,18 +31,58 @@ import com.example.tisunga.ui.components.BottomNavBar
 import com.example.tisunga.ui.navigation.Routes
 import com.example.tisunga.ui.theme.*
 import com.example.tisunga.viewmodel.HomeViewModel
+import com.example.tisunga.viewmodel.UserProfileViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.Locale
 
 @Composable
-fun HomeScreen(navController: NavController, viewModel: HomeViewModel) {
+fun HomeScreen(
+    navController: NavController, 
+    viewModel: HomeViewModel,
+    userProfileViewModel: UserProfileViewModel // Added this
+) {
     val uiState by viewModel.uiState.collectAsState()
+    val userProfileState by userProfileViewModel.uiState.collectAsState()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+    var showProfilePrompt by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         viewModel.loadHomeData()
+        userProfileViewModel.loadProfile()
+    }
+
+    LaunchedEffect(userProfileState.isProfileComplete, userProfileState.isLoading) {
+        if (!userProfileState.isLoading && !userProfileState.isProfileComplete) {
+            showProfilePrompt = true
+        }
+    }
+
+    if (showProfilePrompt) {
+        AlertDialog(
+            onDismissRequest = { },
+            title = { Text("Complete Your Profile") },
+            text = { Text("Welcome to Tisunga! Please complete your profile details (including National ID) to start using all features of the app.") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showProfilePrompt = false
+                        navController.navigate(Routes.USER_PROFILE)
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = NavyBlue)
+                ) {
+                    Text("Go to Profile")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showProfilePrompt = false }) {
+                    Text("Later", color = NavyBlue)
+                }
+            },
+            shape = RoundedCornerShape(16.dp),
+            containerColor = White
+        )
     }
 
     ModalNavigationDrawer(
@@ -70,9 +110,12 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel) {
                 
                 NavigationDrawerItem(
                     icon = { Icon(Icons.Default.Person, contentDescription = null) },
-                    label = { Text("User Profile") },
+                    label = { Text(stringResource(R.string.my_profile_title)) },
                     selected = false,
-                    onClick = { /* Navigate to profile */ },
+                    onClick = {
+                        navController.navigate(Routes.USER_PROFILE)
+                        scope.launch { drawerState.close() }
+                    },
                     modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
                     colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
                 )

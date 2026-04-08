@@ -275,4 +275,10 @@
 
     <!-- Notifications Screen -->
     <string name="notifications_title">Notification</string>
+
+    <!-- Profile Screen -->
+    <string name="my_profile_title">My Profile</string>
+    <string name="save_changes_button">Save Changes</string>
+    <string name="profile_updated_msg">Profile updated successfully</string>
+    <string name="avatar_updated_msg">Avatar updated successfully</string>
 </resources>

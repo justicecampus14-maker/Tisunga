@@ -16,36 +16,8 @@ import com.example.tisunga.ui.screens.savings.*
 import com.example.tisunga.ui.screens.events.EventsScreen
 import com.example.tisunga.ui.screens.transactions.TransactionsScreen
 import com.example.tisunga.ui.screens.notifications.NotificationsScreen
+import com.example.tisunga.ui.screens.profile.UserProfileScreen
 import com.example.tisunga.viewmodel.*
-
-object Routes {
-    const val WELCOME = "welcome"
-    const val SIGN_IN = "sign_in"
-    const val CREATE_ACCOUNT = "create_account"
-    const val VERIFICATION = "verification"
-    const val CREATE_PASSWORD = "create_password"
-    const val FORGOT_PASSWORD = "forgot_password"
-    const val HOME = "home"
-    const val GROUP_DETAIL = "group_detail/{groupId}"
-    const val GROUP_MEMBERS = "group_members/{groupId}"
-    const val GROUP_MEMBERS_CHAIR = "group_members_chair/{groupId}"
-    const val CREATE_GROUP_STEP1 = "create_group_step1"
-    const val ADD_MEMBERS = "add_members/{groupId}"
-    const val DISCOVER_GROUPS = "discover_groups"
-    const val JOIN_GROUP = "join_group"
-    const val GROUP_SAVINGS = "group_savings"
-    const val MAKE_CONTRIBUTION = "make_contribution/{groupId}"
-    const val CONTRIBUTION_HISTORY = "contribution_history/{groupId}"
-    const val DISBURSEMENT = "disbursement/{groupId}"
-    const val ALL_LOANS = "all_loans"
-    const val MY_LOANS = "my_loans/{groupId}"
-    const val GROUP_LOANS = "group_loans/{groupId}"
-    const val GROUP_LOANS_DETAIL = "group_loans_detail/{groupId}"
-    const val APPLY_LOAN = "apply_loan/{groupId}"
-    const val EVENTS = "events/{groupId}"
-    const val TRANSACTIONS = "transactions/{groupId}"
-    const val NOTIFICATIONS = "notifications"
-}
 
 @Composable
 fun AppNavGraph(
@@ -55,7 +27,8 @@ fun AppNavGraph(
     loanViewModel: LoanViewModel,
     savingsViewModel: SavingsViewModel,
     eventViewModel: EventViewModel,
-    homeViewModel: HomeViewModel
+    homeViewModel: HomeViewModel,
+    userProfileViewModel: UserProfileViewModel
 ) {
     NavHost(navController = navController, startDestination = Routes.WELCOME) {
         composable(Routes.WELCOME) { WelcomeScreen(navController) }
@@ -65,7 +38,9 @@ fun AppNavGraph(
         composable(Routes.CREATE_PASSWORD) { CreatePasswordScreen(navController, authViewModel) }
         composable(Routes.FORGOT_PASSWORD) { ForgotPasswordScreen(navController, authViewModel) }
         
-        composable(Routes.HOME) { HomeScreen(navController, homeViewModel) }
+        composable(Routes.HOME) { 
+            HomeScreen(navController, homeViewModel, userProfileViewModel) 
+        }
         
         composable(
             Routes.GROUP_DETAIL,
@@ -182,5 +157,9 @@ fun AppNavGraph(
         }
         
         composable(Routes.NOTIFICATIONS) { NotificationsScreen(navController) }
+
+        composable(Routes.USER_PROFILE) {
+            UserProfileScreen(navController, userProfileViewModel)
+        }
     }
 }
