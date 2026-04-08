@@ -123,7 +123,12 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel) {
                     selected = false,
                     onClick = {
                         uiState.myGroups.firstOrNull()?.let { group ->
-                            navController.navigate(Routes.GROUP_MEMBERS.replace("{groupId}", group.id.toString()))
+                            val role = viewModel.getUserGroupRole(group.id)
+                            if (role.equals("chairperson", ignoreCase = true) || role.equals("secretary", ignoreCase = true)) {
+                                navController.navigate(Routes.GROUP_MEMBERS_CHAIR.replace("{groupId}", group.id.toString()))
+                            } else {
+                                navController.navigate(Routes.GROUP_MEMBERS.replace("{groupId}", group.id.toString()))
+                            }
                         }
                         scope.launch { drawerState.close() }
                     },

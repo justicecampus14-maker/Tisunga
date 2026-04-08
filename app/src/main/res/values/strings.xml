@@ -78,12 +78,12 @@
     <string name="chair_notice">Upon Creation You are the Chair for the group</string>
     <string name="group_name_label">Group Name*</string>
     <string name="group_name_hint">eg, Mphatsso Group</string>
-    <string name="description_label">Description</string>
+    <string name="description_label">Description*</string>
     <string name="description_hint">Mphatso group is a group that saves a minimum of k2000 each week .......</string>
-    <string name="location_label">Location</string>
+    <string name="location_label">Location*</string>
     <string name="location_hint">e.g Zomba, Chikanda</string>
-    <string name="min_contribution_label">Minimun Contribtuion (MK 2,000)</string>
-    <string name="saving_period_label">Saving Period (Months)</string>
+    <string name="min_contribution_label">Minimum Contribution* (MK 2,000)</string>
+    <string name="saving_period_label">Saving Period* (Months)</string>
     <string name="max_members_label">Max Members</string>
     <string name="visibility_label">Vissibility</string>
     <string name="visibility_public">Public</string>
@@ -149,6 +149,8 @@
     <string name="group_code_hint">2Q12Q</string>
     <string name="or_text">OR</string>
     <string name="ok_button">OK</string>
+    <string name="no_pending_requests">No pending requests</string>
+    <string name="close_button">Close</string>
 
     <!-- Onboarding -->
     <string name="welcome_to">WELCOME TO</string>

@@ -38,8 +38,7 @@ import java.util.*
 data class SessionMember(
     val fullName: String,
     val phone: String,
-    val role: String,
-    val password: String
+    val role: String
 )
 
 @Composable
@@ -60,13 +59,6 @@ fun AddMembersScreen(
 
     // LOCAL list — only members added in this session, never reads from uiState.members
     val sessionMembers = remember { mutableStateListOf<SessionMember>() }
-
-    fun generateRandomPassword(): String {
-        val chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*"
-        return (1..8)
-            .map { chars.random() }
-            .joinToString("")
-    }
 
     Scaffold(
         containerColor = BackgroundGray,
@@ -103,7 +95,6 @@ fun AddMembersScreen(
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back_desc))
                     }
-                    Text(stringResource(R.string.add_members_title), fontSize = 20.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
                 }
 
             }
@@ -151,40 +142,37 @@ fun AddMembersScreen(
                         Text("+ Add a Member", fontWeight = FontWeight.Bold, fontSize = 14.sp)
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text("FULL NAME", fontSize = 11.sp, color = TextSecondary, fontWeight = FontWeight.Bold)
-                                OutlinedTextField(
-                                    value = fullName,
-                                    onValueChange = { fullName = it },
-                                    modifier = Modifier.fillMaxWidth(),
-                                    placeholder = { Text("e.g. Joseph Mwale", fontSize = 13.sp) },
-                                    shape = RoundedCornerShape(10.dp)
-                                )
-                            }
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text("ROLE", fontSize = 11.sp, color = TextSecondary, fontWeight = FontWeight.Bold)
-                                Box(modifier = Modifier.fillMaxWidth()) {
-                                    OutlinedTextField(
-                                        value = selectedRole,
-                                        onValueChange = {},
-                                        readOnly = true,
-                                        modifier = Modifier.fillMaxWidth(),
-                                        trailingIcon = {
-                                            IconButton(onClick = { roleExpanded = true }) {
-                                                Icon(Icons.Default.ArrowDropDown, null)
-                                            }
-                                        },
-                                        shape = RoundedCornerShape(10.dp)
-                                    )
-                                    DropdownMenu(expanded = roleExpanded, onDismissRequest = { roleExpanded = false }) {
-                                        listOf("Member", "Secretary", "Treasurer").forEach { role ->
-                                            DropdownMenuItem(
-                                                text = { Text(role) },
-                                                onClick = { selectedRole = role; roleExpanded = false }
-                                            )
-                                        }
+                        Text("FULL NAME", fontSize = 11.sp, color = TextSecondary, fontWeight = FontWeight.Bold)
+                        OutlinedTextField(
+                            value = fullName,
+                            onValueChange = { fullName = it },
+                            modifier = Modifier.fillMaxWidth(),
+                            placeholder = { Text("e.g. Joseph Mwale", fontSize = 13.sp) },
+                            shape = RoundedCornerShape(10.dp)
+                        )
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Text("ROLE", fontSize = 11.sp, color = TextSecondary, fontWeight = FontWeight.Bold)
+                        Box(modifier = Modifier.fillMaxWidth()) {
+                            OutlinedTextField(
+                                value = selectedRole,
+                                onValueChange = {},
+                                readOnly = true,
+                                modifier = Modifier.fillMaxWidth(),
+                                trailingIcon = {
+                                    IconButton(onClick = { roleExpanded = true }) {
+                                        Icon(Icons.Default.ArrowDropDown, null)
                                     }
+                                },
+                                shape = RoundedCornerShape(10.dp)
+                            )
+                            DropdownMenu(expanded = roleExpanded, onDismissRequest = { roleExpanded = false }) {
+                                listOf("Member", "Secretary", "Treasurer").forEach { role ->
+                                    DropdownMenuItem(
+                                        text = { Text(role) },
+                                        onClick = { selectedRole = role; roleExpanded = false }
+                                    )
                                 }
                             }
                         }
@@ -214,10 +202,7 @@ fun AddMembersScreen(
                         Button(
                             onClick = {
                                 if (fullName.isNotEmpty() && manualPhone.isNotEmpty()) {
-                                    val generatedPassword = generateRandomPassword()
                                     // Persist to DB
-                                    // Note: In a real scenario, the backend should handle password generation or hashing.
-                                    // Here we are passing phone and role as per existing API, but we'll show the password to the user.
                                     viewModel.addMemberWithRole(groupId, manualPhone, selectedRole)
 
                                     // Add to local session list for immediate display
@@ -225,8 +210,7 @@ fun AddMembersScreen(
                                         SessionMember(
                                             fullName = fullName,
                                             phone = "+265$manualPhone",
-                                            role = selectedRole,
-                                            password = generatedPassword
+                                            role = selectedRole
                                         )
                                     )
 
@@ -235,7 +219,7 @@ fun AddMembersScreen(
                                     manualPhone = ""
                                     selectedRole = "Member"
                                     
-                                    Toast.makeText(context, "Member added with password: $generatedPassword", Toast.LENGTH_LONG).show()
+                                    Toast.makeText(context, "Member added successfully", Toast.LENGTH_SHORT).show()
                                 }
                             },
                             modifier = Modifier.fillMaxWidth().height(48.dp),
@@ -318,33 +302,6 @@ fun SessionMemberRow(member: SessionMember, onRemove: () -> Unit) {
 
             IconButton(onClick = onRemove) {
                 Icon(Icons.Default.Close, null, tint = RedAccent)
-            }
-        }
-        
-        // Show the generated password
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 52.dp, top = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(
-                text = "Temp Password: ${member.password}",
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Medium,
-                color = NavyBlue
-            )
-            IconButton(
-                onClick = {
-                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                    val clip = ClipData.newPlainText("password", member.password)
-                    clipboard.setPrimaryClip(clip)
-                    Toast.makeText(context, "Password copied!", Toast.LENGTH_SHORT).show()
-                },
-                modifier = Modifier.size(24.dp)
-            ) {
-                Icon(Icons.Default.ContentCopy, null, tint = TextSecondary, modifier = Modifier.size(16.dp))
             }
         }
     }
