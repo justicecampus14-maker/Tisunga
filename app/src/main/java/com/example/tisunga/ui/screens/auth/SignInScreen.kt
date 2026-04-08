@@ -17,6 +17,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -144,7 +145,13 @@ fun SignInScreen(navController: NavController, viewModel: AuthViewModel) {
                                 }
                             },
                             modifier = Modifier.fillMaxWidth(),
-                            placeholder = { Text("e.g. 0882752624", fontSize = 14.sp) },
+                            placeholder = { 
+                                Text(
+                                    "e.g. 0882752624", 
+                                    fontSize = 14.sp,
+                                    modifier = Modifier.alpha(0.4f)
+                                ) 
+                            },
                             leadingIcon = { MalawiFlag() },
                             shape = RoundedCornerShape(12.dp),
                             colors = OutlinedTextFieldDefaults.colors(

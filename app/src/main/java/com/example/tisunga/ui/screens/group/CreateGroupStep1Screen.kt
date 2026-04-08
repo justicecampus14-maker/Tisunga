@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.tisunga.R
 import com.example.tisunga.data.model.Group
+import com.example.tisunga.ui.components.BottomNavBar
 import com.example.tisunga.ui.components.SecondaryTopBar
 import com.example.tisunga.ui.navigation.Routes
 import com.example.tisunga.ui.theme.*
@@ -37,7 +38,7 @@ fun CreateGroupStep1Screen(navController: NavController, viewModel: GroupViewMod
     var groupName by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var location by remember { mutableStateOf("") }
-    var minContribution by remember { mutableStateOf("2000") }
+    var minContribution by remember { mutableStateOf("") }
     var savingPeriod by remember { mutableStateOf("6") }
     
     var groupNameError by remember { mutableStateOf<String?>(null) }
@@ -68,7 +69,7 @@ fun CreateGroupStep1Screen(navController: NavController, viewModel: GroupViewMod
                     description = description,
                     savingPeriod = savingPeriod.toIntOrNull() ?: 6,
                     location = location,
-                    minContribution = minContribution.toDoubleOrNull() ?: 2000.0,
+                    minContribution = minContribution.toDoubleOrNull() ?: 0.0,
                     maxMembers = 15,
                     visibility = "Public",
                     startDate = "",
@@ -94,23 +95,17 @@ fun CreateGroupStep1Screen(navController: NavController, viewModel: GroupViewMod
                 onBackClick = { navController.popBackStack() }
             )
         },
-        containerColor = BackgroundGray
-    ) { padding ->
+        containerColor = BackgroundGray,
+        bottomBar = { BottomNavBar(navController) }
+    ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
+                .padding(paddingValues)
                 .padding(24.dp)
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = "Create a new savings community and start growing together.",
-                fontSize = 14.sp,
-                color = TextSecondary,
-                modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp)
-            )
-
             Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
                 GroupFormField(
                     label = stringResource(R.string.group_name_label),
@@ -187,6 +182,7 @@ fun CreateGroupStep1Screen(navController: NavController, viewModel: GroupViewMod
                                     if (it.isNotEmpty()) minContributionError = null
                                 },
                                 modifier = Modifier.fillMaxWidth(),
+                                placeholder = { Text("MK 2000", color = TextSecondary.copy(alpha = 0.5f)) },
                                 shape = RoundedCornerShape(12.dp),
                                 isError = minContributionError != null,
                                 colors = fieldColors(),

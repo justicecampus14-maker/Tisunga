@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.tisunga.R
 import com.example.tisunga.data.model.Contribution
+import com.example.tisunga.ui.components.BottomNavBar
 import com.example.tisunga.ui.components.SecondaryTopBar
 import com.example.tisunga.ui.theme.*
 import com.example.tisunga.viewmodel.SavingsViewModel
@@ -39,6 +40,7 @@ fun ContributionHistoryScreen(navController: NavController, groupId: Int, viewMo
                 onBackClick = { navController.popBackStack() }
             )
         },
+        bottomBar = { BottomNavBar(navController, type = "B") },
         containerColor = BackgroundGray
     ) { padding ->
         if (uiState.contributions.isEmpty()) {

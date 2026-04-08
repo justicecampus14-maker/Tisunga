@@ -29,8 +29,10 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.tisunga.R
+import com.example.tisunga.ui.navigation.Routes
 import com.example.tisunga.ui.theme.*
 import com.example.tisunga.viewmodel.UserProfileViewModel
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -60,7 +62,11 @@ fun UserProfileScreen(navController: NavController, viewModel: UserProfileViewMo
     LaunchedEffect(uiState.successMessage) {
         uiState.successMessage?.let {
             snackbarHostState.showSnackbar(it)
+            delay(1000) // Give user a moment to see the success
             viewModel.clearMessages()
+            navController.navigate(Routes.HOME) {
+                popUpTo(Routes.HOME) { inclusive = true }
+            }
         }
     }
 

@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.tisunga.R
 import com.example.tisunga.data.model.Loan
+import com.example.tisunga.ui.components.BottomNavBar
 import com.example.tisunga.ui.components.SecondaryTopBar
 import com.example.tisunga.ui.components.SuccessDialog
 import com.example.tisunga.ui.theme.*
@@ -69,6 +70,7 @@ fun ApplyLoanScreen(navController: NavController, groupId: Int, viewModel: LoanV
                 onBackClick = { navController.popBackStack() }
             )
         },
+        bottomBar = { BottomNavBar(navController, type = "C") },
         containerColor = BackgroundGray
     ) { padding ->
         Column(

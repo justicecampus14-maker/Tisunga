@@ -12,6 +12,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -46,6 +47,13 @@ fun EventsScreen(navController: NavController, groupId: Int, viewModel: EventVie
 
     LaunchedEffect(Unit) {
         viewModel.getGroupEvents(groupId)
+    }
+
+    LaunchedEffect(uiState.isSuccess) {
+        if (uiState.isSuccess) {
+            viewModel.getGroupEvents(groupId)
+            viewModel.resetState()
+        }
     }
 
     Scaffold(
@@ -89,28 +97,45 @@ fun EventsScreen(navController: NavController, groupId: Int, viewModel: EventVie
 
             Spacer(modifier = Modifier.height(24.dp))
 
+            // Filtering logic
+            val activeList = uiState.activeEvents.filter { event ->
+                event.type.lowercase() != "birthday" && (
+                    selectedFilter == filterAll || 
+                    selectedFilter == filterActive || 
+                    (selectedFilter == filterUpcoming && event.status == "upcoming")
+                )
+            }
+            val closedList = uiState.closedEvents.filter { event ->
+                event.type.lowercase() != "birthday" && (
+                    selectedFilter == filterAll || 
+                    selectedFilter == filterClosed
+                )
+            }
+
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(start = 24.dp, end = 24.dp, bottom = 100.dp),
                 verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
-                item {
-                    Text(
-                        stringResource(R.string.active_events_count, uiState.activeEvents.size),
-                        fontSize = 14.sp,
-                        fontWeight = Bold,
-                        color = NavyBlue,
-                        modifier = Modifier.padding(start = 4.dp)
-                    )
-                }
+                if (activeList.isNotEmpty()) {
+                    item {
+                        Text(
+                            stringResource(R.string.active_events_count, activeList.size),
+                            fontSize = 14.sp,
+                            fontWeight = Bold,
+                            color = NavyBlue,
+                            modifier = Modifier.padding(start = 4.dp)
+                        )
+                    }
 
-                items(uiState.activeEvents) { event ->
-                    EventItemCard(event, isChair = true) {
-                        viewModel.closeEvent(event.id)
+                    items(activeList) { event ->
+                        EventItemCard(event, isChair = true) {
+                            viewModel.closeEvent(event.id)
+                        }
                     }
                 }
 
-                if (uiState.closedEvents.isNotEmpty()) {
+                if (closedList.isNotEmpty()) {
                     item {
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
@@ -122,8 +147,16 @@ fun EventsScreen(navController: NavController, groupId: Int, viewModel: EventVie
                         )
                     }
 
-                    items(uiState.closedEvents) { event ->
+                    items(closedList) { event ->
                         EventItemCard(event, isChair = true, isClosed = true) {}
+                    }
+                }
+                
+                if (activeList.isEmpty() && closedList.isEmpty()) {
+                    item {
+                        Box(modifier = Modifier.fillParentMaxSize().padding(top = 40.dp), contentAlignment = Alignment.TopCenter) {
+                            Text("No events found", color = TextSecondary)
+                        }
                     }
                 }
             }
@@ -177,10 +210,10 @@ fun EventItemCard(event: Event, isChair: Boolean, isClosed: Boolean = false, onC
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                val (bgColor, textColor) = when (event.type) {
-                    "Wedding" -> Color(0xFFE3F2FD) to Color(0xFF1976D2)
-                    "Birthday" -> Color(0xFFF3E5F5) to Color(0xFF7B1FA2)
-                    "Funeral" -> Color(0xFFFFEBEE) to Color(0xFFD32F2F)
+                val (bgColor, textColor) = when (event.type.lowercase()) {
+                    "wedding" -> Color(0xFFE3F2FD) to Color(0xFF1976D2)
+                    "welfare" -> Color(0xFFF3E5F5) to Color(0xFF7B1FA2)
+                    "funeral" -> Color(0xFFFFEBEE) to Color(0xFFD32F2F)
                     else -> BackgroundGray to TextSecondary
                 }
                 
@@ -248,15 +281,15 @@ fun EventItemCard(event: Event, isChair: Boolean, isClosed: Boolean = false, onC
 
 @Composable
 fun CreateEventDialog(onDismiss: () -> Unit, onCreate: (Event) -> Unit) {
-    val typeWedding = stringResource(R.string.event_type_wedding)
-    val typeBirthday = stringResource(R.string.event_type_birthday)
-    val typeFuneral = stringResource(R.string.event_type_funeral)
-    val typeOther = stringResource(R.string.event_type_other)
+    val funeral = "Funeral"
+    val welfare = "Welfare"
+    val wedding = "Wedding"
+    val other = "Other"
     
     val amountFixed = stringResource(R.string.amount_type_fixed)
     val amountFlexible = stringResource(R.string.amount_type_flexible)
 
-    var type by remember { mutableStateOf(typeWedding) }
+    var type by remember { mutableStateOf(funeral) }
     var title by remember { mutableStateOf("") }
     var date by remember { mutableStateOf("") }
     var amountType by remember { mutableStateOf(amountFixed) }
@@ -281,11 +314,19 @@ fun CreateEventDialog(onDismiss: () -> Unit, onCreate: (Event) -> Unit) {
                             readOnly = true,
                             modifier = Modifier.fillMaxWidth().clickable { typeExpanded = true },
                             shape = RoundedCornerShape(12.dp),
+                            trailingIcon = { Icon(Icons.Default.ArrowDropDown, null, tint = NavyBlue) },
                             colors = OutlinedTextFieldDefaults.colors(unfocusedBorderColor = DividerColor, focusedBorderColor = NavyBlue, unfocusedContainerColor = White, focusedContainerColor = White)
                         )
-                        DropdownMenu(expanded = typeExpanded, onDismissRequest = { typeExpanded = false }) {
-                            listOf(typeWedding, typeBirthday, typeFuneral, typeOther).forEach {
-                                DropdownMenuItem(text = { Text(it) }, onClick = { type = it; typeExpanded = false })
+                        DropdownMenu(
+                            expanded = typeExpanded, 
+                            onDismissRequest = { typeExpanded = false },
+                            modifier = Modifier.background(White).fillMaxWidth(0.7f)
+                        ) {
+                            listOf(funeral, welfare, wedding, other).forEach {
+                                DropdownMenuItem(
+                                    text = { Text(it, color = TextPrimary) }, 
+                                    onClick = { type = it; typeExpanded = false }
+                                )
                             }
                         }
                     }
@@ -326,11 +367,19 @@ fun CreateEventDialog(onDismiss: () -> Unit, onCreate: (Event) -> Unit) {
                             readOnly = true,
                             modifier = Modifier.fillMaxWidth().clickable { amountTypeExpanded = true },
                             shape = RoundedCornerShape(12.dp),
+                            trailingIcon = { Icon(Icons.Default.ArrowDropDown, null, tint = NavyBlue) },
                             colors = OutlinedTextFieldDefaults.colors(unfocusedBorderColor = DividerColor, focusedBorderColor = NavyBlue, unfocusedContainerColor = White, focusedContainerColor = White)
                         )
-                        DropdownMenu(expanded = amountTypeExpanded, onDismissRequest = { amountTypeExpanded = false }) {
+                        DropdownMenu(
+                            expanded = amountTypeExpanded, 
+                            onDismissRequest = { amountTypeExpanded = false },
+                            modifier = Modifier.background(White).fillMaxWidth(0.7f)
+                        ) {
                             listOf(amountFixed, amountFlexible).forEach {
-                                DropdownMenuItem(text = { Text(it) }, onClick = { amountType = it; amountTypeExpanded = false })
+                                DropdownMenuItem(
+                                    text = { Text(it, color = TextPrimary) }, 
+                                    onClick = { amountType = it; amountTypeExpanded = false }
+                                )
                             }
                         }
                     }

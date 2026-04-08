@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import com.example.tisunga.data.model.Loan
+import com.example.tisunga.ui.components.BottomNavBar
 import com.example.tisunga.ui.components.GroupLoansSummaryCard
 import com.example.tisunga.ui.components.SecondaryTopBar
 import com.example.tisunga.ui.components.SuccessDialog
@@ -141,25 +142,7 @@ fun AllLoansScreen(navController: NavController, viewModel: LoanViewModel, homeV
             )
         },
         containerColor = BackgroundGray,
-        bottomBar = {
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                color = White,
-                shadowElevation = 8.dp
-            ) {
-                Button(
-                    onClick = { navController.navigate(Routes.APPLY_LOAN.replace("{groupId}", currentGroup?.id.toString())) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp)
-                        .height(56.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = NavyBlue)
-                ) {
-                    Text("Apply for a Loan", color = White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                }
-            }
-        }
+        bottomBar = { BottomNavBar(navController, type = "C") }
     ) { padding ->
         Column(
             modifier = Modifier
@@ -178,6 +161,19 @@ fun AllLoansScreen(navController: NavController, viewModel: LoanViewModel, homeV
 
             GroupLoansSummaryCard()
             
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Button(
+                onClick = { navController.navigate(Routes.APPLY_LOAN.replace("{groupId}", currentGroup?.id.toString())) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = NavyBlue)
+            ) {
+                Text("Apply for a Loan", color = White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            }
+
             Spacer(modifier = Modifier.height(24.dp))
             
             if (myLoan != null) {
@@ -405,7 +401,7 @@ fun GroupLoanCard(
                             Text("Reject")
                         }
                         Button(
-                            onClick = onApprove,
+                            onClick = { onApprove() },
                             modifier = Modifier.weight(1f),
                             shape = RoundedCornerShape(10.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = NavyBlue)
