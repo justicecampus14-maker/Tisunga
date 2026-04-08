@@ -77,16 +77,20 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel) {
                     colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
                 )
 
-                val currentGroupId = uiState.myGroups.firstOrNull()?.id ?: 0
                 NavigationDrawerItem(
-                    icon = { Icon(Icons.Default.PersonAdd, contentDescription = null) },
-                    label = { Text("Add Members") },
+                    icon = { Icon(Icons.Default.Group, contentDescription = null) },
+                    label = { Text("Group Members") },
                     selected = false,
                     onClick = {
-                        scope.launch {
-                            drawerState.close()
-                            navController.navigate(Routes.ADD_MEMBERS.replace("{groupId}", currentGroupId.toString()))
+                        uiState.myGroups.firstOrNull()?.let { group ->
+                            val role = viewModel.getUserGroupRole(group.id)
+                            if (role.equals("chairperson", ignoreCase = true) || role.equals("secretary", ignoreCase = true)) {
+                                navController.navigate(Routes.GROUP_MEMBERS_CHAIR.replace("{groupId}", group.id.toString()))
+                            } else {
+                                navController.navigate(Routes.GROUP_MEMBERS.replace("{groupId}", group.id.toString()))
+                            }
                         }
+                        scope.launch { drawerState.close() }
                     },
                     modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
                     colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
@@ -106,25 +110,6 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel) {
                     label = { Text("Theme") },
                     selected = false,
                     onClick = { /* Toggle theme */ },
-                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
-                    colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
-                )
-
-                NavigationDrawerItem(
-                    icon = { Icon(Icons.Default.Group, contentDescription = null) },
-                    label = { Text("Group Members") },
-                    selected = false,
-                    onClick = {
-                        uiState.myGroups.firstOrNull()?.let { group ->
-                            val role = viewModel.getUserGroupRole(group.id)
-                            if (role.equals("chairperson", ignoreCase = true) || role.equals("secretary", ignoreCase = true)) {
-                                navController.navigate(Routes.GROUP_MEMBERS_CHAIR.replace("{groupId}", group.id.toString()))
-                            } else {
-                                navController.navigate(Routes.GROUP_MEMBERS.replace("{groupId}", group.id.toString()))
-                            }
-                        }
-                        scope.launch { drawerState.close() }
-                    },
                     modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
                     colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
                 )

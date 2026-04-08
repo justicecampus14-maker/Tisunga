@@ -49,9 +49,9 @@ fun WelcomeScreen(navController: NavController) {
             letterSpacing = 2.sp,
             color = TextPrimary
         )
-        
+
         Spacer(modifier = Modifier.height(48.dp))
-        
+
         Text(
             text = stringResource(R.string.welcome_description),
             fontSize = 15.sp,
