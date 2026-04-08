@@ -60,13 +60,16 @@ class GroupViewModel(private val sessionManager: SessionManager) : ViewModel() {
             try {
                 val createdGroup = apiService.createGroup(group)
                 // Save role as chairperson for this group
-                val currentRoles = mutableMapOf<Int, String>()
-                currentRoles[createdGroup.id] = "chairperson"
-                sessionManager.saveGroupRoles(currentRoles)
+                val currentRolesMap = sessionManager.getGroupRolesMap().toMutableMap()
+                currentRolesMap[createdGroup.id] = "chairperson"
+                sessionManager.saveGroupRoles(currentRolesMap)
                 
                 _uiState.value = _uiState.value.copy(isLoading = false, isSuccess = true, selectedGroup = createdGroup)
             } catch (e: Exception) {
-                val mockGroup = MockDataProvider.getMockGroups().first().copy(name = group.name)
+                val mockGroup = MockDataProvider.getMockGroups().first().copy(id = (100..999).random(), name = group.name)
+                val currentRolesMap = sessionManager.getGroupRolesMap().toMutableMap()
+                currentRolesMap[mockGroup.id] = "chairperson"
+                sessionManager.saveGroupRoles(currentRolesMap)
                 _uiState.value = _uiState.value.copy(isLoading = false, isSuccess = true, selectedGroup = mockGroup)
             }
         }
@@ -92,6 +95,47 @@ class GroupViewModel(private val sessionManager: SessionManager) : ViewModel() {
                 _uiState.value = _uiState.value.copy(isLoading = false, members = members)
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(isLoading = false, members = MockDataProvider.getMockMembers())
+            }
+        }
+    }
+
+    fun getJoinRequests(groupId: Int) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true)
+            try {
+                val requests = apiService.getJoinRequests(groupId)
+                _uiState.value = _uiState.value.copy(isLoading = false, joinRequests = requests)
+            } catch (e: Exception) {
+                // Use a subset of mock members as mock requests
+                _uiState.value = _uiState.value.copy(isLoading = false, joinRequests = MockDataProvider.getMockMembers().take(2))
+            }
+        }
+    }
+
+    fun approveJoinRequest(groupId: Int, userId: Int) {
+        viewModelScope.launch {
+            try {
+                apiService.approveJoinRequest(groupId, userId)
+                getJoinRequests(groupId)
+                getGroupMembers(groupId)
+            } catch (e: Exception) {
+                // Mock success
+                val currentRequests = _uiState.value.joinRequests.filter { it.id != userId }
+                _uiState.value = _uiState.value.copy(joinRequests = currentRequests)
+                getGroupMembers(groupId)
+            }
+        }
+    }
+
+    fun rejectJoinRequest(groupId: Int, userId: Int) {
+        viewModelScope.launch {
+            try {
+                apiService.rejectJoinRequest(groupId, userId)
+                getJoinRequests(groupId)
+            } catch (e: Exception) {
+                // Mock success
+                val currentRequests = _uiState.value.joinRequests.filter { it.id != userId }
+                _uiState.value = _uiState.value.copy(joinRequests = currentRequests)
             }
         }
     }
@@ -130,5 +174,9 @@ class GroupViewModel(private val sessionManager: SessionManager) : ViewModel() {
 
     fun resetState() {
         _uiState.value = _uiState.value.copy(isSuccess = false, successMessage = "", errorMessage = "")
+    }
+
+    fun getUserRole(groupId: Int): String {
+        return sessionManager.getGroupRole(groupId) ?: "member"
     }
 }

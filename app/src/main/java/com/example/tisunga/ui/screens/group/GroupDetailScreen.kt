@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.compose.ui.res.stringResource
+import java.util.Locale
 import com.example.tisunga.R
 import com.example.tisunga.data.model.Transaction
 import com.example.tisunga.ui.components.BottomNavBar
@@ -31,13 +32,17 @@ import com.example.tisunga.viewmodel.GroupViewModel
 fun GroupDetailScreen(navController: NavController, groupId: Int, viewModel: GroupViewModel) {
     val uiState by viewModel.uiState.collectAsState()
     
-    // Placeholder data
-    val groupName = stringResource(R.string.placeholder_group_name)
+    val group = uiState.selectedGroup ?: uiState.myGroups.find { it.id == groupId }
+    val groupName = group?.name ?: stringResource(R.string.placeholder_group_name)
     val userPhone = "0882752624"
-    val isChair = true // This should come from SessionManager or ViewModel
+    val role = viewModel.getUserRole(groupId)
+    val isChairOrSecretary = role.equals("chairperson", ignoreCase = true) || role.equals("secretary", ignoreCase = true)
 
     LaunchedEffect(Unit) {
         viewModel.getGroupTransactions(groupId)
+        if (uiState.selectedGroup == null) {
+            viewModel.getMyGroups()
+        }
     }
 
     Scaffold(
@@ -56,14 +61,14 @@ fun GroupDetailScreen(navController: NavController, groupId: Int, viewModel: Gro
                 contentPadding = PaddingValues(bottom = 16.dp)
             ) {
                 item {
-                    GroupSummaryCard(groupName)
+                    GroupSummaryCard(groupName, group)
                     Spacer(modifier = Modifier.height(20.dp))
                 }
                 
                 item {
-                    QuickActionsHeader(navController, groupId, isChair)
+                    QuickActionsHeader(navController, groupId, isChairOrSecretary)
                     Spacer(modifier = Modifier.height(12.dp))
-                    QuickActionsGrid(navController, groupId, isChair)
+                    QuickActionsGrid(navController, groupId, isChairOrSecretary)
                     Spacer(modifier = Modifier.height(20.dp))
                 }
                 
@@ -82,7 +87,7 @@ fun GroupDetailScreen(navController: NavController, groupId: Int, viewModel: Gro
 }
 
 @Composable
-fun GroupSummaryCard(groupName: String) {
+fun GroupSummaryCard(groupName: String, group: com.example.tisunga.data.model.Group?) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(bottomStart = 20.dp, bottomEnd = 20.dp),
@@ -94,21 +99,21 @@ fun GroupSummaryCard(groupName: String) {
             Spacer(modifier = Modifier.height(16.dp))
             
             Text(stringResource(R.string.group_saving_label), fontSize = 14.sp)
-            Box(
-                modifier = Modifier
-                    .height(8.dp)
-                    .width(180.dp)
-                    .background(Color(0xFFDDDDDD), RoundedCornerShape(4.dp))
+            Text(
+                text = String.format(Locale.US, "MK %,.0f", group?.totalSavings ?: 0.0),
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = NavyBlue
             )
             
             Spacer(modifier = Modifier.height(12.dp))
             
             Text(stringResource(R.string.my_savings_label), fontSize = 14.sp)
-            Box(
-                modifier = Modifier
-                    .height(8.dp)
-                    .width(140.dp)
-                    .background(Color(0xFFDDDDDD), RoundedCornerShape(4.dp))
+            Text(
+                text = String.format(Locale.US, "MK %,.0f", group?.mySavings ?: 0.0),
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = GreenAccent
             )
         }
     }

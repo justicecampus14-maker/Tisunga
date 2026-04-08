@@ -55,6 +55,9 @@ interface ApiService {
     @PUT("groups/{groupId}/join-requests/{userId}/approve")
     suspend fun approveJoinRequest(@Path("groupId") groupId: Int, @Path("userId") userId: Int): Map<String, String>
 
+    @PUT("groups/{groupId}/join-requests/{userId}/reject")
+    suspend fun rejectJoinRequest(@Path("groupId") groupId: Int, @Path("userId") userId: Int): Map<String, String>
+
     @GET("groups/{id}/transactions")
     suspend fun getGroupTransactions(@Path("id") id: Int): List<Transaction>
 

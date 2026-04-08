@@ -51,6 +51,12 @@ class SessionManager(context: Context) {
         return roles[groupId]
     }
 
+    fun getGroupRolesMap(): Map<Int, String> {
+        val json = prefs.getString(GROUP_ROLES, null) ?: return emptyMap()
+        val type = object : TypeToken<Map<Int, String>>() {}.type
+        return gson.fromJson(json, type) ?: emptyMap()
+    }
+
     fun clearSession() {
         prefs.edit().clear().apply()
     }
