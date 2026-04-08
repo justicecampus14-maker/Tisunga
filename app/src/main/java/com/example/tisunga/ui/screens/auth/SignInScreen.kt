@@ -1,10 +1,16 @@
 package com.example.tisunga.ui.screens.auth
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountBalanceWallet
+import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Visibility
@@ -13,8 +19,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -35,6 +44,18 @@ fun SignInScreen(navController: NavController, viewModel: AuthViewModel) {
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var validationError by remember { mutableStateOf("") }
+    val passwordFocusRequester = remember { FocusRequester() }
+
+    val handleLogin = {
+        if (phone.length !in 9..10) {
+            validationError = "Phone number must be 9 or 10 digits"
+        } else if (password.isEmpty()) {
+            validationError = "Password is required"
+        } else {
+            validationError = ""
+            viewModel.login(phone, password)
+        }
+    }
 
     LaunchedEffect(uiState.isSuccess) {
         if (uiState.isSuccess) {
@@ -53,21 +74,48 @@ fun SignInScreen(navController: NavController, viewModel: AuthViewModel) {
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Spacer(modifier = Modifier.height(40.dp))
-        Text(text = stringResource(R.string.signin_title), fontSize = 28.sp, fontWeight = FontWeight.Bold, color = NavyBlue)
-        Text(text = stringResource(R.string.signin_subtitle), fontSize = 14.sp, color = TextSecondary)
+        Spacer(modifier = Modifier.height(60.dp))
         
-        Spacer(modifier = Modifier.height(32.dp))
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(60.dp)
+                    .border(2.dp, NavyBlue, RoundedCornerShape(8.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "APP\nLOGO",
+                    fontSize = 12.sp,
+                    lineHeight = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = NavyBlue,
+                    textAlign = TextAlign.Center
+                )
+            }
+            Spacer(modifier = Modifier.width(16.dp))
+            Text(
+                text = "Tisunge",
+                fontSize = 32.sp,
+                fontWeight = FontWeight.Bold,
+                color = NavyBlue
+            )
+        }
+        
+        Spacer(modifier = Modifier.height(24.dp))
         
         Card(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(12.dp),
             colors = CardDefaults.cardColors(containerColor = White),
-            elevation = CardDefaults.cardElevation(4.dp)
+            elevation = CardDefaults.cardElevation(2.dp),
+            border = BorderStroke(1.dp, DividerColor)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text(text = stringResource(R.string.phone_number_label), fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                Spacer(modifier = Modifier.height(8.dp))
+                Text(text = stringResource(R.string.phone_number_label), fontSize = 16.sp, color = TextPrimary, fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.height(4.dp))
                 OutlinedTextField(
                     value = phone,
                     onValueChange = { input -> 
@@ -77,23 +125,21 @@ fun SignInScreen(navController: NavController, viewModel: AuthViewModel) {
                         }
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(10.dp),
-                    placeholder = { Text(stringResource(R.string.phone_number_placeholder)) },
-                    leadingIcon = { 
-                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 8.dp)) {
-                            Text("🇲🇼")
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Icon(Icons.Default.Phone, contentDescription = null, modifier = Modifier.size(20.dp))
-                        }
-                    },
-                    isError = validationError.isNotEmpty(),
+                    shape = RoundedCornerShape(8.dp),
+                    leadingIcon = { Icon(Icons.Default.Phone, contentDescription = null, tint = NavyBlue) },
                     colors = OutlinedTextFieldDefaults.colors(
                         unfocusedBorderColor = DividerColor,
                         focusedBorderColor = NavyBlue,
                         unfocusedContainerColor = BackgroundGray,
                         focusedContainerColor = BackgroundGray
                     ),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Phone,
+                        imeAction = ImeAction.Next
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onNext = { passwordFocusRequester.requestFocus() }
+                    )
                 )
                 
                 if (validationError.isNotEmpty()) {
@@ -107,20 +153,22 @@ fun SignInScreen(navController: NavController, viewModel: AuthViewModel) {
                 
                 Spacer(modifier = Modifier.height(16.dp))
                 
-                Text(text = stringResource(R.string.password_label), fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                Spacer(modifier = Modifier.height(8.dp))
+                Text(text = stringResource(R.string.password_label), fontSize = 16.sp, color = TextPrimary, fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.height(4.dp))
                 OutlinedTextField(
                     value = password,
                     onValueChange = { password = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(10.dp),
-                    placeholder = { Text(stringResource(R.string.password_label)) },
-                    leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .focusRequester(passwordFocusRequester),
+                    shape = RoundedCornerShape(8.dp),
+                    leadingIcon = { Icon(Icons.Default.Key, contentDescription = null, tint = NavyBlue) },
                     trailingIcon = {
                         IconButton(onClick = { passwordVisible = !passwordVisible }) {
                             Icon(
                                 if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                                contentDescription = null
+                                contentDescription = null,
+                                tint = TextSecondary
                             )
                         }
                     },
@@ -131,37 +179,36 @@ fun SignInScreen(navController: NavController, viewModel: AuthViewModel) {
                         unfocusedContainerColor = BackgroundGray,
                         focusedContainerColor = BackgroundGray
                     ),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Password,
+                        imeAction = ImeAction.Done
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onDone = { handleLogin() }
+                    )
                 )
                 
                 TextButton(
                     onClick = { navController.navigate(Routes.FORGOT_PASSWORD) },
-                    modifier = Modifier.align(Alignment.End)
+                    modifier = Modifier.align(Alignment.End),
+                    contentPadding = PaddingValues(0.dp)
                 ) {
-                    Text(stringResource(R.string.forgot_password_link), color = BlueLink, fontSize = 13.sp)
+                    Text(stringResource(R.string.forgot_password_link), color = Color.Black, fontSize = 14.sp)
                 }
                 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(8.dp))
                 
                 Button(
-                    onClick = { 
-                        if (phone.length !in 9..10) {
-                            validationError = "Phone number must be 9 or 10 digits"
-                        } else if (password.isEmpty()) {
-                            validationError = "Password is required"
-                        } else {
-                            validationError = ""
-                            viewModel.login(phone, password)
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth().height(52.dp),
-                    shape = RoundedCornerShape(10.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = NavyBlue)
+                    onClick = handleLogin,
+                    modifier = Modifier.align(Alignment.End).height(44.dp),
+                    shape = RoundedCornerShape(4.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = NavyBlue),
+                    contentPadding = PaddingValues(horizontal = 24.dp)
                 ) {
                     if (uiState.isLoading) {
-                        CircularProgressIndicator(color = White, modifier = Modifier.size(24.dp))
+                        CircularProgressIndicator(color = White, modifier = Modifier.size(20.dp))
                     } else {
-                        Text(stringResource(R.string.signin_title), color = White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                        Text(stringResource(R.string.signin_title), color = White, fontSize = 16.sp)
                     }
                 }
                 
@@ -178,13 +225,22 @@ fun SignInScreen(navController: NavController, viewModel: AuthViewModel) {
             }
         }
         
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(16.dp))
         
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(stringResource(R.string.no_account_text), fontSize = 14.sp, color = TextSecondary)
-            TextButton(onClick = { navController.navigate(Routes.CREATE_ACCOUNT) }) {
-                Text(stringResource(R.string.signup_link), color = NavyBlue, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-            }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(stringResource(R.string.no_account_text), fontSize = 15.sp, color = Color.Black)
+            Spacer(modifier = Modifier.width(4.dp))
+            Text(
+                text = stringResource(R.string.signup_link),
+                color = Color.Black,
+                fontWeight = FontWeight.Bold,
+                fontSize = 15.sp,
+                modifier = Modifier.clickable { navController.navigate(Routes.CREATE_ACCOUNT) }
+            )
         }
     }
 }
