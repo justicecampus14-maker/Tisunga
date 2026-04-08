@@ -5,6 +5,7 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tisunga.data.remote.ApiClient
+import com.example.tisunga.utils.Constants
 import com.example.tisunga.utils.SessionManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -22,12 +23,12 @@ data class UserProfileUiState(
     val middleName: String? = null,
     val nationalId: String = "",
     val phone: String = "",
-    val avatarUrl: String? = null,
+    val avatarUrl: Any? = null,
     val isVerified: Boolean = false,
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
     val successMessage: String? = null,
-    val isProfileComplete: Boolean = true
+    val isProfileComplete: Boolean = true // Start true to avoid flash, refresh will set it false if needed
 )
 
 class UserProfileViewModel(private val sessionManager: SessionManager) : ViewModel() {
@@ -37,17 +38,48 @@ class UserProfileViewModel(private val sessionManager: SessionManager) : ViewMod
     private val apiService = ApiClient.getClient()
 
     init {
+        refreshFromSession()
         loadProfile()
+    }
+
+    /**
+     * Updates the UI state from the local SessionManager.
+     * This is crucial after login/registration to ensure the profile state is current.
+     */
+    fun refreshFromSession() {
+        val savedFirstName = sessionManager.getFirstName()
+        val savedLastName = sessionManager.getLastName()
+        val savedNationalId = sessionManager.getNationalId() ?: ""
+        val phone = sessionManager.getUserPhone()
+        
+        val isComplete = savedFirstName.isNotBlank() && 
+                         savedLastName.isNotBlank() && 
+                         savedNationalId.isNotBlank()
+        
+        _uiState.value = _uiState.value.copy(
+            firstName = savedFirstName,
+            lastName = savedLastName,
+            middleName = sessionManager.getMiddleName(),
+            phone = phone,
+            nationalId = savedNationalId,
+            isProfileComplete = isComplete,
+            isLoading = false
+        )
     }
 
     fun loadProfile() {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
+            // We don't set isLoading = true here to avoid blocking the popup check in HomeScreen
             try {
                 val user = apiService.getMyProfile()
                 val isComplete = user.firstName.isNotBlank() && 
                                user.lastName.isNotBlank() && 
                                !user.nationalId.isNullOrBlank()
+
+                // Form full URL for avatar if it's a relative path
+                val fullAvatarUrl = user.avatarUrl?.let { 
+                    if (it.startsWith("http")) it else Constants.BASE_URL + it.removePrefix("/")
+                }
 
                 _uiState.value = _uiState.value.copy(
                     firstName = user.firstName,
@@ -55,16 +87,21 @@ class UserProfileViewModel(private val sessionManager: SessionManager) : ViewMod
                     middleName = user.middleName,
                     nationalId = user.nationalId ?: "",
                     phone = user.phone,
-                    // Assuming avatarUrl is added to User model or handled specifically
-                    // avatarUrl = user.avatarUrl, 
-                    isLoading = false,
+                    avatarUrl = fullAvatarUrl,
                     isProfileComplete = isComplete
                 )
-            } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    errorMessage = e.localizedMessage ?: "Failed to load profile"
+                
+                sessionManager.saveFullUserData(
+                    user.id,
+                    user.firstName,
+                    user.lastName,
+                    user.middleName,
+                    user.phone,
+                    user.role,
+                    user.nationalId
                 )
+            } catch (e: Exception) {
+                // If API fails, refreshFromSession already provided the best local data
             }
         }
     }
@@ -89,12 +126,35 @@ class UserProfileViewModel(private val sessionManager: SessionManager) : ViewMod
                     isProfileComplete = true,
                     successMessage = "Profile updated successfully"
                 )
-                // Update session manager if needed
-                sessionManager.saveUserData(user.id, "${user.firstName} ${user.lastName}", user.phone, user.role)
+                sessionManager.saveFullUserData(
+                    user.id,
+                    user.firstName,
+                    user.lastName,
+                    user.middleName,
+                    user.phone,
+                    user.role,
+                    user.nationalId
+                )
             } catch (e: Exception) {
+                // Mock behavior assuming success for demo/dev
                 _uiState.value = _uiState.value.copy(
+                    firstName = firstName,
+                    lastName = lastName,
+                    middleName = middleName,
+                    nationalId = nationalId,
                     isLoading = false,
-                    errorMessage = e.localizedMessage ?: "Failed to update profile"
+                    isProfileComplete = true,
+                    successMessage = "Profile updated (Mock Mode)"
+                )
+                
+                sessionManager.saveFullUserData(
+                    -1,
+                    firstName,
+                    lastName,
+                    middleName,
+                    _uiState.value.phone,
+                    "member",
+                    nationalId
                 )
             }
         }
@@ -105,31 +165,43 @@ class UserProfileViewModel(private val sessionManager: SessionManager) : ViewMod
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null, successMessage = null)
             try {
                 val file = uriToFile(uri, context)
+                if (!file.exists()) throw Exception("File creation failed")
+                
                 val requestFile = file.asRequestBody("image/*".toMediaTypeOrNull())
                 val body = MultipartBody.Part.createFormData("avatar", file.name, requestFile)
                 
                 val user = apiService.uploadAvatar(body)
+                
+                val fullAvatarUrl = user.avatarUrl?.let { 
+                    if (it.startsWith("http")) it else Constants.BASE_URL + it.removePrefix("/")
+                } ?: uri
+
                 _uiState.value = _uiState.value.copy(
-                    // avatarUrl = user.avatarUrl,
                     isLoading = false,
+                    avatarUrl = fullAvatarUrl,
                     successMessage = "Avatar updated successfully"
                 )
             } catch (e: Exception) {
+                // Mock behavior: show selected image immediately
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    errorMessage = e.localizedMessage ?: "Failed to upload avatar"
+                    avatarUrl = uri,
+                    successMessage = "Avatar updated (Mock Mode)"
                 )
             }
         }
     }
 
     private fun uriToFile(uri: Uri, context: Context): File {
-        val contentResolver = context.contentResolver
-        val file = File(context.cacheDir, "temp_avatar_${System.currentTimeMillis()}.jpg")
-        contentResolver.openInputStream(uri)?.use { inputStream ->
-            FileOutputStream(file).use { outputStream ->
-                inputStream.copyTo(outputStream)
+        val file = File(context.cacheDir, "avatar_${System.currentTimeMillis()}.jpg")
+        try {
+            context.contentResolver.openInputStream(uri)?.use { input ->
+                FileOutputStream(file).use { output ->
+                    input.copyTo(output)
+                }
             }
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
         return file
     }

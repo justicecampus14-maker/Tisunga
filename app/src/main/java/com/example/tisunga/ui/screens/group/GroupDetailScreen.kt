@@ -55,7 +55,7 @@ fun GroupDetailScreen(navController: NavController, groupId: Int, viewModel: Gro
                 .padding(padding)
         ) {
             HomeHeader(userPhone, navController, onMenuClick = { })
-            
+
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(bottom = 16.dp)

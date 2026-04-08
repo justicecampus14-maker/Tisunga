@@ -15,6 +15,7 @@
     <string name="first_name_label">First Name</string>
     <string name="middle_name_label">Middle Name (Optional)</string>
     <string name="last_name_label">Last Name</string>
+    <string name="national_id_label">National ID</string>
     <string name="error_fill_all_fields">Please fill all required fields</string>
     <string name="continue_button">Continue</string>
     <string name="already_have_account_text">Already have an account? </string>
@@ -281,4 +282,7 @@
     <string name="save_changes_button">Save Changes</string>
     <string name="profile_updated_msg">Profile updated successfully</string>
     <string name="avatar_updated_msg">Avatar updated successfully</string>
+    <string name="complete_profile_dialog_title">Complete Your Profile</string>
+    <string name="complete_profile_dialog_msg">Welcome to Tisunga! Please complete your profile details (including National ID) to start using all features of the app.</string>
+    <string name="go_to_profile_button">Go to Profile</string>
 </resources>

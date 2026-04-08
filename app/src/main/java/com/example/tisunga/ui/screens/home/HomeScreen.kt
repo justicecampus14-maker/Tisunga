@@ -23,6 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.DialogProperties
 import androidx.navigation.NavController
 import com.example.tisunga.R
 import com.example.tisunga.data.model.Group
@@ -40,7 +41,7 @@ import java.util.Locale
 fun HomeScreen(
     navController: NavController, 
     viewModel: HomeViewModel,
-    userProfileViewModel: UserProfileViewModel // Added this
+    userProfileViewModel: UserProfileViewModel
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val userProfileState by userProfileViewModel.uiState.collectAsState()
@@ -56,30 +57,33 @@ fun HomeScreen(
     LaunchedEffect(userProfileState.isProfileComplete, userProfileState.isLoading) {
         if (!userProfileState.isLoading && !userProfileState.isProfileComplete) {
             showProfilePrompt = true
+        } else if (userProfileState.isProfileComplete) {
+            showProfilePrompt = false
         }
     }
 
     if (showProfilePrompt) {
         AlertDialog(
             onDismissRequest = { },
-            title = { Text("Complete Your Profile") },
-            text = { Text("Welcome to Tisunga! Please complete your profile details (including National ID) to start using all features of the app.") },
+            title = { Text(stringResource(R.string.complete_profile_dialog_title), fontWeight = FontWeight.Bold) },
+            text = { Text(stringResource(R.string.complete_profile_dialog_msg)) },
             confirmButton = {
                 Button(
                     onClick = {
                         showProfilePrompt = false
                         navController.navigate(Routes.USER_PROFILE)
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = NavyBlue)
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = NavyBlue),
+                    shape = RoundedCornerShape(12.dp)
                 ) {
-                    Text("Go to Profile")
+                    Text(stringResource(R.string.go_to_profile_button), fontWeight = FontWeight.Bold)
                 }
             },
-            dismissButton = {
-                TextButton(onClick = { showProfilePrompt = false }) {
-                    Text("Later", color = NavyBlue)
-                }
-            },
+            properties = DialogProperties(
+                dismissOnBackPress = false,
+                dismissOnClickOutside = false
+            ),
             shape = RoundedCornerShape(16.dp),
             containerColor = White
         )

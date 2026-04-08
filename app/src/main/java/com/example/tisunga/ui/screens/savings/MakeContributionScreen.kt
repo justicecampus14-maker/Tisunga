@@ -3,15 +3,17 @@ package com.example.tisunga.ui.screens.savings
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -21,6 +23,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.tisunga.R
 import com.example.tisunga.data.model.Contribution
+import com.example.tisunga.ui.components.SecondaryTopBar
 import com.example.tisunga.ui.theme.*
 import com.example.tisunga.viewmodel.SavingsViewModel
 
@@ -43,131 +46,184 @@ fun MakeContributionScreen(navController: NavController, groupId: Int, viewModel
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(BackgroundGray)
-            .padding(16.dp)
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = { navController.popBackStack() }) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back_desc))
-            }
-            Text(stringResource(R.string.make_contribution_title), fontSize = 20.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text(
-            stringResource(R.string.active_number_notice),
-            color = PurpleSubtitle,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.SemiBold,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(20.dp))
-
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = White),
-            elevation = CardDefaults.cardElevation(4.dp)
+    Scaffold(
+        topBar = {
+            SecondaryTopBar(
+                title = stringResource(R.string.make_contribution_title),
+                onBackClick = { navController.popBackStack() }
+            )
+        },
+        containerColor = BackgroundGray
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(24.dp)
+                .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text(stringResource(R.string.enter_phone_label), fontWeight = FontWeight.Bold, fontSize = 14.sp, color = TextSecondary)
-                Box {
-                    OutlinedTextField(
-                        value = phoneNumber,
-                        onValueChange = {},
-                        modifier = Modifier.fillMaxWidth().clickable { phoneExpanded = true },
-                        readOnly = true,
-                        shape = RoundedCornerShape(10.dp),
-                        trailingIcon = { Icon(Icons.Default.ArrowDropDown, null, Modifier.clickable { phoneExpanded = true }) },
-                        colors = OutlinedTextFieldDefaults.colors(
-                            unfocusedContainerColor = BackgroundGray,
-                            focusedContainerColor = BackgroundGray
-                        )
-                    )
-                    DropdownMenu(expanded = phoneExpanded, onDismissRequest = { phoneExpanded = false }) {
-                        listOf("+265 882752624", "+265 999782230").forEach {
-                            DropdownMenuItem(text = { Text(it) }, onClick = { phoneNumber = it; phoneExpanded = false })
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Text(stringResource(R.string.contribution_type_label), fontWeight = FontWeight.Bold, fontSize = 14.sp, color = TextSecondary)
-                Box {
-                    OutlinedTextField(
-                        value = contributionType,
-                        onValueChange = {},
-                        modifier = Modifier.fillMaxWidth().clickable { typeExpanded = true },
-                        readOnly = true,
-                        shape = RoundedCornerShape(10.dp),
-                        trailingIcon = { Icon(Icons.Default.ArrowDropDown, null, Modifier.clickable { typeExpanded = true }) },
-                        colors = OutlinedTextFieldDefaults.colors(
-                            unfocusedContainerColor = BackgroundGray,
-                            focusedContainerColor = BackgroundGray
-                        )
-                    )
-                    DropdownMenu(expanded = typeExpanded, onDismissRequest = { typeExpanded = false }) {
-                        contributionTypes.forEach {
-                            DropdownMenuItem(text = { Text(it) }, onClick = { contributionType = it; typeExpanded = false })
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Text(stringResource(R.string.amount_mk_input_label), fontWeight = FontWeight.Bold, fontSize = 14.sp, color = TextSecondary)
-                OutlinedTextField(
-                    value = amount,
-                    onValueChange = { amount = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(10.dp),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        unfocusedContainerColor = BackgroundGray,
-                        focusedContainerColor = BackgroundGray
-                    )
-                )
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                Button(
-                    onClick = { 
-                        val amtVal = amount.toDoubleOrNull() ?: 0.0
-                        if (amtVal > 0) {
-                            viewModel.makeContribution(
-                                Contribution(
-                                    id = 0, groupId = groupId, userId = 0, userName = "",
-                                    amount = amtVal, type = contributionType.lowercase(),
-                                    timestamp = "", status = "pending", phoneNumber = phoneNumber
-                                )
-                            )
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth().height(52.dp),
-                    shape = RoundedCornerShape(10.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = NavyBlue)
-                ) {
-                    Text(stringResource(R.string.send_button), color = White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
-                }
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
+            Surface(
+                color = GreenLight.copy(alpha = 0.5f),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
                 Text(
-                    stringResource(R.string.receive_pin_msg),
-                    color = TextPrimary,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp,
+                    stringResource(R.string.active_number_notice),
+                    color = GreenAccent,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Medium,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.padding(16.dp)
                 )
             }
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                // Phone Number Field
+                ContributionFormField(label = stringResource(R.string.enter_phone_label)) {
+                    Box {
+                        OutlinedTextField(
+                            value = phoneNumber,
+                            onValueChange = {},
+                            modifier = Modifier.fillMaxWidth().clickable { phoneExpanded = true },
+                            readOnly = true,
+                            shape = RoundedCornerShape(12.dp),
+                            trailingIcon = { 
+                                IconButton(onClick = { phoneExpanded = true }) {
+                                    Icon(Icons.Default.ArrowDropDown, null, tint = NavyBlue)
+                                }
+                            },
+                            colors = contributionFieldColors()
+                        )
+                        DropdownMenu(
+                            expanded = phoneExpanded,
+                            onDismissRequest = { phoneExpanded = false },
+                            modifier = Modifier.background(White).fillMaxWidth(0.8f)
+                        ) {
+                            listOf("+265 882752624", "+265 999782230").forEach {
+                                DropdownMenuItem(
+                                    text = { Text(it, color = TextPrimary) },
+                                    onClick = { phoneNumber = it; phoneExpanded = false }
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Contribution Type Field
+                ContributionFormField(label = stringResource(R.string.contribution_type_label)) {
+                    Box {
+                        OutlinedTextField(
+                            value = contributionType,
+                            onValueChange = {},
+                            modifier = Modifier.fillMaxWidth().clickable { typeExpanded = true },
+                            readOnly = true,
+                            shape = RoundedCornerShape(12.dp),
+                            trailingIcon = { 
+                                IconButton(onClick = { typeExpanded = true }) {
+                                    Icon(Icons.Default.ArrowDropDown, null, tint = NavyBlue)
+                                }
+                            },
+                            colors = contributionFieldColors()
+                        )
+                        DropdownMenu(
+                            expanded = typeExpanded,
+                            onDismissRequest = { typeExpanded = false },
+                            modifier = Modifier.background(White).fillMaxWidth(0.8f)
+                        ) {
+                            contributionTypes.forEach {
+                                DropdownMenuItem(
+                                    text = { Text(it, color = TextPrimary) },
+                                    onClick = { contributionType = it; typeExpanded = false }
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Amount Field
+                ContributionFormField(label = stringResource(R.string.amount_mk_input_label)) {
+                    OutlinedTextField(
+                        value = amount,
+                        onValueChange = { amount = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        colors = contributionFieldColors(),
+                        prefix = { Text("MK ", fontWeight = FontWeight.Bold, color = NavyBlue) },
+                        singleLine = true
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(40.dp))
+
+            Button(
+                onClick = { 
+                    val amtVal = amount.toDoubleOrNull() ?: 0.0
+                    if (amtVal > 0) {
+                        viewModel.makeContribution(
+                            Contribution(
+                                id = 0, groupId = groupId, userId = 0, userName = "",
+                                amount = amtVal, type = contributionType.lowercase(),
+                                timestamp = "", status = "pending", phoneNumber = phoneNumber
+                            )
+                        )
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = NavyBlue),
+                enabled = !uiState.isLoading
+            ) {
+                if (uiState.isLoading) {
+                    CircularProgressIndicator(color = White, modifier = Modifier.size(24.dp))
+                } else {
+                    Text(
+                        stringResource(R.string.send_button),
+                        color = White,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(24.dp))
+            
+            Text(
+                stringResource(R.string.receive_pin_msg),
+                color = TextSecondary,
+                fontWeight = FontWeight.Medium,
+                fontSize = 12.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
         }
     }
 }
+
+@Composable
+fun ContributionFormField(label: String, content: @Composable () -> Unit) {
+    Column {
+        Text(
+            text = label,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Bold,
+            color = NavyBlue
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        content()
+    }
+}
+
+@Composable
+private fun contributionFieldColors() = OutlinedTextFieldDefaults.colors(
+    unfocusedBorderColor = DividerColor,
+    focusedBorderColor = NavyBlue,
+    unfocusedContainerColor = White,
+    focusedContainerColor = White
+)
