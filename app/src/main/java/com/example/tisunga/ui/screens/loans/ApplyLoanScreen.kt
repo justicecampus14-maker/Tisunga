@@ -23,6 +23,7 @@ import androidx.navigation.NavController
 import androidx.compose.ui.res.stringResource
 import com.example.tisunga.R
 import com.example.tisunga.data.model.Loan
+import com.example.tisunga.ui.components.SuccessDialog
 import com.example.tisunga.ui.theme.*
 import com.example.tisunga.viewmodel.LoanViewModel
 
@@ -49,61 +50,15 @@ fun ApplyLoanScreen(navController: NavController, groupId: Int, viewModel: LoanV
     }
 
     if (showSuccessDialog) {
-        Dialog(onDismissRequest = { }) {
-            Card(
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                modifier = Modifier.padding(16.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(72.dp)
-                            .background(Color(0xFFE8F5E9), CircleShape),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.CheckCircle,
-                            contentDescription = null,
-                            tint = Color(0xFF4CAF50),
-                            modifier = Modifier.size(48.dp)
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(20.dp))
-                    Text(
-                        text = "Loan Applied Successfully",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        textAlign = TextAlign.Center,
-                        color = TextPrimary
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Text(
-                        text = "Your loan request has been submitted and is awaiting approval from the group officials.",
-                        fontSize = 14.sp,
-                        color = TextSecondary,
-                        textAlign = TextAlign.Center,
-                        lineHeight = 20.sp
-                    )
-                    Spacer(modifier = Modifier.height(24.dp))
-                    Button(
-                        onClick = {
-                            showSuccessDialog = false
-                            viewModel.resetState()
-                            navController.popBackStack()
-                        },
-                        modifier = Modifier.fillMaxWidth().height(50.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = NavyBlue)
-                    ) {
-                        Text("Continue", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                    }
-                }
+        SuccessDialog(
+            title = "Loan Applied Successfully",
+            message = "Your loan request has been submitted and is awaiting approval from the group officials.",
+            onContinue = {
+                showSuccessDialog = false
+                viewModel.resetState()
+                navController.popBackStack()
             }
-        }
+        )
     }
 
     Column(
