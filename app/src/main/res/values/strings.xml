@@ -252,9 +252,8 @@
     <string name="enter_phone_label">Enter Phone_Number</string>
     <string name="group_name_label_simple">Group Name</string>
     <string name="contribution_type_label">Contribution Type</string>
-    <string name="contribution_type_save">Save</string>
-    <string name="contribution_type_special">Special</string>
-    <string name="contribution_type_event">Event Contribution</string>
+    <string name="contribution_type_savings">Savings</string>
+    <string name="social_welfare">Social Welfare</string>
     <string name="amount_mk_input_label">Amount (MK)</string>
     <string name="receive_pin_msg">You will receive a massage to enter your pin on your phone</string>
 
