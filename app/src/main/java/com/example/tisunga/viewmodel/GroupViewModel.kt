@@ -15,8 +15,8 @@ import kotlinx.coroutines.launch
 
 data class GroupUiState(
     val isLoading: Boolean = false,
-    val groups: List<Group> = emptyList(),
     val allGroups: List<Group> = emptyList(),
+    val myGroups: List<Group> = emptyList(),
     val selectedGroup: Group? = null,
     val pendingGroup: Group? = null,
     val members: List<User> = emptyList(),
@@ -43,23 +43,15 @@ class GroupViewModel(private val sessionManager: SessionManager) : ViewModel() {
             _uiState.value = _uiState.value.copy(isLoading = true)
             try {
                 val groups = apiService.getMyGroups()
-                _uiState.value = _uiState.value.copy(isLoading = false, groups = groups)
+                _uiState.value = _uiState.value.copy(isLoading = false, myGroups = groups)
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(isLoading = false, groups = MockDataProvider.getMockGroups())
+                _uiState.value = _uiState.value.copy(isLoading = false, myGroups = MockDataProvider.getMockGroups())
             }
         }
     }
 
     fun getAllGroups() {
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true)
-            try {
-                val groups = apiService.getAllGroups()
-                _uiState.value = _uiState.value.copy(isLoading = false, allGroups = groups)
-            } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(isLoading = false, allGroups = MockDataProvider.getMockGroups())
-            }
-        }
+        // Function removed as DiscoverGroupScreen is deleted
     }
 
     fun createGroup(group: Group) {

@@ -27,11 +27,19 @@ import com.example.tisunga.viewmodel.GroupViewModel
 
 @Composable
 fun CreateGroupStep1Screen(navController: NavController, viewModel: GroupViewModel) {
+    val uiState by viewModel.uiState.collectAsState()
     var groupName by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var savingPeriod by remember { mutableStateOf("6") }
     
     var periodExpanded by remember { mutableStateOf(false) }
+
+    LaunchedEffect(uiState.isSuccess) {
+        if (uiState.isSuccess) {
+            navController.navigate(Routes.ADD_MEMBERS.replace("{groupId}", (uiState.selectedGroup?.id ?: 0).toString()))
+            viewModel.resetState()
+        }
+    }
 
     Scaffold(
         containerColor = BackgroundGray,
@@ -44,37 +52,41 @@ fun CreateGroupStep1Screen(navController: NavController, viewModel: GroupViewMod
                 Button(
                     onClick = {
                         if (groupName.isNotEmpty()) {
-                            viewModel.updatePendingGroup(
+                            viewModel.createGroup(
                                 Group(
                                     id = 0,
                                     name = groupName,
                                     description = description,
                                     savingPeriod = savingPeriod.toIntOrNull() ?: 6,
-                                    location = "", // To be filled/merged if needed
+                                    location = "Not specified",
                                     minContribution = 2000.0,
-                                    maxMembers = 0,
+                                    maxMembers = 15,
                                     visibility = "Public",
                                     startDate = "",
                                     endDate = "",
-                                    meetingDay = "",
-                                    meetingTime = ""
+                                    meetingDay = "Not specified",
+                                    meetingTime = "Not specified"
                                 )
                             )
-                            navController.navigate(Routes.CREATE_GROUP_STEP2)
                         }
                     },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(52.dp),
                     shape = RoundedCornerShape(10.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = NavyBlue)
+                    colors = ButtonDefaults.buttonColors(containerColor = NavyBlue),
+                    enabled = !uiState.isLoading
                 ) {
-                    Text(
-                        stringResource(R.string.continue_button),
-                        color = White,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
+                    if (uiState.isLoading) {
+                        CircularProgressIndicator(color = White, modifier = Modifier.size(24.dp))
+                    } else {
+                        Text(
+                            "Create Group",
+                            color = White,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
                 }
             }
         }

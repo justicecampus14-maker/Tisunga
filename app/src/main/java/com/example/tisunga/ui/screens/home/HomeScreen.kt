@@ -118,6 +118,20 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel) {
                 )
 
                 NavigationDrawerItem(
+                    icon = { Icon(Icons.Default.Group, contentDescription = null) },
+                    label = { Text("Group Members") },
+                    selected = false,
+                    onClick = {
+                        uiState.myGroups.firstOrNull()?.let { group ->
+                            navController.navigate(Routes.GROUP_MEMBERS.replace("{groupId}", group.id.toString()))
+                        }
+                        scope.launch { drawerState.close() }
+                    },
+                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
+                    colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
+                )
+
+                NavigationDrawerItem(
                     icon = { Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null, tint = RedAccent) },
                     label = { Text("Logout", color = RedAccent) },
                     selected = false,
@@ -422,41 +436,63 @@ private fun QuickActionsSection(navController: NavController, group: Group?) {
             modifier=Modifier.fillMaxWidth(),
             horizontalArrangement=Arrangement.spacedBy(8.dp)
         ) {
+            // First button: Create Group or Save
+            if (!hasGroups) {
+                QuickActionCard(
+                    icon = Icons.Filled.GroupAdd,
+                    label = stringResource(R.string.create_group_label),
+                    modifier = Modifier.weight(1f),
+                    onClick = {
+                        navController.navigate(Routes.CREATE_GROUP_STEP1)
+                    }
+                )
+            } else {
+                QuickActionCard(
+                    icon = Icons.Filled.AccountBalanceWallet,
+                    label = stringResource(R.string.save_label),
+                    modifier = Modifier.weight(1f),
+                    onClick = {
+                        navController.navigate(Routes.MAKE_CONTRIBUTION.replace("{groupId}", group?.id.toString()))
+                    }
+                )
+            }
+
+            // Second button: Contributions (Disabled if no group)
             QuickActionCard(
-                icon = Icons.Filled.GroupAdd,
-                label = stringResource(R.string.create_group_label),
-                modifier = Modifier.weight(1f),
-                enabled = !hasGroups,
-                onClick = {
-                    navController.navigate(Routes.CREATE_GROUP_STEP1)
-                }
-            )
-            QuickActionCard(
-                icon = Icons.Filled.AccountBalanceWallet,
-                label = stringResource(R.string.save_label),
+                icon = Icons.Filled.Payments,
+                label = stringResource(R.string.contributions_label),
                 modifier = Modifier.weight(1f),
                 enabled = hasGroups,
                 onClick = {
-                    navController.navigate(Routes.MAKE_CONTRIBUTION.replace("{groupId}", group?.id.toString()))
+                    if (hasGroups) {
+                        navController.navigate(Routes.CONTRIBUTION_HISTORY.replace("{groupId}", group?.id.toString()))
+                    }
                 }
             )
+
+            // Third button: Events (Disabled if no group)
             QuickActionCard(
                 icon = Icons.Filled.Event,
                 label = stringResource(R.string.events_label),
                 modifier = Modifier.weight(1f),
                 enabled = hasGroups,
                 onClick = {
-                    // Navigate to events
-                    navController.navigate(Routes.EVENTS.replace("{groupId}", group?.id.toString()))
+                    if (hasGroups) {
+                        navController.navigate(Routes.EVENTS.replace("{groupId}", group?.id.toString()))
+                    }
                 }
             )
+
+            // Fourth button: Loans (Disabled if no group)
             QuickActionCard(
                 icon = Icons.Filled.SwapHoriz,
                 label = stringResource(R.string.view_loans_label),
                 modifier = Modifier.weight(1f),
                 enabled = hasGroups,
                 onClick = {
-                    navController.navigate(Routes.ALL_LOANS)
+                    if (hasGroups) {
+                        navController.navigate(Routes.ALL_LOANS)
+                    }
                 }
             )
         }
