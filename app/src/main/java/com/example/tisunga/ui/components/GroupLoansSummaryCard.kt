@@ -1,11 +1,11 @@
 package com.example.tisunga.ui.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -23,37 +23,37 @@ fun GroupLoansSummaryCard() {
         border = androidx.compose.foundation.BorderStroke(1.dp, DividerColor)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text("Total Rendered", fontSize = 14.sp, color = TextPrimary, fontWeight = FontWeight.Medium)
+            Text("Total Rendered", fontSize = 12.sp, color = TextSecondary, fontWeight = FontWeight.Medium)
             Spacer(modifier = Modifier.height(4.dp))
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(8.dp),
-                border = androidx.compose.foundation.BorderStroke(1.dp, Color.LightGray),
-                color = BackgroundGray
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(BackgroundGray, RoundedCornerShape(10.dp))
+                    .padding(horizontal = 16.dp, vertical = 12.dp)
             ) {
                 Text(
-                    text = stringResource(R.string.amount_mk, "1,200,000"),
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.SemiBold
+                    text = "MK 1,200,000",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = NavyBlue
                 )
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-            Text("Total payable", fontSize = 14.sp, color = TextPrimary, fontWeight = FontWeight.Medium)
+            Text("Total payable", fontSize = 12.sp, color = TextSecondary, fontWeight = FontWeight.Medium)
             Spacer(modifier = Modifier.height(4.dp))
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(8.dp),
-                border = androidx.compose.foundation.BorderStroke(1.dp, Color.LightGray),
-                color = BackgroundGray
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(BackgroundGray, RoundedCornerShape(10.dp))
+                    .padding(horizontal = 16.dp, vertical = 12.dp)
             ) {
                 Text(
-                    text = stringResource(R.string.amount_mk, "1,260,000"),
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.SemiBold
+                    text = "MK 1,260,000",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = GreenAccent
                 )
             }
         }

@@ -28,15 +28,13 @@ import com.example.tisunga.viewmodel.SavingsViewModel
 fun MakeContributionScreen(navController: NavController, groupId: Int, viewModel: SavingsViewModel) {
     val uiState by viewModel.uiState.collectAsState()
     var phoneNumber by remember { mutableStateOf("+265 882752624") }
-    var groupName by remember { mutableStateOf("Mphatso Group") }
-    val contributionTypeSave = stringResource(R.string.contribution_type_save)
-    val contributionTypeSpecial = stringResource(R.string.contribution_type_special)
-    val contributionTypeEvent = stringResource(R.string.contribution_type_event)
-    var contributionType by remember { mutableStateOf(contributionTypeSave) }
+    
+    val contributionTypeSavings = stringResource(R.string.contribution_type_savings)
+    val contributionTypeSocial = stringResource(R.string.social_welfare)
+    var contributionType by remember { mutableStateOf(contributionTypeSavings) }
     var amount by remember { mutableStateOf("2000") }
 
     var phoneExpanded by remember { mutableStateOf(false) }
-    var groupExpanded by remember { mutableStateOf(false) }
     var typeExpanded by remember { mutableStateOf(false) }
 
     LaunchedEffect(uiState.isSuccess) {
@@ -102,29 +100,6 @@ fun MakeContributionScreen(navController: NavController, groupId: Int, viewModel
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Text(stringResource(R.string.group_name_label_simple), fontWeight = FontWeight.Bold, fontSize = 14.sp, color = TextSecondary)
-                Box {
-                    OutlinedTextField(
-                        value = groupName,
-                        onValueChange = {},
-                        modifier = Modifier.fillMaxWidth().clickable { groupExpanded = true },
-                        readOnly = true,
-                        shape = RoundedCornerShape(10.dp),
-                        trailingIcon = { Icon(Icons.Default.ArrowDropDown, null, Modifier.clickable { groupExpanded = true }) },
-                        colors = OutlinedTextFieldDefaults.colors(
-                            unfocusedContainerColor = BackgroundGray,
-                            focusedContainerColor = BackgroundGray
-                        )
-                    )
-                    DropdownMenu(expanded = groupExpanded, onDismissRequest = { groupExpanded = false }) {
-                        listOf("Mphatso Group", "Doman Group").forEach {
-                            DropdownMenuItem(text = { Text(it) }, onClick = { groupName = it; groupExpanded = false })
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
                 Text(stringResource(R.string.contribution_type_label), fontWeight = FontWeight.Bold, fontSize = 14.sp, color = TextSecondary)
                 Box {
                     OutlinedTextField(
@@ -140,7 +115,7 @@ fun MakeContributionScreen(navController: NavController, groupId: Int, viewModel
                         )
                     )
                     DropdownMenu(expanded = typeExpanded, onDismissRequest = { typeExpanded = false }) {
-                        listOf(contributionTypeSave, contributionTypeSpecial, contributionTypeEvent).forEach {
+                        listOf(contributionTypeSavings, contributionTypeSocial).forEach {
                             DropdownMenuItem(text = { Text(it) }, onClick = { contributionType = it; typeExpanded = false })
                         }
                     }

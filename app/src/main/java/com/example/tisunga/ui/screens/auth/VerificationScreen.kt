@@ -61,7 +61,7 @@ fun VerificationScreen(navController: NavController, viewModel: AuthViewModel) {
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            repeat(4) { index ->
+            repeat(6) { index ->
                 val digit = otpCode.getOrNull(index)?.toString() ?: ""
                 Card(
                     modifier = Modifier
@@ -83,7 +83,7 @@ fun VerificationScreen(navController: NavController, viewModel: AuthViewModel) {
         // Hidden TextField to capture input
         TextField(
             value = otpCode,
-            onValueChange = { if (it.length <= 4) otpCode = it },
+            onValueChange = { if (it.length <= 6) otpCode = it },
             modifier = Modifier.size(0.dp),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
         )

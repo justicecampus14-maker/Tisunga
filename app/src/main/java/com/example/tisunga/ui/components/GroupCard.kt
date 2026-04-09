@@ -1,6 +1,7 @@
 package com.example.tisunga.ui.components
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -38,8 +39,41 @@ fun GroupCard(group: Group, onClick: () -> Unit, onSaveNowClick: () -> Unit) {
                 Spacer(modifier = Modifier.width(12.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(group.name, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = TextPrimary)
-                    Text("Group savings : ${FormatUtils.formatMoney(group.totalSavings)}", fontSize = 12.sp, color = TextSecondary)
-                    Text("My Savings: ${FormatUtils.formatMoney(group.mySavings)}", fontSize = 12.sp, color = TextSecondary)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Column {
+                            Text("Total Savings", fontSize = 10.sp, color = TextSecondary)
+                            Box(
+                                modifier = Modifier
+                                    .background(BackgroundGray, RoundedCornerShape(8.dp))
+                                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                            ) {
+                                Text(
+                                    FormatUtils.formatMoney(group.totalSavings),
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = NavyBlue
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column {
+                            Text("My Savings", fontSize = 10.sp, color = TextSecondary)
+                            Box(
+                                modifier = Modifier
+                                    .background(BackgroundGray, RoundedCornerShape(8.dp))
+                                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                            ) {
+                                Text(
+                                    FormatUtils.formatMoney(group.mySavings),
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = GreenAccent
+                                )
+                            }
+                        }
+                    }
                 }
                 Surface(
                     shape = RoundedCornerShape(20.dp),
