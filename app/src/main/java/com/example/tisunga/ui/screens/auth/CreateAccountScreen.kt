@@ -3,15 +3,20 @@ package com.example.tisunga.ui.screens.auth
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -30,6 +35,16 @@ fun CreateAccountScreen(navController: NavController, viewModel: AuthViewModel) 
     var middleName by remember { mutableStateOf("") }
     var lastName by remember { mutableStateOf("") }
     var showError by remember { mutableStateOf(false) }
+    val focusManager = LocalFocusManager.current
+
+    val onContinue = {
+        if (phone.isNotEmpty() && firstName.isNotEmpty() && lastName.isNotEmpty()) {
+            viewModel.register(firstName, middleName, lastName, phone)
+            navController.navigate(Routes.VERIFICATION)
+        } else {
+            showError = true
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -38,9 +53,26 @@ fun CreateAccountScreen(navController: NavController, viewModel: AuthViewModel) 
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Spacer(modifier = Modifier.height(40.dp))
-        Text(text = stringResource(R.string.create_account_title), fontSize = 28.sp, fontWeight = FontWeight.Bold, color = NavyBlue)
-        Text(text = stringResource(R.string.create_account_subtitle), fontSize = 14.sp, color = TextSecondary)
+        Spacer(modifier = Modifier.height(16.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = { navController.popBackStack() }) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = stringResource(R.string.back_desc),
+                    tint = NavyBlue
+                )
+            }
+            Text(
+                text = stringResource(R.string.create_account_title),
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                color = NavyBlue
+            )
+        }
+
         
         Spacer(modifier = Modifier.height(32.dp))
         
@@ -68,7 +100,13 @@ fun CreateAccountScreen(navController: NavController, viewModel: AuthViewModel) 
                         unfocusedContainerColor = BackgroundGray,
                         focusedContainerColor = BackgroundGray
                     ),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Phone,
+                        imeAction = ImeAction.Next
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onNext = { focusManager.moveFocus(FocusDirection.Down) }
+                    )
                 )
                 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -85,6 +123,10 @@ fun CreateAccountScreen(navController: NavController, viewModel: AuthViewModel) 
                         focusedBorderColor = NavyBlue,
                         unfocusedContainerColor = BackgroundGray,
                         focusedContainerColor = BackgroundGray
+                    ),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                    keyboardActions = KeyboardActions(
+                        onNext = { focusManager.moveFocus(FocusDirection.Down) }
                     )
                 )
                 
@@ -102,6 +144,10 @@ fun CreateAccountScreen(navController: NavController, viewModel: AuthViewModel) 
                         focusedBorderColor = NavyBlue,
                         unfocusedContainerColor = BackgroundGray,
                         focusedContainerColor = BackgroundGray
+                    ),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                    keyboardActions = KeyboardActions(
+                        onNext = { focusManager.moveFocus(FocusDirection.Down) }
                     )
                 )
                 
@@ -119,6 +165,10 @@ fun CreateAccountScreen(navController: NavController, viewModel: AuthViewModel) 
                         focusedBorderColor = NavyBlue,
                         unfocusedContainerColor = BackgroundGray,
                         focusedContainerColor = BackgroundGray
+                    ),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(
+                        onDone = { onContinue() }
                     )
                 )
                 
@@ -134,14 +184,7 @@ fun CreateAccountScreen(navController: NavController, viewModel: AuthViewModel) 
                 Spacer(modifier = Modifier.height(24.dp))
                 
                 Button(
-                    onClick = { 
-                        if (phone.isNotEmpty() && firstName.isNotEmpty() && lastName.isNotEmpty()) {
-                            viewModel.register(firstName, middleName, lastName, phone)
-                            navController.navigate(Routes.VERIFICATION)
-                        } else {
-                            showError = true
-                        }
-                    },
+                    onClick = onContinue,
                     modifier = Modifier.fillMaxWidth().height(52.dp),
                     shape = RoundedCornerShape(10.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = NavyBlue)

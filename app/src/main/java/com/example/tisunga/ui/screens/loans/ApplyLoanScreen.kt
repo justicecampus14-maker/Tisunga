@@ -111,18 +111,40 @@ fun ApplyLoanScreen(navController: NavController, groupId: Int, viewModel: LoanV
                 )
 
                 if (amount.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Card(modifier = Modifier.weight(1f), colors = CardDefaults.cardColors(containerColor = BackgroundGray)) {
-                            Column(modifier = Modifier.padding(8.dp)) {
-                                Text(stringResource(R.string.interest_label), fontSize = 12.sp, color = TextSecondary)
-                                Text(stringResource(R.string.amount_mk, uiState.calculatedInterest), fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                        Column {
+                            Text(stringResource(R.string.interest_label), fontSize = 12.sp, color = TextSecondary, fontWeight = FontWeight.Medium)
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(BackgroundGray, RoundedCornerShape(10.dp))
+                                    .padding(horizontal = 16.dp, vertical = 12.dp)
+                            ) {
+                                Text(
+                                    text = "MK ${uiState.calculatedInterest}",
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = NavyBlue
+                                )
                             }
                         }
-                        Card(modifier = Modifier.weight(1f), colors = CardDefaults.cardColors(containerColor = BackgroundGray)) {
-                            Column(modifier = Modifier.padding(8.dp)) {
-                                Text(stringResource(R.string.total_repayable_label), fontSize = 12.sp, color = TextSecondary)
-                                Text(stringResource(R.string.amount_mk, uiState.calculatedRepayable), fontWeight = FontWeight.Bold)
+                        Column {
+                            Text(stringResource(R.string.total_repayable_label), fontSize = 12.sp, color = TextSecondary, fontWeight = FontWeight.Medium)
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(BackgroundGray, RoundedCornerShape(10.dp))
+                                    .padding(horizontal = 16.dp, vertical = 12.dp)
+                            ) {
+                                Text(
+                                    text = "MK ${uiState.calculatedRepayable}",
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = GreenAccent
+                                )
                             }
                         }
                     }

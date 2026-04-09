@@ -322,40 +322,40 @@ fun MyLoanCard(loan: Loan, onClear: () -> Unit) {
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             // Amount Section
-            Text("Amount", fontSize = 14.sp, color = TextPrimary, fontWeight = FontWeight.Medium)
+            Text("Amount", fontSize = 12.sp, color = TextSecondary, fontWeight = FontWeight.Medium)
             Spacer(modifier = Modifier.height(4.dp))
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(8.dp),
-                border = BorderStroke(1.dp, Color.LightGray),
-                color = BackgroundGray
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(BackgroundGray, RoundedCornerShape(10.dp))
+                    .padding(horizontal = 16.dp, vertical = 12.dp)
             ) {
                 Text(
                     text = "MK ${String.format("%,.0f", loan.amount)}",
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.SemiBold
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = NavyBlue
                 )
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             // Repayable & Interest Section
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("Repayable", fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                    Text("Repayable", fontSize = 12.sp, color = TextSecondary, fontWeight = FontWeight.Medium)
                     Spacer(modifier = Modifier.height(4.dp))
-                    Surface(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(8.dp),
-                        border = BorderStroke(1.dp, Color.LightGray),
-                        color = BackgroundGray
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(BackgroundGray, RoundedCornerShape(10.dp))
+                            .padding(horizontal = 16.dp, vertical = 12.dp)
                     ) {
                         Text(
                             text = "MK ${String.format("%,.0f", loan.repayableAmount)}",
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.SemiBold
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = GreenAccent
                         )
                     }
                 }
@@ -459,23 +459,23 @@ fun GroupLoanCard(
                 Spacer(modifier = Modifier.height(12.dp))
 
                 // Amount Section
-                Text("Amount", fontSize = 14.sp, color = TextPrimary, fontWeight = FontWeight.Medium)
+                Text("Amount", fontSize = 12.sp, color = TextSecondary, fontWeight = FontWeight.Medium)
                 Spacer(modifier = Modifier.height(4.dp))
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(8.dp),
-                    border = BorderStroke(1.dp, Color.LightGray),
-                    color = BackgroundGray
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(BackgroundGray, RoundedCornerShape(10.dp))
+                        .padding(horizontal = 16.dp, vertical = 12.dp)
                 ) {
                     Text(
                         text = "MK ${String.format("%,.0f", loan.amount)}",
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = NavyBlue
                     )
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
                 if (loan.status.lowercase() == "pending") {
                     // Pending Style (Requests)
@@ -502,19 +502,19 @@ fun GroupLoanCard(
                     // Repayable & Interest Section
                     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("Repayable", fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                            Text("Repayable", fontSize = 12.sp, color = TextSecondary, fontWeight = FontWeight.Medium)
                             Spacer(modifier = Modifier.height(4.dp))
-                            Surface(
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(8.dp),
-                                border = BorderStroke(1.dp, Color.LightGray),
-                                color = BackgroundGray
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(BackgroundGray, RoundedCornerShape(10.dp))
+                                    .padding(horizontal = 16.dp, vertical = 12.dp)
                             ) {
                                 Text(
                                     text = "MK ${String.format("%,.0f", loan.repayableAmount)}",
-                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                                    fontSize = 16.sp,
-                                    fontWeight = FontWeight.SemiBold
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = GreenAccent
                                 )
                             }
                         }
