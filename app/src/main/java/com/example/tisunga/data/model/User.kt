@@ -6,5 +6,9 @@ data class User(
     val middleName: String? = null,
     val lastName: String,
     val phone: String,
-    val role: String = "member"
+    val nationalId: String? = null,
+    val role: String = "member",
+    val avatarUrl: String? = null,
+    val isVerified: Boolean = false,
+    val createdAt: String? = null
 )

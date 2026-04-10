@@ -2,6 +2,7 @@ package com.example.tisunga.data.remote
 
 import com.example.tisunga.data.model.*
 import com.example.tisunga.data.remote.dto.*
+import okhttp3.MultipartBody
 import retrofit2.http.*
 
 interface ApiService {
@@ -20,6 +21,17 @@ interface ApiService {
 
     @POST("auth/create-password")
     suspend fun createPassword(@Body body: Map<String, String>): LoginResponse
+
+    // USERS
+    @GET("users/me")
+    suspend fun getMyProfile(): User
+
+    @PATCH("users/me")
+    suspend fun updateProfile(@Body body: Map<String, String?>): User
+
+    @Multipart
+    @PATCH("users/me/avatar")
+    suspend fun uploadAvatar(@Part avatar: MultipartBody.Part): User
 
     // GROUPS
     @GET("groups/my")

@@ -10,6 +10,7 @@ object MockDataProvider {
         middleName = "Enock",
         lastName = "Phiri",
         phone = "0882752624",
+        nationalId = null, // Set to null to test profile completion prompt
         role = "chairperson"
     )
 

@@ -16,6 +16,10 @@ class SessionManager(context: Context) {
         const val USER_PHONE = "user_phone"
         const val USER_ROLE = "user_role"
         const val GROUP_ROLES = "group_roles"
+        const val FIRST_NAME = "first_name"
+        const val LAST_NAME = "last_name"
+        const val MIDDLE_NAME = "middle_name"
+        const val NATIONAL_ID = "national_id"
     }
 
     fun saveAuthToken(token: String) {
@@ -35,9 +39,39 @@ class SessionManager(context: Context) {
         }.apply()
     }
 
+    fun saveFullUserData(
+        userId: Int,
+        firstName: String,
+        lastName: String,
+        middleName: String?,
+        phone: String,
+        role: String,
+        nationalId: String? = null
+    ) {
+        val editor = prefs.edit()
+        editor.putInt(USER_ID, userId)
+        editor.putString(FIRST_NAME, firstName)
+        editor.putString(LAST_NAME, lastName)
+        editor.putString(MIDDLE_NAME, middleName)
+        editor.putString(USER_NAME, "$firstName $lastName")
+        editor.putString(USER_PHONE, phone)
+        editor.putString(USER_ROLE, role)
+        
+        if (nationalId != null && nationalId.isNotBlank()) {
+            editor.putString(NATIONAL_ID, nationalId)
+        } else {
+            editor.remove(NATIONAL_ID)
+        }
+        editor.apply()
+    }
+
     fun getUserName(): String = prefs.getString(USER_NAME, "") ?: ""
     fun getUserPhone(): String = prefs.getString(USER_PHONE, "") ?: ""
     fun getUserRole(): String = prefs.getString(USER_ROLE, "member") ?: "member"
+    fun getFirstName(): String = prefs.getString(FIRST_NAME, "") ?: ""
+    fun getLastName(): String = prefs.getString(LAST_NAME, "") ?: ""
+    fun getMiddleName(): String? = prefs.getString(MIDDLE_NAME, null)
+    fun getNationalId(): String? = prefs.getString(NATIONAL_ID, null)
 
     fun saveGroupRoles(roles: Map<Int, String>) {
         val json = gson.toJson(roles)

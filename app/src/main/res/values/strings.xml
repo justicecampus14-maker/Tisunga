@@ -10,11 +10,13 @@
     <string name="forgot_password_link">Forgot your password?</string>
     <string name="no_account_text">Don\'t have an account? </string>
     <string name="signup_link">Sign up</string>
+    <string name="blocks_title">Create Account</string>
     <string name="create_account_title">Create Account</string>
     <string name="create_account_subtitle">Join us today and get started</string>
     <string name="first_name_label">First Name</string>
     <string name="middle_name_label">Middle Name (Optional)</string>
     <string name="last_name_label">Last Name</string>
+    <string name="national_id_label">National ID</string>
     <string name="error_fill_all_fields">Please fill all required fields</string>
     <string name="continue_button">Continue</string>
     <string name="already_have_account_text">Already have an account? </string>
@@ -82,7 +84,7 @@
     <string name="description_hint">Mphatso group is a group that saves a minimum of k2000 each week .......</string>
     <string name="location_label">Location*</string>
     <string name="location_hint">e.g Zomba, Chikanda</string>
-    <string name="min_contribution_label">Minimum Contribution* (MK 2,000)</string>
+    <string name="min_contribution_label">Min Contribution*</string>
     <string name="saving_period_label">Saving Period* (Months)</string>
     <string name="max_members_label">Max Members</string>
     <string name="visibility_label">Vissibility</string>
@@ -274,4 +276,13 @@
 
     <!-- Notifications Screen -->
     <string name="notifications_title">Notification</string>
+
+    <!-- Profile Screen -->
+    <string name="my_profile_title">My Profile</string>
+    <string name="save_changes_button">Save Changes</string>
+    <string name="profile_updated_msg">Profile updated successfully</string>
+    <string name="avatar_updated_msg">Avatar updated successfully</string>
+    <string name="complete_profile_dialog_title">Complete Your Profile</string>
+    <string name="complete_profile_dialog_msg">Welcome to Tisunga! Please complete your profile details (including National ID) to start using all features of the app.</string>
+    <string name="go_to_profile_button">Go to Profile</string>
 </resources>

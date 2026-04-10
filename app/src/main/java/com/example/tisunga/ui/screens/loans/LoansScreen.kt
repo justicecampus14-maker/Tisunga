@@ -4,11 +4,9 @@ import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -17,18 +15,22 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import com.example.tisunga.data.model.Loan
+import com.example.tisunga.ui.components.BottomNavBar
 import com.example.tisunga.ui.components.GroupLoansSummaryCard
+import com.example.tisunga.ui.components.SecondaryTopBar
 import com.example.tisunga.ui.components.SuccessDialog
 import com.example.tisunga.ui.components.TisungaConfirmDialog
 import com.example.tisunga.ui.navigation.Routes
 import com.example.tisunga.ui.theme.*
 import com.example.tisunga.viewmodel.LoanViewModel
 import com.example.tisunga.viewmodel.HomeViewModel
+import java.util.Locale
 
 @Composable
 fun AllLoansScreen(navController: NavController, viewModel: LoanViewModel, homeViewModel: HomeViewModel, groupId: Int? = null) {
@@ -36,7 +38,7 @@ fun AllLoansScreen(navController: NavController, viewModel: LoanViewModel, homeV
     val homeUiState by homeViewModel.uiState.collectAsState()
     
     val filterActive = "Active"
-    val filterPending = "Request"
+    val filterPending = "Requests"
     val filterHistory = "History"
 
     var selectedTab by remember { mutableStateOf(filterActive) }
@@ -44,7 +46,7 @@ fun AllLoansScreen(navController: NavController, viewModel: LoanViewModel, homeV
     // Dialog States
     var showRepayDialog by remember { mutableStateOf(false) }
     var showConfirmActionDialog by remember { mutableStateOf(false) }
-    var confirmActionType by remember { mutableStateOf("") } // "Approve", "Reject", "Clear"
+    var confirmActionType by remember { mutableStateOf("") } 
     var selectedLoanForAction by remember { mutableStateOf<Loan?>(null) }
     var showSuccessDialog by remember { mutableStateOf(false) }
 
@@ -56,9 +58,9 @@ fun AllLoansScreen(navController: NavController, viewModel: LoanViewModel, homeV
             else -> ""
         }
         val message = when (confirmActionType) {
-            "Approve" -> "Are you sure you want to approve this loan request for MK ${String.format("%,.0f", selectedLoanForAction!!.amount)}?"
-            "Reject" -> "Are you sure you want to reject this loan request for MK ${String.format("%,.0f", selectedLoanForAction!!.amount)}?"
-            "Clear" -> "Are you sure you want to clear the remaining balance of MK ${String.format("%,.0f", selectedLoanForAction!!.remainingAmount)} for this loan?"
+            "Approve" -> "Are you sure you want to approve this loan request for MK ${String.format(Locale.US, "%,.0f", selectedLoanForAction!!.amount)}?"
+            "Reject" -> "Are you sure you want to reject this loan request for MK ${String.format(Locale.US, "%,.0f", selectedLoanForAction!!.amount)}?"
+            "Clear" -> "Are you sure you want to clear the remaining balance of MK ${String.format(Locale.US, "%,.0f", selectedLoanForAction!!.remainingAmount)} for this loan?"
             else -> ""
         }
         val confirmText = when (confirmActionType) {
@@ -118,7 +120,7 @@ fun AllLoansScreen(navController: NavController, viewModel: LoanViewModel, homeV
     } else {
         homeUiState.myGroups.firstOrNull()
     }
-    val myLoan = uiState.myLoans.firstOrNull { it.status == "active" }
+    val myLoan = uiState.myLoans.firstOrNull { it.status.lowercase() == "active" }
     
     val filteredGroupLoans = when (selectedTab) {
         filterActive -> uiState.groupLoans.filter { it.status.lowercase() == "active" }
@@ -133,107 +135,91 @@ fun AllLoansScreen(navController: NavController, viewModel: LoanViewModel, homeV
     }
 
     Scaffold(
+        topBar = {
+            SecondaryTopBar(
+                title = "Loans",
+                onBackClick = { navController.popBackStack() }
+            )
+        },
         containerColor = BackgroundGray,
-        bottomBar = {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Button(
-                    onClick = { navController.navigate(Routes.APPLY_LOAN.replace("{groupId}", currentGroup?.id.toString())) },
-                    modifier = Modifier
-                        .fillMaxWidth(0.8f)
-                        .height(50.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = NavyBlue)
-                ) {
-                    Text("Apply Loan", color = White, fontWeight = FontWeight.Bold)
-                }
-            }
-        }
+        bottomBar = { BottomNavBar(navController, type = "C") }
     ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
+                .padding(16.dp)
         ) {
-            // Top Profile Header
-            HeaderSection(homeUiState.userName, homeUiState.userPhone, navController)
+            Text(
+                text = currentGroup?.name ?: "No Group Selected",
+                fontSize = 14.sp,
+                color = TextSecondary,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier.padding(bottom = 16.dp, start = 4.dp)
+            )
 
-            // Screen Title & Group Name
-            Row(
+            GroupLoansSummaryCard()
+            
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Button(
+                onClick = { navController.navigate(Routes.APPLY_LOAN.replace("{groupId}", currentGroup?.id.toString())) },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
+                    .height(56.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = NavyBlue)
             ) {
-                Surface(
-                    modifier = Modifier.size(36.dp),
-                    shape = RoundedCornerShape(8.dp),
-                    color = Color.LightGray.copy(0.3f)
-                ) {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, null, modifier = Modifier.size(20.dp))
-                    }
-                }
-                Spacer(modifier = Modifier.width(12.dp))
-                Column {
-                    Text("Loans", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
-                    Text(currentGroup?.name ?: "Doman Group", fontSize = 13.sp, color = TextSecondary)
-                }
+                Text("Apply for a Loan", color = White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
             }
 
-            // Summary and My Loan Section
-            Column(modifier = Modifier.padding(16.dp)) {
-                GroupLoansSummaryCard()
-                
-                Spacer(modifier = Modifier.height(20.dp))
-                
-                Text("My Loan", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
-                Spacer(modifier = Modifier.height(12.dp))
-                if (myLoan != null) {
-                    MyLoanCard(myLoan) {
-                        selectedLoanForAction = myLoan
-                        showRepayDialog = true
-                    }
+            Spacer(modifier = Modifier.height(24.dp))
+            
+            if (myLoan != null) {
+                Text(
+                    "My Active Loan", 
+                    fontSize = 16.sp, 
+                    fontWeight = FontWeight.Bold, 
+                    color = NavyBlue,
+                    modifier = Modifier.padding(start = 4.dp, bottom = 12.dp)
+                )
+                MyLoanCard(myLoan) {
+                    selectedLoanForAction = myLoan
+                    showRepayDialog = true
                 }
+                Spacer(modifier = Modifier.height(24.dp))
             }
 
-            // Group Loans Section
-            Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text("Members Loans", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
-                    Text(
-                        "Requests", 
-                        fontSize = 14.sp, 
-                        fontWeight = FontWeight.Bold, 
-                        color = NavyBlue,
-                        modifier = Modifier.clickable { selectedTab = filterPending }
-                    )
-                }
-                
-                Spacer(modifier = Modifier.height(12.dp))
-                
-                // Tabs
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    TabItem(filterActive, selectedTab == filterActive) { selectedTab = filterActive }
-                    TabItem(filterPending, selectedTab == filterPending) { selectedTab = filterPending }
-                    TabItem(filterHistory, selectedTab == filterHistory) { selectedTab = filterHistory }
-                }
+            Text(
+                "Members Loans", 
+                fontSize = 16.sp, 
+                fontWeight = FontWeight.Bold, 
+                color = NavyBlue,
+                modifier = Modifier.padding(start = 4.dp, bottom = 12.dp)
+            )
+            
+            // Tabs
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                TabItem(filterActive, selectedTab == filterActive) { selectedTab = filterActive }
+                TabItem(filterPending, selectedTab == filterPending) { selectedTab = filterPending }
+                TabItem(filterHistory, selectedTab == filterHistory) { selectedTab = filterHistory }
+            }
 
-                Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-                // Group Loan Cards
+            // Group Loan Cards
+            if (filteredGroupLoans.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxWidth().padding(32.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("No loans found in this category", color = TextSecondary)
+                }
+            } else {
                 filteredGroupLoans.forEach { loan ->
                     GroupLoanCard(
                         loan = loan,
@@ -255,58 +241,9 @@ fun AllLoansScreen(navController: NavController, viewModel: LoanViewModel, homeV
                     )
                     Spacer(modifier = Modifier.height(12.dp))
                 }
-                
-                Spacer(modifier = Modifier.height(80.dp)) // Extra space for FAB/Bottom button
             }
-        }
-    }
-}
-@Composable
-fun HeaderSection(userName: String, userPhone: String, navController: NavController) {
-    val initials = if (userName.isNotEmpty()) {
-        userName.split(" ").filter { it.isNotEmpty() }.let { parts ->
-            if (parts.size >= 2) {
-                "${parts[0][0]}${parts[1][0]}".uppercase()
-            } else if (parts.isNotEmpty()) {
-                parts[0][0].toString().uppercase()
-            } else ""
-        }
-    } else ""
-
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp)
-    ) {
-        Box(
-            modifier = Modifier
-                .size(40.dp)
-                .background(NavyBlue, CircleShape)
-                .align(Alignment.CenterStart),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(initials, color = White, fontWeight = FontWeight.Bold)
-        }
-
-        Surface(
-            modifier = Modifier.align(Alignment.Center),
-            shape = RoundedCornerShape(20.dp),
-            color = Color(0xFFE8E8E8).copy(alpha = 0.5f)
-        ) {
-            Row(
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(userPhone, fontSize = 13.sp)
-                Icon(Icons.Default.KeyboardArrowDown, null, Modifier.size(16.dp))
-            }
-        }
-
-        IconButton(
-            onClick = { navController.navigate(Routes.NOTIFICATIONS) },
-            modifier = Modifier.align(Alignment.CenterEnd)
-        ) {
-            Icon(Icons.Default.Notifications, null, modifier = Modifier.size(28.dp))
+            
+            Spacer(modifier = Modifier.height(24.dp))
         }
     }
 }
@@ -315,100 +252,78 @@ fun HeaderSection(userName: String, userPhone: String, navController: NavControl
 fun MyLoanCard(loan: Loan, onClear: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = White),
-        elevation = CardDefaults.cardElevation(2.dp),
-        border = BorderStroke(1.dp, DividerColor)
+        elevation = CardDefaults.cardElevation(2.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            // Amount Section
-            Text("Amount", fontSize = 12.sp, color = TextSecondary, fontWeight = FontWeight.Medium)
-            Spacer(modifier = Modifier.height(4.dp))
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(BackgroundGray, RoundedCornerShape(10.dp))
-                    .padding(horizontal = 16.dp, vertical = 12.dp)
-            ) {
-                Text(
-                    text = "MK ${String.format("%,.0f", loan.amount)}",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = NavyBlue
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Repayable & Interest Section
-            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text("Repayable", fontSize = 12.sp, color = TextSecondary, fontWeight = FontWeight.Medium)
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(BackgroundGray, RoundedCornerShape(10.dp))
-                            .padding(horizontal = 16.dp, vertical = 12.dp)
-                    ) {
-                        Text(
-                            text = "MK ${String.format("%,.0f", loan.repayableAmount)}",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = GreenAccent
-                        )
-                    }
+        Column(modifier = Modifier.padding(20.dp)) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Column {
+                    Text("Borrowed Amount", fontSize = 12.sp, color = TextSecondary)
+                    Text(
+                        text = "MK ${String.format(Locale.US, "%,.0f", loan.amount)}",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = TextPrimary
+                    )
                 }
-                Spacer(modifier = Modifier.width(24.dp))
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("Interest", fontSize = 14.sp)
-                    Text("${loan.interestRate.toInt()}%", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = NavyBlue)
+                Surface(color = GreenLight, shape = RoundedCornerShape(8.dp)) {
+                    Text(
+                        text = "${loan.interestRate.toInt()}% Interest",
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = GreenAccent
+                    )
                 }
             }
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // Progress Bar
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Column {
+                    Text("Repayable", fontSize = 12.sp, color = TextSecondary)
+                    Text("MK ${String.format(Locale.US, "%,.0f", loan.repayableAmount)}", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                }
+                Column(horizontalAlignment = Alignment.End) {
+                    Text("Due Date", fontSize = 12.sp, color = TextSecondary)
+                    Text(loan.dueDate, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
             LinearProgressIndicator(
                 progress = { loan.percentRepaid },
                 modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)),
                 color = NavyBlue,
-                trackColor = DividerColor
+                trackColor = BackgroundGray
             )
             
-            Text(
-                text = "Remaining: MK ${String.format("%,.0f", loan.remainingAmount)}",
-                modifier = Modifier.align(Alignment.End).padding(top = 4.dp),
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Bold,
-                color = NavyBlue
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Footer
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text("Due : ${loan.dueDate}", fontSize = 14.sp, fontWeight = FontWeight.Medium)
-                
-                Surface(
-                    modifier = Modifier.clickable { onClear() },
-                    shape = RoundedCornerShape(8.dp),
-                    border = BorderStroke(1.dp, NavyBlue),
-                    color = Color.Transparent
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text("Clear", color = NavyBlue, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Icon(Icons.AutoMirrored.Filled.ArrowForward, null, tint = NavyBlue, modifier = Modifier.size(16.dp))
-                    }
-                }
+                Text("${(loan.percentRepaid * 100).toInt()}% Repaid", fontSize = 11.sp, color = TextSecondary)
+                Text(
+                    text = "Remaining: MK ${String.format(Locale.US, "%,.0f", loan.remainingAmount)}",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = NavyBlue
+                )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Button(
+                onClick = onClear,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = NavyBlue.copy(alpha = 0.1f), contentColor = NavyBlue)
+            ) {
+                Text("Make Repayment", fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.width(8.dp))
+                Icon(Icons.AutoMirrored.Filled.ArrowForward, null, modifier = Modifier.size(16.dp))
             }
         }
     }
@@ -427,147 +342,103 @@ fun GroupLoanCard(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { isExpanded = !isExpanded },
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = White),
-        elevation = CardDefaults.cardElevation(2.dp),
-        border = BorderStroke(1.dp, DividerColor)
+        elevation = CardDefaults.cardElevation(1.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            // Header: Member Name and Expand/Collapse Icon
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = loan.memberName,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = TextPrimary
-                )
-                Icon(
-                    imageVector = Icons.Default.KeyboardArrowDown,
-                    contentDescription = null,
-                    modifier = Modifier
-                        .size(24.dp)
-                        .rotate(if (isExpanded) 180f else 0f),
-                    tint = TextSecondary
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(modifier = Modifier.size(40.dp).background(NavyBlue.copy(alpha = 0.1f), CircleShape), contentAlignment = Alignment.Center) {
+                        Text(loan.memberName.take(1).uppercase(), color = NavyBlue, fontWeight = FontWeight.Bold)
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column {
+                        Text(loan.memberName, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                        Text("MK ${String.format(Locale.US, "%,.0f", loan.amount)}", fontSize = 13.sp, color = TextSecondary)
+                    }
+                }
+                
+                Surface(
+                    color = when(loan.status.lowercase()) {
+                        "active" -> GreenLight
+                        "pending" -> Color(0xFFFFF9C4)
+                        else -> BackgroundGray
+                    },
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text(
+                        text = loan.status.uppercase(),
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = when(loan.status.lowercase()) {
+                            "active" -> GreenAccent
+                            "pending" -> Color(0xFFFBC02D)
+                            else -> TextSecondary
+                        }
+                    )
+                }
             }
 
             if (isExpanded) {
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // Amount Section
-                Text("Amount", fontSize = 12.sp, color = TextSecondary, fontWeight = FontWeight.Medium)
-                Spacer(modifier = Modifier.height(4.dp))
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(BackgroundGray, RoundedCornerShape(10.dp))
-                        .padding(horizontal = 16.dp, vertical = 12.dp)
-                ) {
-                    Text(
-                        text = "MK ${String.format("%,.0f", loan.amount)}",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = NavyBlue
-                    )
-                }
-
+                Spacer(modifier = Modifier.height(16.dp))
+                HorizontalDivider(color = DividerColor, thickness = 0.5.dp)
                 Spacer(modifier = Modifier.height(16.dp))
 
                 if (loan.status.lowercase() == "pending") {
-                    // Pending Style (Requests)
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         OutlinedButton(
                             onClick = onReject,
-                            modifier = Modifier.padding(end = 8.dp),
-                            shape = RoundedCornerShape(8.dp),
-                            border = BorderStroke(1.dp, Color.Red),
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Red)
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(10.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = RedAccent)
                         ) {
                             Text("Reject")
                         }
                         Button(
-                            onClick = onApprove,
-                            shape = RoundedCornerShape(8.dp),
+                            onClick = { onApprove() },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(10.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = NavyBlue)
                         ) {
                             Text("Approve")
                         }
                     }
                 } else {
-                    // Active Style
-                    // Repayable & Interest Section
-                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text("Repayable", fontSize = 12.sp, color = TextSecondary, fontWeight = FontWeight.Medium)
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .background(BackgroundGray, RoundedCornerShape(10.dp))
-                                    .padding(horizontal = 16.dp, vertical = 12.dp)
-                            ) {
-                                Text(
-                                    text = "MK ${String.format("%,.0f", loan.repayableAmount)}",
-                                    fontSize = 18.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = GreenAccent
-                                )
-                            }
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Column {
+                            Text("Repayable", fontSize = 11.sp, color = TextSecondary)
+                            Text("MK ${String.format(Locale.US, "%,.0f", loan.repayableAmount)}", fontSize = 14.sp, fontWeight = FontWeight.Bold)
                         }
-                        Spacer(modifier = Modifier.width(24.dp))
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("Interest", fontSize = 14.sp)
-                            Text("${loan.interestRate.toInt()}%", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = NavyBlue)
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text("Due Date", fontSize = 11.sp, color = TextSecondary)
+                            Text(loan.dueDate, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
 
-                    // Progress Bar
                     LinearProgressIndicator(
                         progress = { loan.percentRepaid },
-                        modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)),
+                        modifier = Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)),
                         color = NavyBlue,
-                        trackColor = DividerColor
-                    )
-
-                    Text(
-                        text = "Remaining: MK ${String.format("%,.0f", loan.remainingAmount)}",
-                        modifier = Modifier.align(Alignment.End).padding(top = 4.dp),
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = NavyBlue
+                        trackColor = BackgroundGray
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Footer
-                    Row(
+                    Button(
+                        onClick = onClear,
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                        shape = RoundedCornerShape(10.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = BackgroundGray, contentColor = TextPrimary)
                     ) {
-                        Text("Due : ${loan.dueDate}", fontSize = 14.sp, fontWeight = FontWeight.Medium)
-
-                        Surface(
-                            modifier = Modifier.clickable { onClear() },
-                            shape = RoundedCornerShape(8.dp),
-                            border = BorderStroke(1.dp, NavyBlue),
-                            color = Color.Transparent
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text("Clear", color = NavyBlue, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Icon(Icons.AutoMirrored.Filled.ArrowForward, null, tint = NavyBlue, modifier = Modifier.size(16.dp))
-                            }
-                        }
+                        Text("Record Repayment", fontSize = 13.sp)
                     }
                 }
             }
@@ -593,42 +464,44 @@ fun RepayLoanDialog(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "Clear Loan Balance",
+                    text = "Loan Repayment",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
-                    color = TextPrimary
+                    color = NavyBlue
                 )
-                Spacer(modifier = Modifier.height(16.dp))
-                
+                Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Amount to clear:",
-                    modifier = Modifier.fillMaxWidth(),
+                    text = "Member: ${loan.memberName}",
                     fontSize = 14.sp,
                     color = TextSecondary
                 )
-                Spacer(modifier = Modifier.height(8.dp))
+                
+                Spacer(modifier = Modifier.height(24.dp))
                 
                 OutlinedTextField(
                     value = amount,
                     onValueChange = { amount = it },
                     modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("Enter amount") },
+                    label = { Text("Amount to Repay") },
                     shape = RoundedCornerShape(12.dp),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     colors = OutlinedTextFieldDefaults.colors(
-                        unfocusedContainerColor = BackgroundGray,
-                        focusedContainerColor = BackgroundGray
-                    )
+                        unfocusedContainerColor = BackgroundGray.copy(alpha = 0.5f),
+                        focusedContainerColor = BackgroundGray.copy(alpha = 0.5f),
+                        unfocusedBorderColor = Color.Transparent,
+                        focusedBorderColor = NavyBlue
+                    ),
+                    prefix = { Text("MK ", fontWeight = FontWeight.Bold) }
                 )
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(32.dp))
 
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    OutlinedButton(
+                    TextButton(
                         onClick = onDismiss,
-                        modifier = Modifier.weight(1f).height(50.dp),
-                        shape = RoundedCornerShape(12.dp)
+                        modifier = Modifier.weight(1f).height(50.dp)
                     ) {
-                        Text("Cancel", color = TextPrimary)
+                        Text("Cancel", color = TextSecondary)
                     }
                     Button(
                         onClick = { amount.toDoubleOrNull()?.let { onConfirm(it) } },
@@ -636,7 +509,7 @@ fun RepayLoanDialog(
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = NavyBlue)
                     ) {
-                        Text("Pay Now", color = White, fontWeight = FontWeight.Bold)
+                        Text("Confirm", color = White, fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -651,18 +524,19 @@ fun TabItem(text: String, isSelected: Boolean, onClick: () -> Unit) {
             .clickable(onClick = onClick)
             .height(36.dp),
         shape = RoundedCornerShape(18.dp),
-        color = if (isSelected) NavyBlue else Color.Transparent,
-        border = if (isSelected) null else BorderStroke(1.dp, Color.LightGray)
+        color = if (isSelected) NavyBlue else White,
+        border = if (isSelected) null else BorderStroke(1.dp, DividerColor),
+        shadowElevation = if (isSelected) 2.dp else 0.dp
     ) {
         Box(
-            modifier = Modifier.padding(horizontal = 16.dp),
+            modifier = Modifier.padding(horizontal = 20.dp),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 text = text,
                 color = if (isSelected) White else TextSecondary,
                 fontSize = 14.sp,
-                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
             )
         }
     }

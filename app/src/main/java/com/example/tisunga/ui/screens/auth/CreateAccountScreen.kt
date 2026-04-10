@@ -1,6 +1,7 @@
 package com.example.tisunga.ui.screens.auth
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -194,11 +195,19 @@ fun CreateAccountScreen(navController: NavController, viewModel: AuthViewModel) 
                 
                 Spacer(modifier = Modifier.height(16.dp))
                 
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Text(stringResource(R.string.already_have_account_text), fontSize = 14.sp, color = TextSecondary)
-                    TextButton(onClick = { navController.navigate(Routes.SIGN_IN) }) {
-                        Text(stringResource(R.string.signin_link), color = NavyBlue, fontWeight = FontWeight.Bold)
-                    }
+                    Text(
+                        text = stringResource(R.string.signin_link),
+                        color = NavyBlue,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp,
+                        modifier = Modifier.clickable { navController.navigate(Routes.SIGN_IN) }
+                    )
                 }
             }
         }

@@ -23,6 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.DialogProperties
 import androidx.navigation.NavController
 import com.example.tisunga.R
 import com.example.tisunga.data.model.Group
@@ -31,18 +32,61 @@ import com.example.tisunga.ui.components.BottomNavBar
 import com.example.tisunga.ui.navigation.Routes
 import com.example.tisunga.ui.theme.*
 import com.example.tisunga.viewmodel.HomeViewModel
+import com.example.tisunga.viewmodel.UserProfileViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.Locale
 
 @Composable
-fun HomeScreen(navController: NavController, viewModel: HomeViewModel) {
+fun HomeScreen(
+    navController: NavController, 
+    viewModel: HomeViewModel,
+    userProfileViewModel: UserProfileViewModel
+) {
     val uiState by viewModel.uiState.collectAsState()
+    val userProfileState by userProfileViewModel.uiState.collectAsState()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+    var showProfilePrompt by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         viewModel.loadHomeData()
+        userProfileViewModel.loadProfile()
+    }
+
+    LaunchedEffect(userProfileState.isProfileComplete, userProfileState.isLoading) {
+        if (!userProfileState.isLoading && !userProfileState.isProfileComplete) {
+            showProfilePrompt = true
+        } else if (userProfileState.isProfileComplete) {
+            showProfilePrompt = false
+        }
+    }
+
+    if (showProfilePrompt) {
+        AlertDialog(
+            onDismissRequest = { },
+            title = { Text(stringResource(R.string.complete_profile_dialog_title), fontWeight = FontWeight.Bold) },
+            text = { Text(stringResource(R.string.complete_profile_dialog_msg)) },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showProfilePrompt = false
+                        navController.navigate(Routes.USER_PROFILE)
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = NavyBlue),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text(stringResource(R.string.go_to_profile_button), fontWeight = FontWeight.Bold)
+                }
+            },
+            properties = DialogProperties(
+                dismissOnBackPress = false,
+                dismissOnClickOutside = false
+            ),
+            shape = RoundedCornerShape(16.dp),
+            containerColor = White
+        )
     }
 
     ModalNavigationDrawer(
@@ -70,42 +114,12 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel) {
                 
                 NavigationDrawerItem(
                     icon = { Icon(Icons.Default.Person, contentDescription = null) },
-                    label = { Text("User Profile") },
-                    selected = false,
-                    onClick = { /* Navigate to profile */ },
-                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
-                    colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
-                )
-
-                val currentGroupId = uiState.myGroups.firstOrNull()?.id ?: 0
-                NavigationDrawerItem(
-                    icon = { Icon(Icons.Default.PersonAdd, contentDescription = null) },
-                    label = { Text("Add Members") },
+                    label = { Text(stringResource(R.string.my_profile_title)) },
                     selected = false,
                     onClick = {
-                        scope.launch {
-                            drawerState.close()
-                            navController.navigate(Routes.ADD_MEMBERS.replace("{groupId}", currentGroupId.toString()))
-                        }
+                        navController.navigate(Routes.USER_PROFILE)
+                        scope.launch { drawerState.close() }
                     },
-                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
-                    colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
-                )
-                
-                NavigationDrawerItem(
-                    icon = { Icon(Icons.Default.Settings, contentDescription = null) },
-                    label = { Text("Settings") },
-                    selected = false,
-                    onClick = { /* Navigate to settings */ },
-                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
-                    colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
-                )
-                
-                NavigationDrawerItem(
-                    icon = { Icon(Icons.Default.Palette, contentDescription = null) },
-                    label = { Text("Theme") },
-                    selected = false,
-                    onClick = { /* Toggle theme */ },
                     modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
                     colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
                 )
@@ -125,6 +139,24 @@ fun HomeScreen(navController: NavController, viewModel: HomeViewModel) {
                         }
                         scope.launch { drawerState.close() }
                     },
+                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
+                    colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
+                )
+                
+                NavigationDrawerItem(
+                    icon = { Icon(Icons.Default.Settings, contentDescription = null) },
+                    label = { Text("Settings") },
+                    selected = false,
+                    onClick = { /* Navigate to settings */ },
+                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
+                    colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
+                )
+                
+                NavigationDrawerItem(
+                    icon = { Icon(Icons.Default.Palette, contentDescription = null) },
+                    label = { Text("Theme") },
+                    selected = false,
+                    onClick = { /* Toggle theme */ },
                     modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
                     colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
                 )

@@ -21,7 +21,10 @@ data class AuthUiState(
     val userId: Int = -1,
     val userName: String = "",
     val userPhone: String = "",
-    val userRole: String = "member"
+    val userRole: String = "member",
+    val firstName: String = "",
+    val lastName: String = "",
+    val middleName: String? = null
 )
 
 class AuthViewModel(private val sessionManager: SessionManager) : ViewModel() {
@@ -52,10 +55,17 @@ class AuthViewModel(private val sessionManager: SessionManager) : ViewModel() {
                 val mockUser = MockDataProvider.getMockUser()
                 val mockUserName = "${mockUser.firstName} ${mockUser.lastName}"
                 
-                // Ensure session manager is updated so other ViewModels can read the data
+                // Ensure session manager is updated
                 sessionManager.saveAuthToken(MockDataProvider.MOCK_TOKEN)
-                // Use the phone number entered by the user instead of the mock one
-                sessionManager.saveUserData(mockUser.id, mockUserName, phone, mockUser.role)
+                sessionManager.saveFullUserData(
+                    mockUser.id, 
+                    mockUser.firstName, 
+                    mockUser.lastName, 
+                    mockUser.middleName, 
+                    phone, 
+                    mockUser.role,
+                    mockUser.nationalId
+                )
                 
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
@@ -64,15 +74,20 @@ class AuthViewModel(private val sessionManager: SessionManager) : ViewModel() {
                     userId = mockUser.id,
                     userName = mockUserName,
                     userPhone = phone,
-                    userRole = mockUser.role
+                    userRole = mockUser.role,
+                    firstName = mockUser.firstName,
+                    lastName = mockUser.lastName,
+                    middleName = mockUser.middleName
                 )
             }
         }
     }
 
     fun register(firstName: String, middleName: String?, lastName: String, phone: String) {
-        // Simplified: registration password will be set in CreatePasswordScreen
         _uiState.value = _uiState.value.copy(
+            firstName = firstName,
+            lastName = lastName,
+            middleName = middleName,
             userName = "$firstName $lastName",
             userPhone = phone
         )
@@ -106,15 +121,23 @@ class AuthViewModel(private val sessionManager: SessionManager) : ViewModel() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = "")
             try {
-                // In a real app, we'd send the full registration data here or link it to the previously verified session
                 val response = apiService.createPassword(mapOf("phoneNumber" to phone, "password" to password))
                 sessionManager.saveAuthToken(response.token)
                 sessionManager.saveUserData(response.userId, response.userName, response.userPhone, response.userRole)
                 _uiState.value = _uiState.value.copy(isLoading = false, isSuccess = true)
             } catch (e: Exception) {
-                val mockUser = MockDataProvider.getMockUser()
+                // Mock behavior for development
+                val mockId = (100..999).random()
                 sessionManager.saveAuthToken(MockDataProvider.MOCK_TOKEN)
-                sessionManager.saveUserData(mockUser.id, "${mockUser.firstName} ${mockUser.lastName}", phone, mockUser.role)
+                sessionManager.saveFullUserData(
+                    mockId,
+                    _uiState.value.firstName,
+                    _uiState.value.lastName,
+                    _uiState.value.middleName,
+                    phone,
+                    "member",
+                    null // National ID is empty for new user
+                )
                 _uiState.value = _uiState.value.copy(isLoading = false, isSuccess = true)
             }
         }

@@ -39,6 +39,7 @@ class MainActivity : ComponentActivity() {
                     val savingsViewModel: SavingsViewModel = viewModel(factory = factory)
                     val eventViewModel: EventViewModel = viewModel(factory = factory)
                     val homeViewModel: HomeViewModel = viewModel(factory = factory)
+                    val userProfileViewModel: UserProfileViewModel = viewModel(factory = factory)
                     
                     AppNavGraph(
                         navController = navController,
@@ -47,7 +48,8 @@ class MainActivity : ComponentActivity() {
                         loanViewModel = loanViewModel,
                         savingsViewModel = savingsViewModel,
                         eventViewModel = eventViewModel,
-                        homeViewModel = homeViewModel
+                        homeViewModel = homeViewModel,
+                        userProfileViewModel = userProfileViewModel
                     )
                 }
             }
@@ -64,6 +66,7 @@ class ViewModelFactory(private val sessionManager: SessionManager) : ViewModelPr
             modelClass.isAssignableFrom(SavingsViewModel::class.java) -> SavingsViewModel(sessionManager) as T
             modelClass.isAssignableFrom(EventViewModel::class.java) -> EventViewModel(sessionManager) as T
             modelClass.isAssignableFrom(HomeViewModel::class.java) -> HomeViewModel(sessionManager) as T
+            modelClass.isAssignableFrom(UserProfileViewModel::class.java) -> UserProfileViewModel(sessionManager) as T
             else -> throw IllegalArgumentException("Unknown ViewModel class")
         }
     }

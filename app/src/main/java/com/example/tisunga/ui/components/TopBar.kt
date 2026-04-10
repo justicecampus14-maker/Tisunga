@@ -6,19 +6,21 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material3.Icon
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.font.FontWeight.Companion.Bold
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.tisunga.ui.theme.TextSecondary
+import com.example.tisunga.ui.theme.NavyBlue
+import com.example.tisunga.ui.theme.TextPrimary
+import com.example.tisunga.ui.theme.White
 
 @Composable
 fun TopBar(userName: String, userPhone: String, onNotificationsClick: () -> Unit) {
@@ -82,4 +84,29 @@ fun TopBar(userName: String, userPhone: String, onNotificationsClick: () -> Unit
             )
         }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SecondaryTopBar(title: String, onBackClick: () -> Unit) {
+    TopAppBar(
+        title = { 
+            Text(
+                text = title, 
+                color = NavyBlue, 
+                fontWeight = FontWeight.Bold,
+                fontSize = 20.sp
+            ) 
+        },
+        navigationIcon = {
+            IconButton(onClick = onBackClick) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack, 
+                    contentDescription = "Back", 
+                    tint = NavyBlue
+                )
+            }
+        },
+        colors = TopAppBarDefaults.topAppBarColors(containerColor = White)
+    )
 }
