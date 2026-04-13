@@ -174,7 +174,7 @@ fun AppNavGraph(
 
         // ── Savings ───────────────────────────────────────────────────────
         composable(Routes.GROUP_SAVINGS) {
-            GroupSavingsScreen(navController, savingsViewModel)
+            GroupSavingsScreen(navController, savingsViewModel, homeViewModel, notificationViewModel)
         }
 
         // MakeContributionScreen takes (navController, groupId: String, viewModel: ContributionViewModel)
@@ -211,7 +211,7 @@ fun AppNavGraph(
 
         // ── Loans ─────────────────────────────────────────────────────────
         composable(Routes.ALL_LOANS) {
-            AllLoansScreen(navController, loanViewModel, homeViewModel)
+            AllLoansScreen(navController, loanViewModel, homeViewModel, notificationViewModel)
         }
 
         // MyLoansScreen takes (navController, groupId: String, viewModel: LoanViewModel)

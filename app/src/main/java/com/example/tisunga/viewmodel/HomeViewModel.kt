@@ -17,6 +17,7 @@ data class HomeUiState(
     val userName: String = "Michael",
     val userPhone: String = "0882752624",
     val myGroups: List<Group> = emptyList(),
+    val myRole: String? = null,
     val recentTransactions: List<Transaction> = emptyList(),
     val errorMessage: String = ""
 )
@@ -42,16 +43,23 @@ class HomeViewModel(private val sessionManager: SessionManager) : ViewModel() {
             try {
                 val response = apiService.getMyGroup()
                 val group = response.toGroup()
+                
+                // Fetch dashboard to get role if group exists
+                val dashboard = apiService.getGroupDashboard(group.id)
+                
                 _uiState.value = _uiState.value.copy(
                     isLoading = false, 
                     myGroups = listOf(group),
+                    myRole = dashboard.myRole,
                     recentTransactions = MockDataProvider.getMockTransactions() // Still using mock for transactions as requested
                 )
             } catch (e: Exception) {
+                // If getMyGroup fails (e.g. 404), it means user is not in a group
                 _uiState.value = _uiState.value.copy(
                     isLoading = false, 
                     myGroups = emptyList(),
-                    errorMessage = e.message ?: "Failed to load data"
+                    myRole = null,
+                    recentTransactions = emptyList()
                 )
             }
         }
