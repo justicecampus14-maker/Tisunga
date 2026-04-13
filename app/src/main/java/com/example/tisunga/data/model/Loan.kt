@@ -1,20 +1,37 @@
 package com.example.tisunga.data.model
 
+import com.google.gson.annotations.SerializedName
+
 data class Loan(
-    val id: Int,
-    val groupId: Int,
-    val groupName: String,
-    val memberId: Int,
-    val memberName: String,
-    val amount: Double,
+    val id: String,
+    val groupId: String,
+    val borrowerId: String,
+    val borrowerName: String,
+    val principalAmount: Double,
     val interestRate: Double,
-    val repayableAmount: Double,
-    val remainingAmount: Double,
-    val percentRepaid: Float,
+    val totalRepayable: Double,
+    val remainingBalance: Double,
+    val durationMonths: Int,
     val dueDate: String,
-    val status: String, // "pending", "active", "completed", "rejected"
-    val approvedBy: String? = null,
-    val approvalDate: String? = null,
-    val purpose: String? = null,
-    val period: String? = null
+    val status: String, // "PENDING", "ACTIVE", "COMPLETED", "REJECTED"
+    val purpose: String?,
+    val approverName: String?,
+    val approvedAt: String?,
+    val createdAt: String,
+    val updatedAt: String,
+    
+    @SerializedName("Group")
+    val group: LoanGroupInfo? = null
+)
+
+data class LoanGroupInfo(
+    val id: String,
+    val name: String
+)
+
+data class LoanRepaymentResult(
+    val transactionRef: String,
+    val amount: Double,
+    val remainingBalance: Double,
+    val status: String
 )

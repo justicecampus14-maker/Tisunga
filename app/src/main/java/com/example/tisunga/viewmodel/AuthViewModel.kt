@@ -5,145 +5,252 @@ import androidx.lifecycle.viewModelScope
 import com.example.tisunga.data.remote.ApiClient
 import com.example.tisunga.data.remote.dto.LoginRequest
 import com.example.tisunga.data.remote.dto.RegisterRequest
-import com.example.tisunga.utils.MockDataProvider
+import com.example.tisunga.data.repository.AuthRepository
 import com.example.tisunga.utils.SessionManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import retrofit2.HttpException
+import java.net.ConnectException
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 
 data class AuthUiState(
     val isLoading: Boolean = false,
     val isSuccess: Boolean = false,
     val errorMessage: String = "",
     val successMessage: String = "",
+    // Stored across the register → OTP → set-password steps
+    val pendingUserId: String = "",
+    // Populated after login / set-password
     val token: String = "",
-    val userId: Int = -1,
+    val userId: String = "",
     val userName: String = "",
     val userPhone: String = "",
-    val userRole: String = "member",
-    val firstName: String = "",
-    val lastName: String = "",
-    val middleName: String? = null
+    val userRole: String = "MEMBER"
 )
 
 class AuthViewModel(private val sessionManager: SessionManager) : ViewModel() {
+
     private val _uiState = MutableStateFlow(AuthUiState())
     val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
 
-    private val apiService = ApiClient.getClient()
+    private val repo = AuthRepository(ApiClient.getClient())
+
+    private fun handleError(e: Exception): String {
+        return when (e) {
+            is ConnectException, is UnknownHostException -> 
+                "Unable to connect to the server. Please check your internet connection and ensure the backend is running."
+            is SocketTimeoutException -> 
+                "Connection timed out. Please try again later."
+            is HttpException -> {
+                try {
+                    val errorBody = e.response()?.errorBody()?.string()
+                    // Try to extract "message" from the backend error JSON
+                    val json = com.google.gson.JsonParser.parseString(errorBody).asJsonObject
+                    if (json.has("message")) json.get("message").asString
+                    else "Server error (${e.code()})"
+                } catch (_: Exception) {
+                    "Server error (${e.code()})"
+                }
+            }
+            else -> e.message ?: "An unexpected error occurred"
+        }
+    }
+
+    // ── Step 1: Register ─────────────────────────────────────────────────
+
+    fun register(firstName: String, middleName: String?, lastName: String, phone: String) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = "")
+            try {
+                val response = repo.register(
+                    RegisterRequest(firstName, middleName, lastName, phone)
+                )
+                // Store userId so subsequent OTP / set-password steps can use it
+                _uiState.value = _uiState.value.copy(
+                    isLoading     = false,
+                    isSuccess     = true,
+                    pendingUserId = response.userId,
+                    userPhone     = phone,
+                    userName      = "$firstName $lastName"
+                )
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading    = false,
+                    errorMessage = handleError(e)
+                )
+            }
+        }
+    }
+
+    // ── Step 2: Verify OTP ───────────────────────────────────────────────
+
+    fun verifyOtp(otp: String, purpose: String = "REGISTRATION") {
+        val userId = _uiState.value.pendingUserId
+        if (userId.isEmpty()) {
+            _uiState.value = _uiState.value.copy(errorMessage = "Session expired. Please register again.")
+            return
+        }
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = "")
+            try {
+                repo.verifyOtp(userId, otp, purpose)
+                _uiState.value = _uiState.value.copy(isLoading = false, isSuccess = true)
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading    = false,
+                    errorMessage = handleError(e)
+                )
+            }
+        }
+    }
+
+    fun resendOtp(purpose: String = "REGISTRATION") {
+        val userId = _uiState.value.pendingUserId
+        if (userId.isEmpty()) return
+        viewModelScope.launch {
+            try {
+                repo.resendOtp(userId, purpose)
+                _uiState.value = _uiState.value.copy(successMessage = "Code resent")
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(errorMessage = e.message ?: "Failed to resend")
+            }
+        }
+    }
+
+    // ── Step 3: Set password ─────────────────────────────────────────────
+
+    fun setPassword(password: String) {
+        val userId = _uiState.value.pendingUserId
+        if (userId.isEmpty()) {
+            _uiState.value = _uiState.value.copy(errorMessage = "Session expired. Please register again.")
+            return
+        }
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = "")
+            try {
+                val response = repo.setPassword(userId, password)
+                sessionManager.saveAuthToken(response.accessToken)
+                sessionManager.saveRefreshToken(response.refreshToken)
+                sessionManager.saveUserData(
+                    response.userId,
+                    response.userName,
+                    response.userPhone,
+                    "MEMBER"
+                )
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    isSuccess = true,
+                    token     = response.accessToken,
+                    userId    = response.userId,
+                    userName  = response.userName,
+                    userPhone = response.userPhone
+                )
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading    = false,
+                    errorMessage = handleError(e)
+                )
+            }
+        }
+    }
+
+    // ── Login ─────────────────────────────────────────────────────────────
 
     fun login(phone: String, password: String) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = "")
             try {
-                val response = apiService.login(LoginRequest(phone, password))
-                sessionManager.saveAuthToken(response.token)
-                sessionManager.saveUserData(response.userId, response.userName, response.userPhone, response.userRole)
+                val response = repo.login(LoginRequest(phone, password))
+                sessionManager.saveAuthToken(response.accessToken)
+                sessionManager.saveRefreshToken(response.refreshToken)
+                sessionManager.saveUserData(
+                    response.userId,
+                    response.userName,
+                    response.userPhone,
+                    "MEMBER"
+                )
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     isSuccess = true,
-                    token = response.token,
-                    userId = response.userId,
-                    userName = response.userName,
-                    userPhone = response.userPhone,
-                    userRole = response.userRole
+                    token     = response.accessToken,
+                    userId    = response.userId,
+                    userName  = response.userName,
+                    userPhone = response.userPhone
                 )
             } catch (e: Exception) {
-                // DEVELOPMENT MODE: Use mock data when no network
-                android.util.Log.d("AuthViewModel", "Network error, using mock data: ${e.message}")
-                val mockUser = MockDataProvider.getMockUser()
-                val mockUserName = "${mockUser.firstName} ${mockUser.lastName}"
-                
-                // Ensure session manager is updated
-                sessionManager.saveAuthToken(MockDataProvider.MOCK_TOKEN)
-                sessionManager.saveFullUserData(
-                    mockUser.id, 
-                    mockUser.firstName, 
-                    mockUser.lastName, 
-                    mockUser.middleName, 
-                    phone, 
-                    mockUser.role,
-                    mockUser.nationalId
-                )
-                
                 _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    isSuccess = true,
-                    token = MockDataProvider.MOCK_TOKEN,
-                    userId = mockUser.id,
-                    userName = mockUserName,
-                    userPhone = phone,
-                    userRole = mockUser.role,
-                    firstName = mockUser.firstName,
-                    lastName = mockUser.lastName,
-                    middleName = mockUser.middleName
+                    isLoading    = false,
+                    errorMessage = handleError(e)
                 )
             }
         }
     }
 
-    fun register(firstName: String, middleName: String?, lastName: String, phone: String) {
-        _uiState.value = _uiState.value.copy(
-            firstName = firstName,
-            lastName = lastName,
-            middleName = middleName,
-            userName = "$firstName $lastName",
-            userPhone = phone
-        )
-    }
+    // ── Forgot / reset password ──────────────────────────────────────────
 
-    fun verifyOtp(phone: String, code: String) {
+    fun forgotPassword(phone: String) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = "")
             try {
-                apiService.verifyOtp(mapOf("phoneNumber" to phone, "otp" to code))
-                _uiState.value = _uiState.value.copy(isLoading = false, isSuccess = true)
-            } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(isLoading = false, isSuccess = true) // Bypass for dev
-            }
-        }
-    }
-
-    fun sendOtp(phone: String) {
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = "")
-            try {
-                apiService.sendOtp(mapOf("phoneNumber" to phone))
-                _uiState.value = _uiState.value.copy(isLoading = false, successMessage = "Code resent")
-            } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(isLoading = false, successMessage = "Code resent (Mock)")
-            }
-        }
-    }
-
-    fun createPassword(phone: String, password: String) {
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = "")
-            try {
-                val response = apiService.createPassword(mapOf("phoneNumber" to phone, "password" to password))
-                sessionManager.saveAuthToken(response.token)
-                sessionManager.saveUserData(response.userId, response.userName, response.userPhone, response.userRole)
-                _uiState.value = _uiState.value.copy(isLoading = false, isSuccess = true)
-            } catch (e: Exception) {
-                // Mock behavior for development
-                val mockId = (100..999).random()
-                sessionManager.saveAuthToken(MockDataProvider.MOCK_TOKEN)
-                sessionManager.saveFullUserData(
-                    mockId,
-                    _uiState.value.firstName,
-                    _uiState.value.lastName,
-                    _uiState.value.middleName,
-                    phone,
-                    "member",
-                    null // National ID is empty for new user
+                val response = repo.forgotPassword(phone)
+                _uiState.value = _uiState.value.copy(
+                    isLoading     = false,
+                    isSuccess     = true,
+                    pendingUserId = response.userId ?: "",
+                    successMessage = "OTP sent to your phone"
                 )
-                _uiState.value = _uiState.value.copy(isLoading = false, isSuccess = true)
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading    = false,
+                    errorMessage = handleError(e)
+                )
             }
+        }
+    }
+
+    fun resetPassword(newPassword: String) {
+        val userId = _uiState.value.pendingUserId
+        if (userId.isEmpty()) return
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = "")
+            try {
+                repo.resetPassword(userId, newPassword)
+                _uiState.value = _uiState.value.copy(
+                    isLoading      = false,
+                    isSuccess      = true,
+                    successMessage = "Password reset. Please sign in."
+                )
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading    = false,
+                    errorMessage = handleError(e)
+                )
+            }
+        }
+    }
+
+    // ── Logout ────────────────────────────────────────────────────────────
+
+    fun logout() {
+        viewModelScope.launch {
+            try {
+                val refreshToken = sessionManager.fetchRefreshToken() ?: ""
+                repo.logout(refreshToken)
+            } catch (_: Exception) { /* best-effort */ }
+            sessionManager.clearSession()
+            ApiClient.reset()
+            _uiState.value = AuthUiState()
         }
     }
 
     fun resetState() {
-        _uiState.value = AuthUiState()
+        _uiState.value = _uiState.value.copy(
+            isSuccess      = false,
+            errorMessage   = "",
+            successMessage = ""
+        )
     }
 }

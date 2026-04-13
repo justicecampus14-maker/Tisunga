@@ -2,128 +2,292 @@ package com.example.tisunga.data.remote
 
 import com.example.tisunga.data.model.*
 import com.example.tisunga.data.remote.dto.*
-import okhttp3.MultipartBody
+import com.google.gson.Gson
+import com.google.gson.JsonElement
+import com.google.gson.JsonObject
+import okhttp3.ResponseBody
+import retrofit2.Converter
+import retrofit2.Retrofit
 import retrofit2.http.*
+import java.lang.reflect.Type
 
 interface ApiService {
-    // AUTH
+
+    // ── AUTH ─────────────────────────────────────────────────────────────
+
     @POST("auth/register")
-    suspend fun register(@Body request: RegisterRequest): LoginResponse
+    suspend fun register(@Body request: RegisterRequest): RegisterResponse
+
+    @POST("auth/verify-otp")
+    suspend fun verifyOtp(@Body body: Map<String, String>): VerifyOtpResponse
+
+    @POST("auth/resend-otp")
+    suspend fun resendOtp(@Body body: Map<String, String>): MessageResponse
+
+    @POST("auth/set-password")
+    suspend fun setPassword(@Body body: Map<String, String>): LoginResponse
 
     @POST("auth/login")
     suspend fun login(@Body request: LoginRequest): LoginResponse
 
-    @POST("auth/send-otp")
-    suspend fun sendOtp(@Body body: Map<String, String>): Map<String, String>
+    @POST("auth/forgot-password")
+    suspend fun forgotPassword(@Body body: Map<String, String>): ForgotPasswordResponse
 
-    @POST("auth/verify-otp")
-    suspend fun verifyOtp(@Body body: Map<String, String>): Map<String, String>
+    @POST("auth/reset-password")
+    suspend fun resetPassword(@Body body: Map<String, String>): MessageResponse
 
-    @POST("auth/create-password")
-    suspend fun createPassword(@Body body: Map<String, String>): LoginResponse
+    @POST("auth/logout")
+    suspend fun logout(@Body body: Map<String, String>): MessageResponse
 
-    // USERS
-    @GET("users/me")
-    suspend fun getMyProfile(): User
+    // ── GROUPS ────────────────────────────────────────────────────────────
 
-    @PATCH("users/me")
-    suspend fun updateProfile(@Body body: Map<String, String?>): User
-
-    @Multipart
-    @PATCH("users/me/avatar")
-    suspend fun uploadAvatar(@Part avatar: MultipartBody.Part): User
-
-    // GROUPS
     @GET("groups/my")
+    suspend fun getMyGroup(): MyGroupResponse
+
+    @GET("groups/my-list")
     suspend fun getMyGroups(): List<Group>
 
     @GET("groups")
     suspend fun getAllGroups(): List<Group>
 
-    @GET("groups/{id}")
-    suspend fun getGroupById(@Path("id") id: Int): Group
+    @POST("groups/join")
+    suspend fun joinGroup(@Body body: Map<String, String>): MessageResponse
+
+    @GET("groups/search/member")
+    suspend fun searchMemberByPhone(@Query("phone") phone: String): SearchMemberResponse
 
     @POST("groups")
-    suspend fun createGroup(@Body group: Group): Group
+    suspend fun createGroup(@Body body: Map<String, @JvmSuppressWildcards Any>): Group
 
-    @POST("groups/join")
-    suspend fun joinGroup(@Body body: Map<String, String>): Map<String, String>
+    @GET("groups/{groupId}")
+    suspend fun getGroupById(@Path("groupId") id: String): Group
 
-    @GET("groups/{id}/members")
-    suspend fun getGroupMembers(@Path("id") id: Int): List<User>
+    @GET("groups/{groupId}/dashboard")
+    suspend fun getGroupDashboard(@Path("groupId") id: String): GroupDashboardResponse
 
-    @POST("groups/{id}/members")
-    suspend fun addMemberWithRole(@Path("id") id: Int, @Body body: Map<String, String>): List<User>
+    @POST("groups/{groupId}/members")
+    suspend fun addMember(
+        @Path("groupId") groupId: String,
+        @Body body: Map<String, String>
+    ): AddMemberResponse
 
-    @PUT("groups/{groupId}/members/{memberId}/role")
-    suspend fun changeMemberRole(@Path("groupId") groupId: Int, @Path("memberId") memberId: Int, @Body body: Map<String, String>): User
+    @GET("groups/{groupId}/members")
+    suspend fun getGroupMembers(@Path("groupId") id: String): List<MembershipResponse>
 
-    @DELETE("groups/{groupId}/members/{memberId}")
-    suspend fun removeMember(@Path("groupId") groupId: Int, @Path("memberId") memberId: Int): Map<String, String>
+    @PATCH("groups/{groupId}/members/{userId}")
+    suspend fun updateMember(
+        @Path("groupId") groupId: String,
+        @Path("userId") userId: String,
+        @Body body: Map<String, String>
+    ): MessageResponse
 
-    @GET("groups/{id}/join-requests")
-    suspend fun getJoinRequests(@Path("id") id: Int): List<User>
+    @DELETE("groups/{groupId}/members/{userId}")
+    suspend fun removeMember(
+        @Path("groupId") groupId: String,
+        @Path("userId") userId: String
+    ): MessageResponse
 
-    @PUT("groups/{groupId}/join-requests/{userId}/approve")
-    suspend fun approveJoinRequest(@Path("groupId") groupId: Int, @Path("userId") userId: Int): Map<String, String>
+    @GET("groups/{groupId}/transactions")
+    suspend fun getGroupTransactions(
+        @Path("groupId") id: String,
+        @Query("page") page: Int? = null,
+        @Query("limit") limit: Int? = null,
+        @Query("type") type: String? = null
+    ): List<Transaction>
 
-    @PUT("groups/{groupId}/join-requests/{userId}/reject")
-    suspend fun rejectJoinRequest(@Path("groupId") groupId: Int, @Path("userId") userId: Int): Map<String, String>
+    @GET("groups/{groupId}/contributions")
+    suspend fun getGroupContributions(
+        @Path("groupId") id: String,
+        @Query("page") page: Int? = null
+    ): List<Contribution>
 
-    @GET("groups/{id}/transactions")
-    suspend fun getGroupTransactions(@Path("id") id: Int): List<Transaction>
+    @GET("groups/{groupId}/loans")
+    suspend fun getGroupLoans(@Path("groupId") id: String): List<Loan>
 
-    @POST("groups/{id}/disburse/request")
-    suspend fun requestDisbursement(@Path("id") id: Int): Map<String, String>
+    @GET("groups/{groupId}/events")
+    suspend fun getGroupEvents(@Path("groupId") id: String): List<Event>
 
-    @POST("groups/{id}/disburse/approve")
-    suspend fun approveDisbursement(@Path("id") id: Int): Map<String, String>
+    @POST("groups/{groupId}/events")
+    suspend fun createEvent(
+        @Path("groupId") groupId: String,
+        @Body body: Map<String, @JvmSuppressWildcards Any>
+    ): Event
 
-    @POST("groups/{id}/disburse/reject")
-    suspend fun rejectDisbursement(@Path("id") id: Int, @Body body: Map<String, String>): Map<String, String>
+    @POST("groups/{groupId}/events/typed")
+    suspend fun createEventTyped(
+        @Path("groupId") groupId: String,
+        @Body body: CreateEventRequest
+    ): Event
 
-    @GET("groups/search")
-    suspend fun searchMemberByPhone(@Query("phone") phone: String): User
+    @POST("groups/{groupId}/disbursements/request")
+    suspend fun requestDisbursement(@Path("groupId") id: String): DisbursementResponse
 
-    // CONTRIBUTIONS
-    @GET("contributions/my")
-    suspend fun getMyContributions(): List<Contribution>
+    @GET("groups/{groupId}/disbursements/current")
+    suspend fun getCurrentDisbursement(@Path("groupId") groupId: String): DisbursementResponse
 
-    @GET("contributions/group/{id}")
-    suspend fun getGroupContributions(@Path("id") id: Int): List<Contribution>
+    @GET("groups/{groupId}/disbursements")
+    suspend fun getDisbursementHistory(@Path("groupId") groupId: String): List<DisbursementResponse>
+
+    @POST("groups/{groupId}/disbursements/approve")
+    suspend fun approveCurrentDisbursement(@Path("groupId") groupId: String): MessageResponse
+
+    @POST("groups/{groupId}/disbursements/{disbursementId}/approve")
+    suspend fun approveDisbursement(
+        @Path("groupId") groupId: String,
+        @Path("disbursementId") disbursementId: String
+    ): MessageResponse
+
+    @POST("groups/{groupId}/disbursements/{disbursementId}/reject")
+    suspend fun rejectDisbursement(
+        @Path("groupId") groupId: String,
+        @Path("disbursementId") disbursementId: String,
+        @Body body: RejectDisbursementRequest
+    ): MessageResponse
+
+    // ── CONTRIBUTIONS ─────────────────────────────────────────────────────
+
+    @GET("contributions/mine")
+    suspend fun getMyContributions(@Query("page") page: Int? = null): List<Contribution>
 
     @POST("contributions")
-    suspend fun makeContribution(@Body contribution: Contribution): Contribution
+    suspend fun makeContribution(@Body body: Map<String, @JvmSuppressWildcards Any>): ContributionInitResponse
 
-    // LOANS
+    @POST("contributions/model")
+    suspend fun makeContributionModel(@Body contribution: Contribution): ContributionInitResponse
+
+    // ── LOANS ─────────────────────────────────────────────────────────────
+
     @GET("loans/my")
     suspend fun getMyLoans(): List<Loan>
 
-    @GET("loans/group/{id}")
-    suspend fun getGroupLoans(@Path("id") id: Int): List<Loan>
+    @POST("loans")
+    suspend fun applyForLoan(@Body body: Map<String, @JvmSuppressWildcards Any>): Loan
 
-    @POST("loans/apply")
-    suspend fun applyForLoan(@Body loan: Loan): Loan
+    @POST("loans/request")
+    suspend fun applyForLoanTyped(@Body request: ApplyLoanRequest): Loan
 
-    @PUT("loans/{id}/approve")
-    suspend fun approveLoan(@Path("id") id: Int): Loan
+    @POST("loans/model")
+    suspend fun applyForLoanModel(@Body loan: Loan): Loan
 
-    @PUT("loans/{id}/reject")
-    suspend fun rejectLoan(@Path("id") id: Int): Loan
+    @PATCH("loans/{loanId}/approve")
+    suspend fun approveLoan(@Path("loanId") id: String): Loan
 
-    @POST("loans/{id}/repay")
-    suspend fun repayLoan(@Path("id") id: Int, @Body body: Map<String, Double>): Loan
+    @PATCH("loans/{loanId}/reject")
+    suspend fun rejectLoan(
+        @Path("loanId") id: String,
+        @Body body: RejectLoanRequest
+    ): Loan
 
-    // EVENTS
-    @GET("events/group/{id}")
-    suspend fun getGroupEvents(@Path("id") id: Int): List<Event>
+    @POST("loans/{loanId}/repay")
+    suspend fun repayLoan(@Path("loanId") id: String, @Body body: Map<String, Double>): Loan
 
-    @POST("events")
-    suspend fun createEvent(@Body event: Event): Event
+    @POST("loans/{loanId}/repay/typed")
+    suspend fun repayLoanTyped(@Path("loanId") id: String, @Body request: RepayLoanRequest): Loan
 
-    @PUT("events/{id}/close")
-    suspend fun closeEvent(@Path("id") id: Int): Event
+    // ── EVENTS ────────────────────────────────────────────────────────────
 
-    @POST("events/{id}/contribute")
-    suspend fun contributeToEvent(@Path("id") id: Int, @Body body: Map<String, Double>): Map<String, String>
+    @GET("events/{eventId}")
+    suspend fun getEvent(@Path("eventId") id: String): EventDetail
+
+    @POST("events/{eventId}/close")
+    suspend fun closeEvent(@Path("eventId") id: String): MessageResponse
+
+    @POST("events/{eventId}/contribute")
+    suspend fun contributeToEvent(
+        @Path("eventId") id: String,
+        @Body body: ContributeRequest
+    ): MessageResponse
+
+    @GET("groups/{groupId}/meetings")
+    suspend fun getGroupMeetings(
+        @Path("groupId") groupId: String,
+        @Query("status") status: String? = null
+    ): List<Meeting>
+
+    @GET("groups/{groupId}/meetings/{meetingId}")
+    suspend fun getMeeting(
+        @Path("groupId") groupId: String,
+        @Path("meetingId") meetingId: String
+    ): MeetingDetailResponse
+
+    @POST("groups/{groupId}/meetings")
+    suspend fun createMeeting(
+        @Path("groupId") groupId: String,
+        @Body body: Map<String, @JvmSuppressWildcards Any>
+    ): Meeting
+
+    @PATCH("groups/{groupId}/meetings/{meetingId}")
+    suspend fun updateMeetingStatus(
+        @Path("groupId") groupId: String,
+        @Path("meetingId") meetingId: String,
+        @Body body: Map<String, String>
+    ): Meeting
+
+    @POST("groups/{groupId}/meetings/{meetingId}/attendance")
+    suspend fun markAttendance(
+        @Path("groupId") groupId: String,
+        @Path("meetingId") meetingId: String,
+        @Body body: Map<String, @JvmSuppressWildcards Any>
+    ): MeetingAttendance
+
+    @POST("groups/{groupId}/meetings/{meetingId}/attendance/bulk")
+    suspend fun submitBulkAttendance(
+        @Path("groupId") groupId: String,
+        @Path("meetingId") meetingId: String,
+        @Body request: BulkAttendanceRequest
+    ): BulkAttendanceResponse
+
+    @GET("groups/{groupId}/meetings/{meetingId}/attendance")
+    suspend fun getMeetingAttendance(
+        @Path("groupId") groupId: String,
+        @Path("meetingId") meetingId: String
+    ): MeetingAttendanceResponse
+
+    @POST("groups/{groupId}/meetings/{meetingId}/reminder")
+    suspend fun sendReminder(
+        @Path("groupId") groupId: String,
+        @Path("meetingId") meetingId: String
+    ): ReminderResponse
+
+    // ── NOTIFICATIONS ────────────────────────────────────────────────────
+
+    @GET("notifications")
+    suspend fun getNotifications(@Query("unreadOnly") unreadOnly: Boolean): NotificationsResponse
+
+    @POST("notifications/mark-all-read")
+    suspend fun markAllNotificationsRead(): MessageResponse
+
+    @PATCH("notifications/{id}/read")
+    suspend fun markNotificationRead(@Path("id") id: String): MessageResponse
+}
+
+class UnwrappingGsonConverterFactory(private val gson: Gson) : Converter.Factory() {
+    override fun responseBodyConverter(
+        type: Type,
+        annotations: Array<out Annotation>,
+        retrofit: Retrofit
+    ): Converter<ResponseBody, *> = UnwrappingBodyConverter<Any>(gson, type)
+
+    private class UnwrappingBodyConverter<T>(
+        private val gson: Gson,
+        private val type: Type
+    ) : Converter<ResponseBody, T> {
+        override fun convert(value: ResponseBody): T {
+            val raw = value.string()
+            return try {
+                val root = gson.fromJson(raw, JsonElement::class.java)
+                val target: JsonElement = if (root is JsonObject && root.has("data")) {
+                    root.get("data")
+                } else {
+                    root
+                }
+                gson.fromJson(target, type)
+            } catch (e: Exception) {
+                gson.fromJson(raw, type)
+            }
+        }
+    }
+    companion object {
+        fun create(): UnwrappingGsonConverterFactory = UnwrappingGsonConverterFactory(Gson())
+    }
 }

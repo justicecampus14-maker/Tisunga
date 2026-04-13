@@ -1,20 +1,22 @@
 package com.example.tisunga.data.model
 
+import com.google.gson.annotations.SerializedName
+
 data class Group(
-    val id: Int,
-    val name: String,
-    val description: String,
-    val location: String,
-    val minContribution: Double,
-    val savingPeriod: Int,
-    val maxMembers: Int,
-    val visibility: String,
-    val startDate: String,
-    val endDate: String,
-    val meetingDay: String,
-    val meetingTime: String,
-    val totalSavings: Double = 0.0,
-    val mySavings: Double = 0.0,
-    val status: String = "active",
-    val groupCode: String? = null
+    @SerializedName("id") val id: String,
+    @SerializedName("name") val name: String,
+    @SerializedName("description") val description: String,
+    @SerializedName("location") val location: String,
+    @SerializedName("minContribution") val minContribution: Double,
+    @SerializedName("savingPeriodMonths") val savingPeriod: Int,
+    @SerializedName("visibility") val visibility: String = "PUBLIC",
+    @SerializedName("maxMembers") val maxMembers: Int,
+    @SerializedName("startDate") val startDate: String,
+    @SerializedName("endDate") val endDate: String,
+    @SerializedName("meetingDay") val meetingDay: String,
+    @SerializedName("meetingTime") val meetingTime: String,
+    @SerializedName("totalSavings") val totalSavings: Double = 0.0,
+    @SerializedName("mySavings") val mySavings: Double = 0.0,
+    @SerializedName("status") val status: String = "ACTIVE",
+    @SerializedName("groupCode") val groupCode: String? = null
 )

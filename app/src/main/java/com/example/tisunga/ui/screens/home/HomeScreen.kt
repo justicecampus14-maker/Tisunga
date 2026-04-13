@@ -23,7 +23,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.DialogProperties
 import androidx.navigation.NavController
 import com.example.tisunga.R
 import com.example.tisunga.data.model.Group
@@ -32,7 +31,7 @@ import com.example.tisunga.ui.components.BottomNavBar
 import com.example.tisunga.ui.navigation.Routes
 import com.example.tisunga.ui.theme.*
 import com.example.tisunga.viewmodel.HomeViewModel
-import com.example.tisunga.viewmodel.UserProfileViewModel
+import com.example.tisunga.viewmodel.NotificationViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.Locale
@@ -40,135 +39,119 @@ import java.util.Locale
 @Composable
 fun HomeScreen(
     navController: NavController, 
-    viewModel: HomeViewModel,
-    userProfileViewModel: UserProfileViewModel
+    viewModel: HomeViewModel, 
+    notificationViewModel: NotificationViewModel
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val userProfileState by userProfileViewModel.uiState.collectAsState()
+    val notificationState by notificationViewModel.uiState.collectAsState()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
-    var showProfilePrompt by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         viewModel.loadHomeData()
-        userProfileViewModel.loadProfile()
-    }
-
-    LaunchedEffect(userProfileState.isProfileComplete, userProfileState.isLoading) {
-        if (!userProfileState.isLoading && !userProfileState.isProfileComplete) {
-            showProfilePrompt = true
-        } else if (userProfileState.isProfileComplete) {
-            showProfilePrompt = false
-        }
-    }
-
-    if (showProfilePrompt) {
-        AlertDialog(
-            onDismissRequest = { },
-            title = { Text(stringResource(R.string.complete_profile_dialog_title), fontWeight = FontWeight.Bold) },
-            text = { Text(stringResource(R.string.complete_profile_dialog_msg)) },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        showProfilePrompt = false
-                        navController.navigate(Routes.USER_PROFILE)
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(containerColor = NavyBlue),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Text(stringResource(R.string.go_to_profile_button), fontWeight = FontWeight.Bold)
-                }
-            },
-            properties = DialogProperties(
-                dismissOnBackPress = false,
-                dismissOnClickOutside = false
-            ),
-            shape = RoundedCornerShape(16.dp),
-            containerColor = White
-        )
+        notificationViewModel.load()
     }
 
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
             ModalDrawerSheet(
-                modifier = Modifier.width(260.dp),
+                modifier = Modifier.width(280.dp),
                 drawerContainerColor = BackgroundGray,
                 drawerShape = RoundedCornerShape(topEnd = 16.dp, bottomEnd = 16.dp)
             ) {
-                // Hamburger menu to close the drawer
-                IconButton(
-                    onClick = { scope.launch { drawerState.close() } },
-                    modifier = Modifier.padding(16.dp)
+                // Drawer Header with User Initials
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(NavyBlue)
+                        .padding(24.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Menu,
-                        contentDescription = "Close Menu",
-                        tint = NavyBlue,
-                        modifier = Modifier.size(32.dp)
-                    )
+                    Column {
+                        Box(
+                            modifier = Modifier
+                                .size(64.dp)
+                                .background(White.copy(alpha = 0.2f), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            val initial = uiState.userName.take(1).uppercase()
+                            Text(
+                                text = initial.ifEmpty { "?" },
+                                color = White,
+                                fontSize = 28.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            text = uiState.userName,
+                            color = White,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = uiState.userPhone,
+                            color = White.copy(alpha = 0.7f),
+                            fontSize = 14.sp
+                        )
+                    }
                 }
                 
-                HorizontalDivider(modifier = Modifier.padding(bottom = 8.dp), color = DividerColor)
+                Spacer(modifier = Modifier.height(8.dp))
                 
                 NavigationDrawerItem(
                     icon = { Icon(Icons.Default.Person, contentDescription = null) },
-                    label = { Text(stringResource(R.string.my_profile_title)) },
+                    label = { Text("My Profile") },
                     selected = false,
                     onClick = {
-                        navController.navigate(Routes.USER_PROFILE)
-                        scope.launch { drawerState.close() }
+                        scope.launch {
+                            drawerState.close()
+                            navController.navigate(Routes.PROFILE)
+                        }
                     },
                     modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
                     colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
                 )
 
-                NavigationDrawerItem(
-                    icon = { Icon(Icons.Default.Group, contentDescription = null) },
-                    label = { Text("Group Members") },
-                    selected = false,
-                    onClick = {
-                        uiState.myGroups.firstOrNull()?.let { group ->
-                            val role = viewModel.getUserGroupRole(group.id)
-                            if (role.equals("chairperson", ignoreCase = true) || role.equals("secretary", ignoreCase = true)) {
-                                navController.navigate(Routes.GROUP_MEMBERS_CHAIR.replace("{groupId}", group.id.toString()))
-                            } else {
-                                navController.navigate(Routes.GROUP_MEMBERS.replace("{groupId}", group.id.toString()))
+                if (uiState.myGroups.isNotEmpty()) {
+                    val currentGroup = uiState.myGroups.first()
+                    NavigationDrawerItem(
+                        icon = { Icon(Icons.Default.Group, contentDescription = null) },
+                        label = { Text("Group Members") },
+                        selected = false,
+                        onClick = {
+                            scope.launch {
+                                drawerState.close()
+                                navController.navigate(Routes.GROUP_MEMBERS.replace("{groupId}", currentGroup.id))
                             }
-                        }
-                        scope.launch { drawerState.close() }
-                    },
-                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
-                    colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
-                )
+                        },
+                        modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
+                        colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
+                    )
+                }
                 
                 NavigationDrawerItem(
                     icon = { Icon(Icons.Default.Settings, contentDescription = null) },
                     label = { Text("Settings") },
                     selected = false,
-                    onClick = { /* Navigate to settings */ },
-                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
-                    colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
-                )
-                
-                NavigationDrawerItem(
-                    icon = { Icon(Icons.Default.Palette, contentDescription = null) },
-                    label = { Text("Theme") },
-                    selected = false,
-                    onClick = { /* Toggle theme */ },
+                    onClick = {
+                        scope.launch {
+                            drawerState.close()
+                            navController.navigate(Routes.SETTINGS)
+                        }
+                    },
                     modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
                     colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
                 )
 
                 NavigationDrawerItem(
-                    icon = { Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null, tint = RedAccent) },
-                    label = { Text("Logout", color = RedAccent) },
+                    icon = { Icon(Icons.Default.Palette, contentDescription = null) },
+                    label = { Text("Theme") },
                     selected = false,
-                    onClick = { 
-                        viewModel.logout()
-                        navController.navigate(Routes.SIGN_IN) {
-                            popUpTo(Routes.HOME) { inclusive = true }
+                    onClick = {
+                        scope.launch {
+                            drawerState.close()
+                            navController.navigate(Routes.SETTINGS)
                         }
                     },
                     modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
@@ -176,10 +159,39 @@ fun HomeScreen(
                 )
                 
                 Spacer(Modifier.weight(1f))
+
+                NavigationDrawerItem(
+                    icon = { Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null, tint = RedAccent) },
+                    label = { Text("Logout", color = RedAccent) },
+                    selected = false,
+                    onClick = { 
+                        scope.launch {
+                            drawerState.close()
+                            viewModel.logout()
+                            navController.navigate(Routes.SIGN_IN) {
+                                popUpTo(0) { inclusive = true }
+                            }
+                        }
+                    },
+                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
+                    colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
+                )
+                
+                Spacer(modifier = Modifier.height(16.dp))
             }
         }
     ) {
         Scaffold(
+            topBar = {
+                HomeHeader(
+                    userPhone = uiState.userPhone,
+                    unreadCount = notificationState.unreadCount,
+                    navController = navController,
+                    onMenuClick = {
+                        scope.launch { drawerState.open() }
+                    }
+                )
+            },
             bottomBar = { BottomNavBar(navController, type = "C") },
             containerColor = BackgroundGray
         ) { padding ->
@@ -189,15 +201,6 @@ fun HomeScreen(
                     .padding(padding)
                     .verticalScroll(rememberScrollState())
             ) {
-                // Header with hamburger to open drawer
-                HomeHeader(
-                    userPhone = uiState.userPhone,
-                    navController = navController,
-                    onMenuClick = {
-                        scope.launch { drawerState.open() }
-                    }
-                )
-
                 if (uiState.myGroups.isEmpty()) {
                     BannerSection()
                 } else {
@@ -239,7 +242,7 @@ fun GroupInfoCard(group: Group) {
                 Text(
                     text = group.name,
                     color = Color.White,
-                    fontSize = 22.sp,
+                    fontSize = 28.sp,
                     fontWeight = FontWeight.Bold
                 )
 
@@ -250,27 +253,27 @@ fun GroupInfoCard(group: Group) {
                 ) {
                     Column {
                         Text(
-                            text = "Group Wallet",
+                            text = "Group Savings",
                             color = Color.White.copy(alpha = 0.7f),
-                            fontSize = 12.sp
+                            fontSize = 14.sp
                         )
                         Text(
                             text = String.format(Locale.US, "MK %,.2f", group.totalSavings),
                             color = Color.White,
-                            fontSize = 18.sp,
+                            fontSize = 20.sp,
                             fontWeight = FontWeight.SemiBold
                         )
                     }
                     Column(horizontalAlignment = Alignment.End) {
                         Text(
-                            text = "Your Balance",
+                            text = "My Savings",
                             color = Color.White.copy(alpha = 0.7f),
-                            fontSize = 12.sp
+                            fontSize = 14.sp
                         )
                         Text(
                             text = String.format(Locale.US, "MK %,.2f", group.mySavings),
                             color = Color(0xFFFFEB3B),
-                            fontSize = 18.sp,
+                            fontSize = 20.sp,
                             fontWeight = FontWeight.Bold
                         )
                     }
@@ -281,10 +284,11 @@ fun GroupInfoCard(group: Group) {
 }
 
 @Composable
-fun HomeHeader(userPhone: String, navController: NavController, onMenuClick: () -> Unit) {
+fun HomeHeader(userPhone: String, unreadCount: Int, navController: NavController, onMenuClick: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
+            .background(BackgroundGray)
             .padding(16.dp)
     ) {
         IconButton(
@@ -321,12 +325,23 @@ fun HomeHeader(userPhone: String, navController: NavController, onMenuClick: () 
                     .size(28.dp)
                     .clickable { navController.navigate(Routes.NOTIFICATIONS) }
             )
-            Box(
-                modifier = Modifier
-                    .size(10.dp)
-                    .background(Color.Red, CircleShape)
-                    .align(Alignment.TopEnd)
-            )
+            if (unreadCount > 0) {
+                Box(
+                    modifier = Modifier
+                        .size(18.dp)
+                        .background(Color.Red, CircleShape)
+                        .align(Alignment.TopEnd)
+                        .offset(x = 4.dp, y = (-4).dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = if (unreadCount > 9) "9+" else unreadCount.toString(),
+                        color = Color.White,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
         }
     }
 }
@@ -337,7 +352,7 @@ private fun BannerSection() {
     
     LaunchedEffect(Unit) {
         while (true) {
-            delay(3000)
+            delay(5000)
             val nextPage = (pagerState.currentPage + 1) % pagerState.pageCount
             pagerState.animateScrollToPage(nextPage)
         }
@@ -455,7 +470,6 @@ private fun QuickActionsSection(navController: NavController, group: Group?) {
             modifier=Modifier.fillMaxWidth(),
             horizontalArrangement=Arrangement.spacedBy(8.dp)
         ) {
-            // First button: Create Group or Save
             if (!hasGroups) {
                 QuickActionCard(
                     icon = Icons.Filled.GroupAdd,
@@ -471,12 +485,11 @@ private fun QuickActionsSection(navController: NavController, group: Group?) {
                     label = stringResource(R.string.save_label),
                     modifier = Modifier.weight(1f),
                     onClick = {
-                        navController.navigate(Routes.MAKE_CONTRIBUTION.replace("{groupId}", group?.id.toString()))
+                        navController.navigate(Routes.MAKE_CONTRIBUTION.replace("{groupId}", group.id))
                     }
                 )
             }
 
-            // Second button: Contributions (Disabled if no group)
             QuickActionCard(
                 icon = Icons.Filled.Payments,
                 label = stringResource(R.string.contributions_label),
@@ -484,12 +497,11 @@ private fun QuickActionsSection(navController: NavController, group: Group?) {
                 enabled = hasGroups,
                 onClick = {
                     if (hasGroups) {
-                        navController.navigate(Routes.CONTRIBUTION_HISTORY.replace("{groupId}", group?.id.toString()))
+                        navController.navigate(Routes.CONTRIBUTION_HISTORY.replace("{groupId}", group.id))
                     }
                 }
             )
 
-            // Third button: Events (Disabled if no group)
             QuickActionCard(
                 icon = Icons.Filled.Event,
                 label = stringResource(R.string.events_label),
@@ -497,12 +509,11 @@ private fun QuickActionsSection(navController: NavController, group: Group?) {
                 enabled = hasGroups,
                 onClick = {
                     if (hasGroups) {
-                        navController.navigate(Routes.EVENTS.replace("{groupId}", group?.id.toString()))
+                        navController.navigate(Routes.EVENTS.replace("{groupId}", group.id))
                     }
                 }
             )
 
-            // Fourth button: Loans (Disabled if no group)
             QuickActionCard(
                 icon = Icons.Filled.SwapHoriz,
                 label = stringResource(R.string.view_loans_label),
@@ -613,10 +624,10 @@ fun TransactionRow(transaction: Transaction) {
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        val (icon, color) = when (transaction.type.lowercase()) {
-            "contribution" -> Icons.Default.AddCircle to Color(0xFF4CAF50)
-            "loan_withdrawal" -> Icons.Default.RemoveCircle to Color(0xFFF44336)
-            "loan_repayment" -> Icons.Default.KeyboardArrowUp to Color(0xFF2196F3)
+        val (icon, color) = when (transaction.type) {
+            com.example.tisunga.data.model.TransactionType.SAVINGS -> Icons.Default.AddCircle to Color(0xFF4CAF50)
+            com.example.tisunga.data.model.TransactionType.LOAN_OUT -> Icons.Default.RemoveCircle to Color(0xFFF44336)
+            com.example.tisunga.data.model.TransactionType.LOAN_IN -> Icons.Default.KeyboardArrowUp to Color(0xFF2196F3)
             else -> Icons.Default.SwapHoriz to Color(0xFF757575)
         }
         
@@ -633,7 +644,7 @@ fun TransactionRow(transaction: Transaction) {
         
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = transaction.type.replace("_", " ").uppercase(),
+                text = transaction.type.name.replace("_", " ").uppercase(Locale.US),
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
                 color = color
