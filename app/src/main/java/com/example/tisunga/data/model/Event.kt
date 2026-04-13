@@ -1,14 +1,38 @@
 package com.example.tisunga.data.model
 
 data class Event(
-    val id: Int,
-    val groupId: Int,
-    val type: String, // "Wedding", "Birthday", "Funeral", "Other"
+    val id: String,
     val title: String,
-    val date: String,
-    val amountType: String, // "Fixed", "Flexible"
-    val amount: Double? = null,
     val description: String,
-    val status: String, // "active", "closed"
-    val raisedAmount: Double = 0.0
+    val targetAmount: Double? = null,
+    val currentAmount: Double = 0.0,
+    val endDate: String? = null,
+    val status: String, // OPEN | CLOSED
+    val createdAt: String? = null,
+    val contributionsCount: Int = 0
+)
+
+data class EventDetail(
+    val id: String,
+    val title: String,
+    val description: String,
+    val targetAmount: Double?,
+    val currentAmount: Double,
+    val endDate: String?,
+    val status: String,
+    val createdBy: UserSummary?,
+    val contributions: List<EventContribution> = emptyList()
+)
+
+data class EventContribution(
+    val user: UserSummary,
+    val amount: Double,
+    val createdAt: String
+)
+
+data class UserSummary(
+    val id: String,
+    val firstName: String,
+    val lastName: String,
+    val phone: String? = null
 )

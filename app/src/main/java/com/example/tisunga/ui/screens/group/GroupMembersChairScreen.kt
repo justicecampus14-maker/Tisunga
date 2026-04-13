@@ -25,14 +25,15 @@ import androidx.navigation.NavController
 import androidx.compose.ui.res.stringResource
 import com.example.tisunga.R
 import com.example.tisunga.data.model.User
+import com.example.tisunga.ui.navigation.Routes
 import com.example.tisunga.ui.components.TisungaConfirmDialog
 import com.example.tisunga.ui.theme.*
 import com.example.tisunga.viewmodel.GroupViewModel
 
 @Composable
-fun GroupMembersChairScreen(navController: NavController, groupId: Int, viewModel: GroupViewModel) {
+fun GroupMembersChairScreen(navController: NavController, groupId: String, viewModel: GroupViewModel) {
     val uiState by viewModel.uiState.collectAsState()
-    var expandedMemberId by remember { mutableStateOf<Int?>(null) }
+    var expandedMemberId by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(Unit) {
         viewModel.getGroupMembers(groupId)
@@ -58,7 +59,7 @@ fun GroupMembersChairScreen(navController: NavController, groupId: Int, viewMode
                 fontWeight = Bold
             )
             Surface(
-                modifier = Modifier.clickable { navController.navigate("add_members/$groupId") },
+                modifier = Modifier.clickable { navController.navigate(Routes.ADD_MEMBERS.replace("{groupId}", groupId)) },
                 shape = RoundedCornerShape(20.dp),
                 border = androidx.compose.foundation.BorderStroke(1.dp, NavyBlue),
                 color = Color.Transparent
@@ -134,7 +135,7 @@ private fun ChairMemberCard(
     isExpanded: Boolean, 
     onExpandClick: () -> Unit, 
     navController: NavController, 
-    groupId: Int,
+    groupId: String,
     onAction: (String) -> Unit
 ) {
     val isYou = member.role.equals("chairperson", ignoreCase = true)
@@ -167,8 +168,8 @@ private fun ChairMemberCard(
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            MemberActionChip(stringResource(R.string.loans_label)) { navController.navigate("my_loans/${member.id}") }
-                            MemberActionChip(stringResource(R.string.contributions_label)) { navController.navigate("contribution_history/${member.id}") }
+                            MemberActionChip(stringResource(R.string.loans_label)) { navController.navigate(Routes.MY_LOANS.replace("{groupId}", groupId)) }
+                            MemberActionChip(stringResource(R.string.contributions_label)) { navController.navigate(Routes.CONTRIBUTION_HISTORY.replace("{groupId}", groupId)) }
                             Box {
                                 MemberActionChip(stringResource(R.string.actions_label)) { showMenu = true }
                                 DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {

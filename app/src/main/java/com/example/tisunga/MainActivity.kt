@@ -12,6 +12,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
+import com.example.tisunga.data.remote.ApiClient
 import com.example.tisunga.ui.navigation.AppNavGraph
 import com.example.tisunga.ui.theme.TisungaTheme
 import com.example.tisunga.utils.SessionManager
@@ -21,33 +22,40 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        
+
+        ApiClient.init(this)
         val sessionManager = SessionManager(this)
-        
+
         setContent {
             TisungaTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
+                    color    = MaterialTheme.colorScheme.background
                 ) {
                     val navController = rememberNavController()
-                    
-                    val factory = ViewModelFactory(sessionManager)
-                    val authViewModel: AuthViewModel = viewModel(factory = factory)
-                    val groupViewModel: GroupViewModel = viewModel(factory = factory)
-                    val loanViewModel: LoanViewModel = viewModel(factory = factory)
-                    val savingsViewModel: SavingsViewModel = viewModel(factory = factory)
-                    val eventViewModel: EventViewModel = viewModel(factory = factory)
-                    val homeViewModel: HomeViewModel = viewModel(factory = factory)
-                    
+                    val factory       = ViewModelFactory(sessionManager)
+
+                    val authViewModel: AuthViewModel         = viewModel(factory = factory)
+                    val groupViewModel: GroupViewModel       = viewModel(factory = factory)
+                    val loanViewModel: LoanViewModel         = viewModel(factory = factory)
+                    val savingsViewModel: SavingsViewModel   = viewModel(factory = factory)
+                    val eventViewModel: EventViewModel       = viewModel(factory = factory)
+                    val homeViewModel: HomeViewModel         = viewModel(factory = factory)
+                    val notificationViewModel: NotificationViewModel = viewModel(factory = factory)
+                    val transactionViewModel: TransactionViewModel = viewModel(factory = factory)
+
+                    // FIX 13: AppNavGraph in the zip only accepts these 6 ViewModels — no extras
                     AppNavGraph(
-                        navController = navController,
-                        authViewModel = authViewModel,
-                        groupViewModel = groupViewModel,
-                        loanViewModel = loanViewModel,
-                        savingsViewModel = savingsViewModel,
-                        eventViewModel = eventViewModel,
-                        homeViewModel = homeViewModel
+                        navController         = navController,
+                        sessionManager        = sessionManager,
+                        authViewModel         = authViewModel,
+                        groupViewModel        = groupViewModel,
+                        loanViewModel         = loanViewModel,
+                        savingsViewModel      = savingsViewModel,
+                        eventViewModel        = eventViewModel,
+                        homeViewModel         = homeViewModel,
+                        notificationViewModel = notificationViewModel,
+                        transactionViewModel  = transactionViewModel
                     )
                 }
             }
@@ -58,13 +66,17 @@ class MainActivity : ComponentActivity() {
 class ViewModelFactory(private val sessionManager: SessionManager) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         return when {
-            modelClass.isAssignableFrom(AuthViewModel::class.java) -> AuthViewModel(sessionManager) as T
-            modelClass.isAssignableFrom(GroupViewModel::class.java) -> GroupViewModel(sessionManager) as T
-            modelClass.isAssignableFrom(LoanViewModel::class.java) -> LoanViewModel(sessionManager) as T
+            modelClass.isAssignableFrom(AuthViewModel::class.java)    -> AuthViewModel(sessionManager) as T
+            modelClass.isAssignableFrom(GroupViewModel::class.java)   -> GroupViewModel(sessionManager) as T
+            modelClass.isAssignableFrom(LoanViewModel::class.java)    -> LoanViewModel(sessionManager) as T
             modelClass.isAssignableFrom(SavingsViewModel::class.java) -> SavingsViewModel(sessionManager) as T
-            modelClass.isAssignableFrom(EventViewModel::class.java) -> EventViewModel(sessionManager) as T
-            modelClass.isAssignableFrom(HomeViewModel::class.java) -> HomeViewModel(sessionManager) as T
-            else -> throw IllegalArgumentException("Unknown ViewModel class")
+            modelClass.isAssignableFrom(EventViewModel::class.java)   -> EventViewModel(sessionManager) as T
+            modelClass.isAssignableFrom(HomeViewModel::class.java)    -> HomeViewModel(sessionManager) as T
+            modelClass.isAssignableFrom(NotificationViewModel::class.java) -> NotificationViewModel() as T
+            modelClass.isAssignableFrom(TransactionViewModel::class.java) -> TransactionViewModel() as T
+            modelClass.isAssignableFrom(MeetingViewModel::class.java) -> MeetingViewModel(sessionManager) as T
+            modelClass.isAssignableFrom(ContributionViewModel::class.java) -> ContributionViewModel(sessionManager) as T
+            else -> throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
         }
     }
 }

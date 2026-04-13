@@ -2,13 +2,12 @@ package com.example.tisunga.ui.screens.home
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -19,16 +18,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import androidx.compose.ui.res.stringResource
 import com.example.tisunga.R
 import com.example.tisunga.data.model.Group
 import com.example.tisunga.data.model.Transaction
@@ -36,57 +31,185 @@ import com.example.tisunga.ui.components.BottomNavBar
 import com.example.tisunga.ui.navigation.Routes
 import com.example.tisunga.ui.theme.*
 import com.example.tisunga.viewmodel.HomeViewModel
-import com.example.tisunga.utils.SessionManager
-import com.example.tisunga.utils.MockDataProvider
+import com.example.tisunga.viewmodel.NotificationViewModel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.util.Locale
 
 @Composable
-fun HomeScreen(navController: NavController, viewModel: HomeViewModel) {
+fun HomeScreen(
+    navController: NavController, 
+    viewModel: HomeViewModel, 
+    notificationViewModel: NotificationViewModel
+) {
     val uiState by viewModel.uiState.collectAsState()
+    val notificationState by notificationViewModel.uiState.collectAsState()
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
 
-    // Load data on first composition
     LaunchedEffect(Unit) {
         viewModel.loadHomeData()
+        notificationViewModel.load()
     }
 
-    Scaffold(
-        bottomBar = { BottomNavBar(navController, type = "C") },
-        containerColor = BackgroundGray
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .verticalScroll(rememberScrollState())
-        ) {
-            // Header
-            HomeHeader(
-                userName = uiState.userName,
-                userPhone = uiState.userPhone,
-                navController = navController
-            )
-
-            // Loading state
-            if (uiState.isLoading && uiState.myGroups.isEmpty()) {
-                Box(Modifier.fillMaxWidth().height(200.dp),
-                    contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = NavyBlue)
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            ModalDrawerSheet(
+                modifier = Modifier.width(280.dp),
+                drawerContainerColor = BackgroundGray,
+                drawerShape = RoundedCornerShape(topEnd = 16.dp, bottomEnd = 16.dp)
+            ) {
+                // Drawer Header with User Initials
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(NavyBlue)
+                        .padding(24.dp)
+                ) {
+                    Column {
+                        Box(
+                            modifier = Modifier
+                                .size(64.dp)
+                                .background(White.copy(alpha = 0.2f), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            val initial = uiState.userName.take(1).uppercase()
+                            Text(
+                                text = initial.ifEmpty { "?" },
+                                color = White,
+                                fontSize = 28.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            text = uiState.userName,
+                            color = White,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = uiState.userPhone,
+                            color = White.copy(alpha = 0.7f),
+                            fontSize = 14.sp
+                        )
+                    }
                 }
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                NavigationDrawerItem(
+                    icon = { Icon(Icons.Default.Person, contentDescription = null) },
+                    label = { Text("My Profile") },
+                    selected = false,
+                    onClick = {
+                        scope.launch {
+                            drawerState.close()
+                            navController.navigate(Routes.PROFILE)
+                        }
+                    },
+                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
+                    colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
+                )
+
+                if (uiState.myGroups.isNotEmpty()) {
+                    val currentGroup = uiState.myGroups.first()
+                    NavigationDrawerItem(
+                        icon = { Icon(Icons.Default.Group, contentDescription = null) },
+                        label = { Text("Group Members") },
+                        selected = false,
+                        onClick = {
+                            scope.launch {
+                                drawerState.close()
+                                navController.navigate(Routes.GROUP_MEMBERS.replace("{groupId}", currentGroup.id))
+                            }
+                        },
+                        modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
+                        colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
+                    )
+                }
+                
+                NavigationDrawerItem(
+                    icon = { Icon(Icons.Default.Settings, contentDescription = null) },
+                    label = { Text("Settings") },
+                    selected = false,
+                    onClick = {
+                        scope.launch {
+                            drawerState.close()
+                            navController.navigate(Routes.SETTINGS)
+                        }
+                    },
+                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
+                    colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
+                )
+
+                NavigationDrawerItem(
+                    icon = { Icon(Icons.Default.Palette, contentDescription = null) },
+                    label = { Text("Theme") },
+                    selected = false,
+                    onClick = {
+                        scope.launch {
+                            drawerState.close()
+                            navController.navigate(Routes.SETTINGS)
+                        }
+                    },
+                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
+                    colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
+                )
+                
+                Spacer(Modifier.weight(1f))
+
+                NavigationDrawerItem(
+                    icon = { Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null, tint = RedAccent) },
+                    label = { Text("Logout", color = RedAccent) },
+                    selected = false,
+                    onClick = { 
+                        scope.launch {
+                            drawerState.close()
+                            viewModel.logout()
+                            navController.navigate(Routes.SIGN_IN) {
+                                popUpTo(0) { inclusive = true }
+                            }
+                        }
+                    },
+                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
+                    colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
+                )
+                
+                Spacer(modifier = Modifier.height(16.dp))
             }
+        }
+    ) {
+        Scaffold(
+            topBar = {
+                HomeHeader(
+                    userPhone = uiState.userPhone,
+                    unreadCount = notificationState.unreadCount,
+                    navController = navController,
+                    onMenuClick = {
+                        scope.launch { drawerState.open() }
+                    }
+                )
+            },
+            bottomBar = { BottomNavBar(navController, type = "C") },
+            containerColor = BackgroundGray
+        ) { padding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .verticalScroll(rememberScrollState())
+            ) {
+                if (uiState.myGroups.isEmpty()) {
+                    BannerSection()
+                } else {
+                    GroupInfoCard(uiState.myGroups.first())
+                }
 
-            // Sliding Banner Cards or Beautiful Group Card
-            if (uiState.myGroups.isEmpty()) {
-                BannerSection()
-            } else {
-                GroupInfoCard(uiState.myGroups.first())
+                QuickActionsSection(navController, uiState.myGroups.firstOrNull())
+                RecentTransactionsSection(uiState.recentTransactions)
             }
-
-            // Quick Actions
-            QuickActionsSection(navController, uiState.myGroups.firstOrNull())
-
-            // Recent Transactions
-            RecentTransactionsSection(uiState.recentTransactions)
         }
     }
 }
@@ -103,12 +226,11 @@ fun GroupInfoCard(group: Group) {
         elevation = CardDefaults.cardElevation(8.dp)
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
-            // Decorative background element
             Box(
                 modifier = Modifier
                     .size(150.dp)
                     .offset(x = 220.dp, y = (-50).dp)
-                    .background(White.copy(alpha = 0.1f), CircleShape)
+                    .background(Color.White.copy(alpha = 0.1f), CircleShape)
             )
 
             Column(
@@ -117,19 +239,12 @@ fun GroupInfoCard(group: Group) {
                     .padding(24.dp),
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
-                Column {
-                    Text(
-                        text = group.name,
-                        color = Color.White,
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = "Group Code: ${group.groupCode}",
-                        color = Color.White.copy(alpha = 0.7f),
-                        fontSize = 12.sp
-                    )
-                }
+                Text(
+                    text = group.name,
+                    color = Color.White,
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.Bold
+                )
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -138,27 +253,27 @@ fun GroupInfoCard(group: Group) {
                 ) {
                     Column {
                         Text(
-                            text = "Group Wallet",
+                            text = "Group Savings",
                             color = Color.White.copy(alpha = 0.7f),
-                            fontSize = 12.sp
+                            fontSize = 14.sp
                         )
                         Text(
                             text = String.format(Locale.US, "MK %,.2f", group.totalSavings),
                             color = Color.White,
-                            fontSize = 18.sp,
+                            fontSize = 20.sp,
                             fontWeight = FontWeight.SemiBold
                         )
                     }
                     Column(horizontalAlignment = Alignment.End) {
                         Text(
-                            text = "Your Balance",
+                            text = "My Savings",
                             color = Color.White.copy(alpha = 0.7f),
-                            fontSize = 12.sp
+                            fontSize = 14.sp
                         )
                         Text(
                             text = String.format(Locale.US, "MK %,.2f", group.mySavings),
                             color = Color(0xFFFFEB3B),
-                            fontSize = 18.sp,
+                            fontSize = 20.sp,
                             fontWeight = FontWeight.Bold
                         )
                     }
@@ -169,34 +284,22 @@ fun GroupInfoCard(group: Group) {
 }
 
 @Composable
-fun HomeHeader(userName: String, userPhone: String, navController: NavController) {
-    val initials = if (userName.isNotEmpty()) {
-        userName.split(" ").filter { it.isNotEmpty() }.let { parts ->
-            if (parts.size >= 2) {
-                "${parts[0][0]}${parts[1][0]}".uppercase()
-            } else if (parts.isNotEmpty()) {
-                parts[0][0].toString().uppercase()
-            } else ""
-        }
-    } else ""
-
+fun HomeHeader(userPhone: String, unreadCount: Int, navController: NavController, onMenuClick: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
+            .background(BackgroundGray)
             .padding(16.dp)
     ) {
-        Box(
-            modifier = Modifier
-                .size(40.dp)
-                .background(NavyBlue, CircleShape)
-                .align(Alignment.CenterStart),
-            contentAlignment = Alignment.Center
+        IconButton(
+            onClick = onMenuClick,
+            modifier = Modifier.align(Alignment.CenterStart)
         ) {
-            Text(
-                text = initials,
-                color = Color.White,
-                fontWeight = FontWeight.Bold,
-                fontSize = 16.sp
+            Icon(
+                Icons.Default.Menu,
+                contentDescription = "Menu",
+                tint = NavyBlue,
+                modifier = Modifier.size(32.dp)
             )
         }
 
@@ -222,12 +325,23 @@ fun HomeHeader(userName: String, userPhone: String, navController: NavController
                     .size(28.dp)
                     .clickable { navController.navigate(Routes.NOTIFICATIONS) }
             )
-            Box(
-                modifier = Modifier
-                    .size(10.dp)
-                    .background(Color.Red, CircleShape)
-                    .align(Alignment.TopEnd)
-            )
+            if (unreadCount > 0) {
+                Box(
+                    modifier = Modifier
+                        .size(18.dp)
+                        .background(Color.Red, CircleShape)
+                        .align(Alignment.TopEnd)
+                        .offset(x = 4.dp, y = (-4).dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = if (unreadCount > 9) "9+" else unreadCount.toString(),
+                        color = Color.White,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
         }
     }
 }
@@ -236,10 +350,9 @@ fun HomeHeader(userName: String, userPhone: String, navController: NavController
 private fun BannerSection() {
     val pagerState = rememberPagerState(pageCount = { 3 })
     
-    // Auto-slide effect every 3 seconds
     LaunchedEffect(Unit) {
         while (true) {
-            delay(3000)
+            delay(5000)
             val nextPage = (pagerState.currentPage + 1) % pagerState.pageCount
             pagerState.animateScrollToPage(nextPage)
         }
@@ -260,7 +373,6 @@ private fun BannerSection() {
         
         Spacer(modifier = Modifier.height(12.dp))
         
-        // Pager dots
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.Center
@@ -284,7 +396,6 @@ private fun BannerSection() {
 
 @Composable
 fun BannerCard(page: Int) {
-    // Background color/brush based on page
     val brush = when (page) {
         0 -> Brush.horizontalGradient(listOf(Color(0xFF1B5E20), Color(0xFF2E7D32)))
         1 -> Brush.horizontalGradient(listOf(Color(0xFF1565C0), Color(0xFF1E88E5)))
@@ -332,7 +443,6 @@ fun BannerCard(page: Int) {
                 )
             }
             
-            // Stylized "Group of people" icon placeholder
             Icon(
                 Icons.Default.Groups,
                 contentDescription = null,
@@ -360,40 +470,59 @@ private fun QuickActionsSection(navController: NavController, group: Group?) {
             modifier=Modifier.fillMaxWidth(),
             horizontalArrangement=Arrangement.spacedBy(8.dp)
         ) {
+            if (!hasGroups) {
+                QuickActionCard(
+                    icon = Icons.Filled.GroupAdd,
+                    label = stringResource(R.string.create_group_label),
+                    modifier = Modifier.weight(1f),
+                    onClick = {
+                        navController.navigate(Routes.CREATE_GROUP_STEP1)
+                    }
+                )
+            } else {
+                QuickActionCard(
+                    icon = Icons.Filled.AccountBalanceWallet,
+                    label = stringResource(R.string.save_label),
+                    modifier = Modifier.weight(1f),
+                    onClick = {
+                        navController.navigate(Routes.MAKE_CONTRIBUTION.replace("{groupId}", group.id))
+                    }
+                )
+            }
+
             QuickActionCard(
-                icon = Icons.Filled.GroupAdd,
-                label = stringResource(R.string.create_group_label),
-                modifier = Modifier.weight(1f),
-                onClick = {
-                    navController.navigate(Routes.CREATE_GROUP_STEP1)
-                }
-            )
-            QuickActionCard(
-                icon = Icons.Filled.AccountBalanceWallet,
-                label = stringResource(R.string.save_label),
+                icon = Icons.Filled.Payments,
+                label = stringResource(R.string.contributions_label),
                 modifier = Modifier.weight(1f),
                 enabled = hasGroups,
                 onClick = {
-                    navController.navigate(Routes.MAKE_CONTRIBUTION.replace("{groupId}", group?.id.toString()))
+                    if (hasGroups) {
+                        navController.navigate(Routes.CONTRIBUTION_HISTORY.replace("{groupId}", group.id))
+                    }
                 }
             )
+
             QuickActionCard(
                 icon = Icons.Filled.Event,
                 label = stringResource(R.string.events_label),
                 modifier = Modifier.weight(1f),
                 enabled = hasGroups,
                 onClick = {
-                    // Navigate to events
-                    navController.navigate(Routes.EVENTS.replace("{groupId}", group?.id.toString()))
+                    if (hasGroups) {
+                        navController.navigate(Routes.EVENTS.replace("{groupId}", group.id))
+                    }
                 }
             )
+
             QuickActionCard(
                 icon = Icons.Filled.SwapHoriz,
                 label = stringResource(R.string.view_loans_label),
                 modifier = Modifier.weight(1f),
                 enabled = hasGroups,
                 onClick = {
-                    navController.navigate(Routes.ALL_LOANS)
+                    if (hasGroups) {
+                        navController.navigate(Routes.ALL_LOANS)
+                    }
                 }
             )
         }
@@ -419,8 +548,8 @@ private fun QuickActionCard(
                 .clickable(enabled = enabled) { onClick() },
             shape = RoundedCornerShape(14.dp),
             colors = CardDefaults.cardColors(
-                containerColor = White,
-                disabledContainerColor = White.copy(alpha = 0.6f)
+                containerColor = Color.White,
+                disabledContainerColor = Color.White.copy(alpha = 0.6f)
             ),
             elevation = CardDefaults.cardElevation(if (enabled) 2.dp else 0.dp)
         ) {
@@ -454,36 +583,28 @@ fun RecentTransactionsSection(transactions: List<Transaction>) {
         }
         Spacer(modifier = Modifier.height(12.dp))
         
-        if (transactions.isEmpty()) {
-            Card(
-                modifier = Modifier.fillMaxWidth().height(160.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = White),
-                elevation = CardDefaults.cardElevation(2.dp)
-            ) {
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = White),
+            elevation = CardDefaults.cardElevation(2.dp)
+        ) {
+            if (transactions.isEmpty()) {
                 Box(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier.fillMaxWidth().height(100.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = stringResource(R.string.no_groups_msg),
                         color = TextSecondary,
-                        textAlign = TextAlign.Center,
                         fontSize = 14.sp
                     )
                 }
-            }
-        } else {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = White),
-                elevation = CardDefaults.cardElevation(2.dp)
-            ) {
+            } else {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    transactions.forEach { transaction ->
+                    transactions.take(5).forEachIndexed { index, transaction ->
                         TransactionRow(transaction)
-                        if (transaction != transactions.last()) {
+                        if (index < transactions.take(5).size - 1) {
                             HorizontalDivider(
                                 modifier = Modifier.padding(vertical = 12.dp),
                                 thickness = 0.5.dp,
@@ -503,10 +624,10 @@ fun TransactionRow(transaction: Transaction) {
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        val (icon, color) = when (transaction.type.lowercase()) {
-            "contribution" -> Icons.Default.AddCircle to Color(0xFF4CAF50)
-            "loan_withdrawal" -> Icons.Default.RemoveCircle to Color(0xFFF44336)
-            "loan_repayment" -> Icons.Default.KeyboardArrowUp to Color(0xFF2196F3)
+        val (icon, color) = when (transaction.type) {
+            com.example.tisunga.data.model.TransactionType.SAVINGS -> Icons.Default.AddCircle to Color(0xFF4CAF50)
+            com.example.tisunga.data.model.TransactionType.LOAN_OUT -> Icons.Default.RemoveCircle to Color(0xFFF44336)
+            com.example.tisunga.data.model.TransactionType.LOAN_IN -> Icons.Default.KeyboardArrowUp to Color(0xFF2196F3)
             else -> Icons.Default.SwapHoriz to Color(0xFF757575)
         }
         
@@ -523,7 +644,7 @@ fun TransactionRow(transaction: Transaction) {
         
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = transaction.type.replace("_", " ").uppercase(),
+                text = transaction.type.name.replace("_", " ").uppercase(Locale.US),
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
                 color = color

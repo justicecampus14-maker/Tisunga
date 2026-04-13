@@ -28,16 +28,22 @@ import com.example.tisunga.ui.theme.*
 import com.example.tisunga.viewmodel.GroupViewModel
 
 @Composable
-fun GroupDetailScreen(navController: NavController, groupId: Int, viewModel: GroupViewModel) {
+fun GroupDetailScreen(navController: NavController, groupId: String, viewModel: GroupViewModel) {
     val uiState by viewModel.uiState.collectAsState()
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val sessionManager = remember { com.example.tisunga.utils.SessionManager(context) }
     
-    // Placeholder data
-    val groupName = stringResource(R.string.placeholder_group_name)
-    val userName = "Michael"
-    val userPhone = "0882752624"
-    val isChair = true // This should come from SessionManager or ViewModel
+    // UI state derived from group dashboard
+    val groupName = uiState.selectedGroup?.name ?: stringResource(R.string.placeholder_group_name)
+    val userName = sessionManager.getUserName()
+    val userPhone = sessionManager.getUserPhone()
+    
+    // Check if user is Chair or Secretary for this group
+    val groupRole = sessionManager.getGroupRole(groupId)
+    val isChair = groupRole == "CHAIR" || groupRole == "SECRETARY"
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(groupId) {
+        viewModel.getGroupDashboard(groupId)
         viewModel.getGroupTransactions(groupId)
     }
 
@@ -50,7 +56,7 @@ fun GroupDetailScreen(navController: NavController, groupId: Int, viewModel: Gro
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            HomeHeader(userName, userPhone, navController)
+            HomeHeader(userPhone, 0, navController, {})
             
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
@@ -64,7 +70,7 @@ fun GroupDetailScreen(navController: NavController, groupId: Int, viewModel: Gro
                 item {
                     QuickActionsHeader(navController, groupId, isChair)
                     Spacer(modifier = Modifier.height(12.dp))
-                    QuickActionsGrid(navController, groupId, isChair)
+                    QuickActionsGrid(navController, groupId, isChair, groupName)
                     Spacer(modifier = Modifier.height(20.dp))
                 }
                 
@@ -116,7 +122,7 @@ fun GroupSummaryCard(groupName: String) {
 }
 
 @Composable
-fun QuickActionsHeader(navController: NavController, groupId: Int, isChair: Boolean) {
+fun QuickActionsHeader(navController: NavController, groupId: String, isChair: Boolean) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -128,9 +134,9 @@ fun QuickActionsHeader(navController: NavController, groupId: Int, isChair: Bool
             color = BlueLink,
             modifier = Modifier.clickable {
                 if (isChair) {
-                    navController.navigate("group_members_chair/$groupId")
+                    navController.navigate(Routes.GROUP_MEMBERS_CHAIR.replace("{groupId}", groupId))
                 } else {
-                    navController.navigate("group_members/$groupId")
+                    navController.navigate(Routes.GROUP_MEMBERS.replace("{groupId}", groupId))
                 }
             }
         )
@@ -138,26 +144,39 @@ fun QuickActionsHeader(navController: NavController, groupId: Int, isChair: Bool
 }
 
 @Composable
-fun QuickActionsGrid(navController: NavController, groupId: Int, isChair: Boolean) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        ActionCard(Icons.Default.AddCard, stringResource(R.string.action_save), Modifier.weight(1f)) {
-            navController.navigate("make_contribution/$groupId")
-        }
-        ActionCard(Icons.Default.Badge, stringResource(R.string.action_view_savings), Modifier.weight(1f)) {
-            navController.navigate(Routes.GROUP_SAVINGS)
-        }
-        ActionCard(Icons.Default.CalendarMonth, stringResource(R.string.action_view_events), Modifier.weight(1f)) {
-            navController.navigate("events/$groupId")
-        }
-        ActionCard(Icons.Default.SwapHoriz, stringResource(R.string.action_view_loans), Modifier.weight(1f)) {
-            if (isChair) {
-                navController.navigate("group_loans_detail/$groupId")
-            } else {
-                navController.navigate("my_loans/$groupId")
+fun QuickActionsGrid(navController: NavController, groupId: String, isChair: Boolean, groupName: String) {
+    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            ActionCard(Icons.Default.AddCard, stringResource(R.string.action_save), Modifier.weight(1f)) {
+                navController.navigate(Routes.MAKE_CONTRIBUTION.replace("{groupId}", groupId))
             }
+            ActionCard(Icons.Default.Badge, stringResource(R.string.action_view_savings), Modifier.weight(1f)) {
+                navController.navigate(Routes.GROUP_SAVINGS)
+            }
+            ActionCard(Icons.Default.Event, "Events", Modifier.weight(1f)) {
+                navController.navigate(Routes.EVENTS.replace("{groupId}", groupId))
+            }
+        }
+        Spacer(modifier = Modifier.height(12.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            ActionCard(Icons.Default.SwapHoriz, stringResource(R.string.action_view_loans), Modifier.weight(1f)) {
+                if (isChair) {
+                    navController.navigate(Routes.GROUP_LOANS_DETAIL.replace("{groupId}", groupId))
+                } else {
+                    navController.navigate(Routes.MY_LOANS.replace("{groupId}", groupId))
+                }
+            }
+            ActionCard(Icons.Default.Groups, "Meetings", Modifier.weight(1f)) {
+                navController.navigate(Routes.MEETINGS.replace("{groupId}", groupId))
+            }
+            // Spacer to keep the grid balanced
+            Box(modifier = Modifier.weight(1f))
         }
     }
 }
@@ -183,7 +202,7 @@ fun ActionCard(icon: ImageVector, label: String, modifier: Modifier, onClick: ()
 }
 
 @Composable
-fun TransactionsHeader(navController: NavController, groupId: Int) {
+fun TransactionsHeader(navController: NavController, groupId: String) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -193,7 +212,7 @@ fun TransactionsHeader(navController: NavController, groupId: Int) {
         Text(
             stringResource(R.string.view_all_link),
             color = BlueLink,
-            modifier = Modifier.clickable { navController.navigate("transactions/$groupId") }
+            modifier = Modifier.clickable { navController.navigate(Routes.TRANSACTIONS.replace("{groupId}", groupId)) }
         )
     }
 }
@@ -206,9 +225,9 @@ fun TransactionSummaryCard(transaction: Transaction) {
         colors = CardDefaults.cardColors(containerColor = White)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(stringResource(R.string.member_name_placeholder), fontWeight = FontWeight.Bold, fontSize = 14.sp)
-            Text(stringResource(R.string.trans_id_label, transaction.transId, transaction.type), fontSize = 13.sp, color = TextSecondary)
-            Text(transaction.timestamp, fontSize = 12.sp, color = TextSecondary)
+            Text(transaction.memberName ?: "Member", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+            Text("Ref: ${transaction.tisuRef} | ${transaction.type}", fontSize = 13.sp, color = TextSecondary)
+            Text(transaction.createdAt, fontSize = 12.sp, color = TextSecondary)
         }
     }
 }

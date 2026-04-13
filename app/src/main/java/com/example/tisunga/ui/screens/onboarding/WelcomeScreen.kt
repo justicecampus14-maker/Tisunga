@@ -7,10 +7,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.KeyboardArrowRight
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -27,70 +24,84 @@ import com.example.tisunga.ui.theme.*
 
 @Composable
 fun WelcomeScreen(navController: NavController) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(White)
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Text(
-            text = stringResource(R.string.welcome_to),
-            fontSize = 26.sp,
-            fontWeight = FontWeight.Light,
-            letterSpacing = 4.sp,
-            color = TextPrimary
-        )
-        Text(
-            text = stringResource(R.string.welcome_tisunga),
-            fontSize = 22.sp,
-            fontWeight = FontWeight.Medium,
-            letterSpacing = 2.sp,
-            color = TextPrimary
-        )
-        
-        Spacer(modifier = Modifier.height(48.dp))
-        
-        Text(
-            text = stringResource(R.string.welcome_description),
-            fontSize = 15.sp,
-            textAlign = TextAlign.Center,
-            lineHeight = 24.sp,
-            color = TextPrimary
-        )
-    }
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(bottom = 48.dp, start = 24.dp, end = 24.dp),
-        contentAlignment = Alignment.BottomCenter
-    ) {
-        Row(
+    Scaffold(
+        modifier = Modifier.fillMaxSize(),
+        containerColor = White
+    ) { padding ->
+        Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp)
+                .fillMaxSize()
+                .padding(padding)
         ) {
-            Button(
-                onClick = { navController.navigate(Routes.SIGN_IN) },
+            Column(
                 modifier = Modifier
-                    .weight(0.7f)
-                    .fillMaxHeight(),
-                shape = RoundedCornerShape(topStart = 28.dp, bottomStart = 28.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32))
+                    .fillMaxSize()
+                    .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
             ) {
-                Text(stringResource(R.string.get_started_button), color = White, fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.weight(1f))
+                
+                Text(
+                    text = stringResource(R.string.welcome_to),
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Light,
+                    letterSpacing = 4.sp,
+                    color = TextSecondary,
+                    textAlign = TextAlign.Center
+                )
+                Text(
+                    text = stringResource(R.string.welcome_tisunga),
+                    fontSize = 32.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 2.sp,
+                    color = NavyBlue,
+                    textAlign = TextAlign.Center
+                )
+                
+                Spacer(modifier = Modifier.height(32.dp))
+                
+                Text(
+                    text = "Secure your future through group savings and easy access to loans.",
+                    fontSize = 16.sp,
+                    textAlign = TextAlign.Center,
+                    lineHeight = 24.sp,
+                    color = TextSecondary,
+                    modifier = Modifier.padding(horizontal = 24.dp)
+                )
+                
+                Spacer(modifier = Modifier.weight(1.2f))
             }
-            Button(
-                onClick = { navController.navigate(Routes.SIGN_IN) },
+
+            Column(
                 modifier = Modifier
-                    .weight(0.3f)
-                    .fillMaxHeight(),
-                shape = RoundedCornerShape(topEnd = 28.dp, bottomEnd = 28.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFCC00))
+                    .align(Alignment.BottomCenter)
+                    .padding(24.dp)
+                    .fillMaxWidth()
             ) {
-                Icon(Icons.Default.KeyboardArrowRight, contentDescription = null, tint = White)
+                Button(
+                    onClick = { navController.navigate(Routes.SIGN_IN) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = NavyBlue)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            stringResource(R.string.get_started_button), 
+                            color = White, 
+                            fontSize = 18.sp, 
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Icon(Icons.Default.KeyboardArrowRight, contentDescription = null, tint = White)
+                    }
+                }
+                Spacer(modifier = Modifier.height(24.dp))
             }
         }
     }

@@ -73,7 +73,7 @@ fun GroupSavingsScreen(navController: NavController, viewModel: SavingsViewModel
 
                 items(uiState.groupSavings) { summary ->
                     GroupSavingsCard(summary) {
-                        navController.navigate("make_contribution/${summary.groupId}")
+                        navController.navigate("make_contribution/${summary.groupId}/${summary.groupName}")
                     }
                 }
             }

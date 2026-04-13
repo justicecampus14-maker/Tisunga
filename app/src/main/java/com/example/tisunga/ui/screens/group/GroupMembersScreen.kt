@@ -21,7 +21,7 @@ import com.example.tisunga.ui.theme.*
 import com.example.tisunga.viewmodel.GroupViewModel
 
 @Composable
-fun GroupMembersScreen(navController: NavController, groupId: Int, viewModel: GroupViewModel) {
+fun GroupMembersScreen(navController: NavController, groupId: String, viewModel: GroupViewModel) {
     val uiState by viewModel.uiState.collectAsState()
 
     LaunchedEffect(Unit) {

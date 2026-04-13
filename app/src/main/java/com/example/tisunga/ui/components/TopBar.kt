@@ -8,6 +8,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material3.Badge
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -21,7 +22,12 @@ import androidx.compose.ui.unit.sp
 import com.example.tisunga.ui.theme.TextSecondary
 
 @Composable
-fun TopBar(userName: String, userPhone: String, onNotificationsClick: () -> Unit) {
+fun TopBar(
+    userName: String,
+    userPhone: String,
+    unreadCount: Int = 0,
+    onNotificationsClick: () -> Unit
+) {
     val initials = if (userName.isNotEmpty()) {
         userName.split(" ").filter { it.isNotEmpty() }.let { parts ->
             if (parts.size >= 2) {
@@ -74,12 +80,18 @@ fun TopBar(userName: String, userPhone: String, onNotificationsClick: () -> Unit
                     .size(28.dp)
                     .clickable { onNotificationsClick() }
             )
-            Box(
-                modifier = Modifier
-                    .size(10.dp)
-                    .background(Color.Red, CircleShape)
-                    .align(Alignment.TopEnd)
-            )
+            if (unreadCount > 0) {
+                Badge(
+                    modifier = Modifier.align(Alignment.TopEnd),
+                    containerColor = Color.Red
+                ) {
+                    Text(
+                        if (unreadCount > 99) "99+" else unreadCount.toString(),
+                        fontSize = 9.sp,
+                        color = Color.White
+                    )
+                }
+            }
         }
     }
 }

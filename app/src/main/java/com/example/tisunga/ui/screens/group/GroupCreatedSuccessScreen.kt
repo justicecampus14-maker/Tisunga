@@ -15,10 +15,11 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.compose.ui.res.stringResource
 import com.example.tisunga.R
+import com.example.tisunga.ui.navigation.Routes
 import com.example.tisunga.ui.theme.*
 
 @Composable
-fun GroupCreatedSuccessScreen(navController: NavController, groupId: Int) {
+fun GroupCreatedSuccessScreen(navController: NavController, groupId: String) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -52,7 +53,7 @@ fun GroupCreatedSuccessScreen(navController: NavController, groupId: Int) {
                 Spacer(modifier = Modifier.height(40.dp))
                 
                 OutlinedButton(
-                    onClick = { navController.navigate("add_members/$groupId") },
+                    onClick = { navController.navigate(Routes.ADD_MEMBERS.replace("{groupId}", groupId)) },
                     modifier = Modifier.fillMaxWidth().height(52.dp),
                     shape = RoundedCornerShape(10.dp),
                     border = androidx.compose.foundation.BorderStroke(1.dp, White),

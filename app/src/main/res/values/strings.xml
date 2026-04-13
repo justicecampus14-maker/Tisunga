@@ -21,8 +21,9 @@
     <string name="signin_link">Sign In</string>
     <string name="terms_and_privacy">By continuing, you agree to our Terms of Service and Privacy Policy</string>
     <string name="back_desc">Back</string>
-    <string name="verification_title">Enter Verification Code</string>
+    <string name="verification_title">Verification</string>
     <string name="verification_subtitle">Enter code we sent to your phone number</string>
+    <string name="enter_otp_subtitle">Enter the 6-digit code sent to your phone</string>
     <string name="verify_button">Verify</string>
     <string name="resend_code_link">Resend Code</string>
     <string name="create_password_title">Create Password</string>
@@ -36,6 +37,13 @@
     <string name="enter_phone_subtitle">Enter your phone number</string>
     <string name="phone_placeholder">0882752624</string>
     <string name="send_button">Send</string>
+
+    <!-- Reset Password -->
+    <string name="reset_password_title">Reset Password</string>
+    <string name="reset_password_subtitle">Create a new password for your account</string>
+    <string name="new_password_label">New Password</string>
+    <string name="confirm_password_label">Confirm Password</string>
+    <string name="reset_password_button">Reset Password</string>
 
     <!-- Home Screen -->
     <string name="hi_user">Hi, %1$s</string>
@@ -55,7 +63,6 @@
     <string name="join_group_label">Join Group</string>
     <string name="view_loans_label">Loans</string>
     <string name="my_groups_title">My Groups</string>
-    <string name="discover_groups_link">Discover groups →</string>
     <string name="no_groups_msg">You don\'t belong to any group yet</string>
     <string name="group_total_savings">Group savings : MK %1$s</string>
     <string name="group_my_savings">My Savings: MK %1$s</string>
@@ -72,7 +79,6 @@
     <string name="filter_popular">Popular</string>
     <string name="group_logo_placeholder">Group\nlogo</string>
     <string name="description_placeholder">description placeholder</string>
-    <string name="view_and_join_button">View and Join</string>
     <string name="create_group_title">Create Group</string>
     <string name="chair_notice">Upon Creation You are the Chair for the group</string>
     <string name="group_name_label">Group Name*</string>

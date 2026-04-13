@@ -1,138 +1,214 @@
 package com.example.tisunga.ui.screens.transactions
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.example.tisunga.R
 import com.example.tisunga.data.model.Transaction
+import com.example.tisunga.data.model.TransactionType
 import com.example.tisunga.ui.theme.*
-import com.example.tisunga.viewmodel.GroupViewModel
+import com.example.tisunga.viewmodel.TransactionViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TransactionsScreen(navController: NavController, groupId: Int, viewModel: GroupViewModel) {
+fun TransactionsScreen(
+    navController: NavController,
+    groupId: String,
+    viewModel: TransactionViewModel
+) {
     val uiState by viewModel.uiState.collectAsState()
-    val tabAll = stringResource(R.string.tab_all)
-    val tabContributions = stringResource(R.string.tab_contributions)
-    val tabLoans = stringResource(R.string.tab_loans)
-    val tabJoins = stringResource(R.string.tab_joins)
-    var selectedTab by remember { mutableStateOf(tabAll) }
+    var selectedType by remember { mutableStateOf<String?>(null) }
+    val listState = rememberLazyListState()
 
-    LaunchedEffect(Unit) {
-        viewModel.getGroupTransactions(groupId)
+    LaunchedEffect(groupId, selectedType) {
+        viewModel.getTransactions(groupId, selectedType, refresh = true)
     }
 
-    val filteredTransactions = when (selectedTab) {
-        tabContributions -> uiState.transactions.filter { it.type.contains("Contribution", ignoreCase = true) }
-        tabLoans -> uiState.transactions.filter { it.type.contains("Loan", ignoreCase = true) }
-        tabJoins -> uiState.transactions.filter { it.type.contains("Join", ignoreCase = true) }
-        else -> uiState.transactions
+    // Infinite scroll trigger
+    val shouldLoadMore = remember {
+        derivedStateOf {
+            val lastVisibleItemIndex = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
+            lastVisibleItemIndex >= uiState.transactions.size - 5 && uiState.hasMore && !uiState.isLoading
+        }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(White)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = { navController.popBackStack() }) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back_desc))
-            }
-            Text(stringResource(R.string.placeholder_group_name), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+    LaunchedEffect(shouldLoadMore.value) {
+        if (shouldLoadMore.value) {
+            viewModel.loadMore(groupId, selectedType)
         }
+    }
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            TransactionTabItem(tabAll, selectedTab == tabAll) { selectedTab = tabAll }
-            TransactionTabItem(tabContributions, selectedTab == tabContributions) { selectedTab = tabContributions }
-            TransactionTabItem(tabLoans, selectedTab == tabLoans) { selectedTab = tabLoans }
-            TransactionTabItem(tabJoins, selectedTab == tabJoins) { selectedTab = tabJoins }
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Transaction History", fontSize = 20.sp, fontWeight = FontWeight.Bold) },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = White)
+            )
         }
-
-        LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .background(BackgroundGray)
         ) {
-            item {
-                Text(
-                    stringResource(R.string.transaction_date_placeholder),
-                    modifier = Modifier.fillMaxWidth().padding(12.dp),
-                    textAlign = TextAlign.Center,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp
+            // Filter Chips
+            ScrollableTabRow(
+                selectedTabIndex = if (selectedType == null) 0 else 1,
+                containerColor = White,
+                edgePadding = 16.dp,
+                divider = {},
+                indicator = {}
+            ) {
+                FilterChip(
+                    selected = selectedType == null,
+                    onClick = { selectedType = null },
+                    label = { Text("All") },
+                    modifier = Modifier.padding(horizontal = 4.dp)
                 )
+                listOf("SAVINGS", "LOAN_OUT", "LOAN_IN", "SOCIAL_FUND", "EXPENSE").forEach { type ->
+                    FilterChip(
+                        selected = selectedType == type,
+                        onClick = { selectedType = type },
+                        label = { Text(type.replace("_", " ")) },
+                        modifier = Modifier.padding(horizontal = 4.dp)
+                    )
+                }
             }
 
-            items(filteredTransactions) { transaction ->
-                TransactionBubble(transaction)
+            if (uiState.transactions.isEmpty() && !uiState.isLoading) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(Icons.Default.History, null, Modifier.size(64.dp), tint = Color.LightGray)
+                        Text("No transactions found", color = Color.Gray)
+                    }
+                }
+            } else {
+                LazyColumn(
+                    state = listState,
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    itemsIndexed(uiState.transactions, key = { _, item -> item.id }) { index, transaction ->
+                        TransactionItem(transaction)
+                    }
+
+                    if (uiState.isLoading) {
+                        item {
+                            Box(modifier = Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
+                                CircularProgressIndicator(color = NavyBlue, modifier = Modifier.size(24.dp))
+                            }
+                        }
+                    }
+                }
             }
         }
     }
 }
 
 @Composable
-fun TransactionTabItem(label: String, isSelected: Boolean, onClick: () -> Unit) {
-    Column(
-        modifier = Modifier
-            .clickable { onClick() }
-            .padding(horizontal = 12.dp, vertical = 12.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            text = label,
-            fontSize = 15.sp,
-            color = if (isSelected) NavyBlue else TextSecondary,
-            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-        )
-        if (isSelected) {
-            Spacer(modifier = Modifier.height(4.dp))
-            Box(modifier = Modifier.height(2.dp).width(24.dp).background(NavyBlue))
-        }
-    }
-}
+fun TransactionItem(transaction: Transaction) {
+    val isCredit = transaction.type in listOf(TransactionType.SAVINGS, TransactionType.LOAN_IN, TransactionType.SOCIAL_FUND, TransactionType.SHARE_PURCHASE, TransactionType.JOIN_FEE, TransactionType.INTEREST)
+    val color = if (isCredit) GreenAccent else Color.Red
+    val icon = if (isCredit) Icons.Default.ArrowDownward else Icons.Default.ArrowUpward
 
-@Composable
-fun TransactionBubble(transaction: Transaction) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5))
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = White),
+        elevation = CardDefaults.cardElevation(2.dp)
     ) {
-        Column(modifier = Modifier.padding(12.dp)) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = color.copy(alpha = 0.1f),
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(icon, null, tint = color, modifier = Modifier.size(20.dp))
+                        }
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column {
+                        Text(
+                            text = transaction.type.name.replace("_", " "),
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 15.sp
+                        )
+                        Text(
+                            text = transaction.memberName ?: "System",
+                            fontSize = 12.sp,
+                            color = Color.Gray
+                        )
+                    }
+                }
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        text = (if (isCredit) "+" else "-") + "MK ${String.format("%,.2f", transaction.amount)}",
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 16.sp,
+                        color = color
+                    )
+                    Text(
+                        text = "Bal: MK ${String.format("%,.2f", transaction.balanceAfter)}",
+                        fontSize = 11.sp,
+                        color = Color.Gray
+                    )
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(12.dp))
             Text(
                 text = transaction.description,
-                fontSize = 14.sp,
-                color = TextPrimary,
-                lineHeight = 20.sp
+                fontSize = 13.sp,
+                color = TextSecondary,
+                lineHeight = 18.sp
             )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = stringResource(R.string.transaction_time_placeholder), // Should come from timestamp in real app
+            
+            Spacer(modifier = Modifier.height(12.dp))
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                textAlign = TextAlign.End,
-                fontSize = 11.sp,
-                color = TextSecondary
-            )
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = "Ref: ${transaction.tisuRef}",
+                    fontSize = 10.sp,
+                    color = Color.LightGray
+                )
+                Text(
+                    text = transaction.createdAt.take(16).replace("T", " "),
+                    fontSize = 10.sp,
+                    color = Color.Gray
+                )
+            }
         }
     }
 }
