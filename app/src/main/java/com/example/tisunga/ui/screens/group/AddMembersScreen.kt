@@ -80,7 +80,7 @@ fun AddMembersScreen(
         containerColor = BackgroundGray,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
-            Column(modifier = Modifier.padding(16.dp)) {
+            Column(modifier = Modifier.padding(16.dp).navigationBarsPadding()) {
                 Button(
                     onClick = {
                         homeViewModel.refreshAfterCreation()
@@ -101,6 +101,7 @@ fun AddMembersScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .statusBarsPadding()
                 .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {

@@ -35,7 +35,7 @@ fun BottomNavBar(
     val items: List<BottomNavItem> = listOf(
         BottomNavItem("Home", Icons.Filled.Home, Routes.HOME),
         BottomNavItem(
-            if (type == "B") "Savings" else "Save", 
+            "Savings",
             Icons.Filled.AccountBalance, 
             Routes.GROUP_SAVINGS
         ),
@@ -49,7 +49,8 @@ fun BottomNavBar(
         items.forEach { item ->
             val isSelected = when (item.route) {
                 Routes.HOME -> currentRoute == Routes.HOME
-                Routes.GROUP_SAVINGS -> currentRoute == Routes.GROUP_SAVINGS
+                Routes.GROUP_SAVINGS -> currentRoute == Routes.GROUP_SAVINGS || currentRoute?.startsWith("make_contribution") == true || currentRoute?.startsWith("contribution_history") == true
+                Routes.ALL_LOANS -> currentRoute == Routes.ALL_LOANS || currentRoute?.startsWith("my_loans") == true || currentRoute?.startsWith("group_loans") == true || currentRoute?.startsWith("apply_loan") == true
                 else -> currentRoute == item.route
             }
 

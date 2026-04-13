@@ -37,6 +37,148 @@ import kotlinx.coroutines.launch
 import java.util.Locale
 
 @Composable
+fun AppDrawerContent(
+    userName: String,
+    userPhone: String,
+    myGroups: List<com.example.tisunga.data.model.Group>,
+    myRole: String?,
+    navController: NavController,
+    drawerState: DrawerState,
+    scope: kotlinx.coroutines.CoroutineScope,
+    onLogout: () -> Unit
+) {
+    ModalDrawerSheet(
+        modifier = Modifier.width(280.dp),
+        drawerContainerColor = BackgroundGray,
+        drawerShape = RoundedCornerShape(topEnd = 16.dp, bottomEnd = 16.dp)
+    ) {
+        // Drawer Header with User Initials
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(NavyBlue)
+                .statusBarsPadding()
+                .padding(24.dp)
+        ) {
+            Column {
+                Box(
+                    modifier = Modifier
+                        .size(64.dp)
+                        .background(White.copy(alpha = 0.2f), CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    val initial = userName.take(1).uppercase()
+                    Text(
+                        text = initial.ifEmpty { "?" },
+                        color = White,
+                        fontSize = 28.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    text = userName,
+                    color = White,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = userPhone,
+                    color = White.copy(alpha = 0.7f),
+                    fontSize = 14.sp
+                )
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(8.dp))
+        
+        NavigationDrawerItem(
+            icon = { Icon(Icons.Default.Person, contentDescription = null) },
+            label = { Text("My Profile") },
+            selected = false,
+            onClick = {
+                scope.launch {
+                    drawerState.close()
+                    navController.navigate(Routes.PROFILE)
+                }
+            },
+            modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
+            colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
+        )
+
+        if (myGroups.isNotEmpty()) {
+            val currentGroup = myGroups.first()
+            val role = myRole?.lowercase() ?: "member"
+            val isPrivileged = role == "chairperson" || role == "secretary"
+
+            NavigationDrawerItem(
+                icon = { Icon(Icons.Default.Group, contentDescription = null) },
+                label = { Text("Group Members") },
+                selected = false,
+                onClick = {
+                    scope.launch {
+                        drawerState.close()
+                        if (isPrivileged) {
+                            navController.navigate(Routes.GROUP_MEMBERS_CHAIR.replace("{groupId}", currentGroup.id))
+                        } else {
+                            navController.navigate(Routes.GROUP_MEMBERS.replace("{groupId}", currentGroup.id))
+                        }
+                    }
+                },
+                modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
+                colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
+            )
+        }
+        
+        NavigationDrawerItem(
+            icon = { Icon(Icons.Default.Settings, contentDescription = null) },
+            label = { Text("Settings") },
+            selected = false,
+            onClick = {
+                scope.launch {
+                    drawerState.close()
+                    navController.navigate(Routes.SETTINGS)
+                }
+            },
+            modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
+            colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
+        )
+
+        NavigationDrawerItem(
+            icon = { Icon(Icons.Default.Palette, contentDescription = null) },
+            label = { Text("Theme") },
+            selected = false,
+            onClick = {
+                scope.launch {
+                    drawerState.close()
+                    navController.navigate(Routes.SETTINGS)
+                }
+            },
+            modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
+            colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
+        )
+        
+        Spacer(Modifier.weight(1f))
+
+        NavigationDrawerItem(
+            icon = { Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null, tint = RedAccent) },
+            label = { Text("Logout", color = RedAccent) },
+            selected = false,
+            onClick = { 
+                scope.launch {
+                    drawerState.close()
+                    onLogout()
+                }
+            },
+            modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
+            colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
+        )
+        
+        Spacer(modifier = Modifier.height(16.dp))
+    }
+}
+
+@Composable
 fun HomeScreen(
     navController: NavController, 
     viewModel: HomeViewModel, 
@@ -55,130 +197,21 @@ fun HomeScreen(
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
-            ModalDrawerSheet(
-                modifier = Modifier.width(280.dp),
-                drawerContainerColor = BackgroundGray,
-                drawerShape = RoundedCornerShape(topEnd = 16.dp, bottomEnd = 16.dp)
-            ) {
-                // Drawer Header with User Initials
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(NavyBlue)
-                        .padding(24.dp)
-                ) {
-                    Column {
-                        Box(
-                            modifier = Modifier
-                                .size(64.dp)
-                                .background(White.copy(alpha = 0.2f), CircleShape),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            val initial = uiState.userName.take(1).uppercase()
-                            Text(
-                                text = initial.ifEmpty { "?" },
-                                color = White,
-                                fontSize = 28.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Text(
-                            text = uiState.userName,
-                            color = White,
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = uiState.userPhone,
-                            color = White.copy(alpha = 0.7f),
-                            fontSize = 14.sp
-                        )
+            AppDrawerContent(
+                userName = uiState.userName,
+                userPhone = uiState.userPhone,
+                myGroups = uiState.myGroups,
+                myRole = uiState.myRole,
+                navController = navController,
+                drawerState = drawerState,
+                scope = scope,
+                onLogout = {
+                    viewModel.logout()
+                    navController.navigate(Routes.SIGN_IN) {
+                        popUpTo(0) { inclusive = true }
                     }
                 }
-                
-                Spacer(modifier = Modifier.height(8.dp))
-                
-                NavigationDrawerItem(
-                    icon = { Icon(Icons.Default.Person, contentDescription = null) },
-                    label = { Text("My Profile") },
-                    selected = false,
-                    onClick = {
-                        scope.launch {
-                            drawerState.close()
-                            navController.navigate(Routes.PROFILE)
-                        }
-                    },
-                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
-                    colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
-                )
-
-                if (uiState.myGroups.isNotEmpty()) {
-                    val currentGroup = uiState.myGroups.first()
-                    NavigationDrawerItem(
-                        icon = { Icon(Icons.Default.Group, contentDescription = null) },
-                        label = { Text("Group Members") },
-                        selected = false,
-                        onClick = {
-                            scope.launch {
-                                drawerState.close()
-                                navController.navigate(Routes.GROUP_MEMBERS.replace("{groupId}", currentGroup.id))
-                            }
-                        },
-                        modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
-                        colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
-                    )
-                }
-                
-                NavigationDrawerItem(
-                    icon = { Icon(Icons.Default.Settings, contentDescription = null) },
-                    label = { Text("Settings") },
-                    selected = false,
-                    onClick = {
-                        scope.launch {
-                            drawerState.close()
-                            navController.navigate(Routes.SETTINGS)
-                        }
-                    },
-                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
-                    colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
-                )
-
-                NavigationDrawerItem(
-                    icon = { Icon(Icons.Default.Palette, contentDescription = null) },
-                    label = { Text("Theme") },
-                    selected = false,
-                    onClick = {
-                        scope.launch {
-                            drawerState.close()
-                            navController.navigate(Routes.SETTINGS)
-                        }
-                    },
-                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
-                    colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
-                )
-                
-                Spacer(Modifier.weight(1f))
-
-                NavigationDrawerItem(
-                    icon = { Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null, tint = RedAccent) },
-                    label = { Text("Logout", color = RedAccent) },
-                    selected = false,
-                    onClick = { 
-                        scope.launch {
-                            drawerState.close()
-                            viewModel.logout()
-                            navController.navigate(Routes.SIGN_IN) {
-                                popUpTo(0) { inclusive = true }
-                            }
-                        }
-                    },
-                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
-                    colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
-                )
-                
-                Spacer(modifier = Modifier.height(16.dp))
-            }
+            )
         }
     ) {
         Scaffold(
@@ -192,7 +225,7 @@ fun HomeScreen(
                     }
                 )
             },
-            bottomBar = { BottomNavBar(navController, type = "C") },
+            bottomBar = { BottomNavBar(navController) },
             containerColor = BackgroundGray
         ) { padding ->
             Column(
@@ -203,11 +236,12 @@ fun HomeScreen(
             ) {
                 if (uiState.myGroups.isEmpty()) {
                     BannerSection()
+                    QuickActionsSection(navController, null)
                 } else {
                     GroupInfoCard(uiState.myGroups.first())
+                    QuickActionsSection(navController, uiState.myGroups.first())
                 }
 
-                QuickActionsSection(navController, uiState.myGroups.firstOrNull())
                 RecentTransactionsSection(uiState.recentTransactions)
             }
         }
@@ -289,6 +323,7 @@ fun HomeHeader(userPhone: String, unreadCount: Int, navController: NavController
         modifier = Modifier
             .fillMaxWidth()
             .background(BackgroundGray)
+            .statusBarsPadding()
             .padding(16.dp)
     ) {
         IconButton(

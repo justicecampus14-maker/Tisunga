@@ -36,6 +36,7 @@ fun GroupMembersChairScreen(navController: NavController, groupId: String, viewM
     var expandedMemberId by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(Unit) {
+        viewModel.getGroupDashboard(groupId)
         viewModel.getGroupMembers(groupId)
     }
 
@@ -52,7 +53,7 @@ fun GroupMembersChairScreen(navController: NavController, groupId: String, viewM
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back_desc))
             }
             Text(
-                stringResource(R.string.group_members_title_placeholder, stringResource(R.string.placeholder_group_name)),
+                uiState.selectedGroup?.name ?: stringResource(R.string.group_members_title_placeholder, stringResource(R.string.placeholder_group_name)),
                 modifier = Modifier.weight(1f),
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                 fontSize = 18.sp,
@@ -72,10 +73,11 @@ fun GroupMembersChairScreen(navController: NavController, groupId: String, viewM
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            InfoCard(label = stringResource(R.string.join_request_label), value = "4", modifier = Modifier.weight(1f)) {
+            InfoCard(label = stringResource(R.string.join_request_label), value = "${uiState.joinRequests.size}", modifier = Modifier.weight(1f)) {
                 // Show JoinRequestsDialog
             }
-            InfoCard(label = stringResource(R.string.group_code_label_simple), value = stringResource(R.string.placeholder_group_code), isCode = true, modifier = Modifier.weight(1f)) {
+            val groupCode = uiState.selectedGroup?.groupCode ?: stringResource(R.string.placeholder_group_code)
+            InfoCard(label = stringResource(R.string.group_code_label_simple), value = groupCode, isCode = true, modifier = Modifier.weight(1f)) {
                 // Share code logic
             }
         }

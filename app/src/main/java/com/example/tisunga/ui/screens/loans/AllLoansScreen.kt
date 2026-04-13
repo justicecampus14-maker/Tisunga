@@ -9,6 +9,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -21,10 +22,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.tisunga.data.model.Loan
+import com.example.tisunga.ui.components.BottomNavBar
 import com.example.tisunga.ui.navigation.Routes
+import com.example.tisunga.ui.screens.home.AppDrawerContent
+import com.example.tisunga.ui.screens.home.HomeHeader
 import com.example.tisunga.ui.theme.*
 import com.example.tisunga.viewmodel.HomeViewModel
 import com.example.tisunga.viewmodel.LoanViewModel
+import com.example.tisunga.viewmodel.NotificationViewModel
+import kotlinx.coroutines.launch
 import java.util.Locale
 
 // ── Tab item ──────────────────────────────────────────────────────────────────
@@ -54,14 +60,21 @@ fun TabItem(label: String, isSelected: Boolean, onClick: () -> Unit) {
 fun AllLoansScreen(
     navController: NavController,
     viewModel: LoanViewModel,
-    homeViewModel: HomeViewModel
+    homeViewModel: HomeViewModel,
+    notificationViewModel: NotificationViewModel
 ) {
     val uiState     by viewModel.uiState.collectAsState()
     val homeUiState by homeViewModel.uiState.collectAsState()
+    val notificationState by notificationViewModel.uiState.collectAsState()
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
 
     var selectedTab by remember { mutableStateOf("Active") }
 
-    LaunchedEffect(Unit) { viewModel.getMyLoans() }
+    LaunchedEffect(Unit) { 
+        viewModel.getMyLoans()
+        notificationViewModel.load()
+    }
 
     val currentGroup = homeUiState.myGroups.firstOrNull()
     val groupId      = currentGroup?.id ?: ""
@@ -75,101 +88,105 @@ fun AllLoansScreen(
         else      -> uiState.groupLoans
     }
 
-    Scaffold(
-        containerColor = BackgroundGray,
-        bottomBar = {
-            Box(
-                modifier         = Modifier.fillMaxWidth().padding(16.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Button(
-                    onClick  = { navController.navigate("apply_loan/$groupId") },
-                    modifier = Modifier.fillMaxWidth(0.8f).height(50.dp),
-                    shape    = RoundedCornerShape(12.dp),
-                    colors   = ButtonDefaults.buttonColors(containerColor = NavyBlue)
-                ) {
-                    Text("Apply Loan", color = White, fontWeight = FontWeight.Bold)
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            AppDrawerContent(
+                userName = homeUiState.userName,
+                userPhone = homeUiState.userPhone,
+                myGroups = homeUiState.myGroups,
+                myRole = homeUiState.myRole,
+                navController = navController,
+                drawerState = drawerState,
+                scope = scope,
+                onLogout = {
+                    homeViewModel.logout()
+                    navController.navigate(Routes.SIGN_IN) {
+                        popUpTo(0) { inclusive = true }
+                    }
                 }
-            }
+            )
         }
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .verticalScroll(rememberScrollState())
-        ) {
-            // Header
-            HeaderSection(homeUiState.userName, homeUiState.userPhone, navController)
-
-            // Back + title row
-            Row(
-                modifier          = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
+    ) {
+        Scaffold(
+            containerColor = BackgroundGray,
+            topBar = {
+                HomeHeader(
+                    userPhone = homeUiState.userPhone,
+                    unreadCount = notificationState.unreadCount,
+                    navController = navController,
+                    onMenuClick = {
+                        scope.launch { drawerState.open() }
+                    }
+                )
+            },
+            bottomBar = { BottomNavBar(navController) },
+            floatingActionButton = {
+                if (groupId.isNotEmpty()) {
+                    FloatingActionButton(
+                        onClick = { navController.navigate("apply_loan/$groupId") },
+                        containerColor = NavyBlue,
+                        contentColor = White
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = "Apply Loan")
+                    }
+                }
+            }
+        ) { padding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .verticalScroll(rememberScrollState())
             ) {
-                Surface(
-                    modifier = Modifier.size(36.dp),
-                    shape    = RoundedCornerShape(8.dp),
-                    color    = Color.LightGray.copy(0.3f)
-                ) {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, null, modifier = Modifier.size(20.dp))
+                // Group Loans section
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        modifier              = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment     = Alignment.CenterVertically
+                    ) {
+                        Text("Group Loans", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+                        Text(
+                            "Requests",
+                            fontSize   = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            color      = NavyBlue,
+                            modifier   = Modifier.clickable { navController.navigate("group_loans/$groupId") }
+                        )
                     }
-                }
-                Spacer(Modifier.width(12.dp))
-                Column {
-                    Text("Loans", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
-                    Text(currentGroup?.name ?: "", fontSize = 13.sp, color = TextSecondary)
-                }
-            }
 
-            // My Loan section
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text("My Loan", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
-                Spacer(Modifier.height(12.dp))
-                if (myLoan != null) {
-                    MyLoanCard(
-                        loan        = myLoan,
-                        onRepayClick = { navController.navigate("my_loans/$groupId") }
-                    )
-                } else {
-                    Text("No active loan.", fontSize = 13.sp, color = TextSecondary)
-                }
-            }
+                    Spacer(Modifier.height(12.dp))
 
-            // Group Loans section
-            Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-                Row(
-                    modifier              = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment     = Alignment.CenterVertically
-                ) {
-                    Text("Group Loans", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
-                    Text(
-                        "Requests",
-                        fontSize   = 14.sp,
-                        fontWeight = FontWeight.Bold,
-                        color      = NavyBlue,
-                        modifier   = Modifier.clickable { navController.navigate("group_loans/$groupId") }
-                    )
-                }
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf("Active", "Pending", "History").forEach { tab ->
+                            TabItem(label = tab, isSelected = selectedTab == tab) { selectedTab = tab }
+                        }
+                    }
 
-                Spacer(Modifier.height(12.dp))
+                    Spacer(Modifier.height(16.dp))
 
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    listOf("Active", "Pending", "History").forEach { tab ->
-                        TabItem(label = tab, isSelected = selectedTab == tab) { selectedTab = tab }
+                    if (filteredGroupLoans.isEmpty()) {
+                        Text("No loans in this category.", fontSize = 13.sp, color = TextSecondary)
+                    } else {
+                        filteredGroupLoans.forEach { loan ->
+                            GroupLoanCard(loan)
+                            Spacer(Modifier.height(12.dp))
+                        }
                     }
                 }
 
-                Spacer(Modifier.height(16.dp))
-
-                if (filteredGroupLoans.isEmpty()) {
-                    Text("No loans in this category.", fontSize = 13.sp, color = TextSecondary)
-                } else {
-                    filteredGroupLoans.forEach { loan ->
-                        GroupLoanCard(loan)
-                        Spacer(Modifier.height(12.dp))
+                // My Loan section
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("My Loan", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+                    Spacer(Modifier.height(12.dp))
+                    if (myLoan != null) {
+                        MyLoanCard(
+                            loan        = myLoan,
+                            onRepayClick = { navController.navigate("my_loans/$groupId") }
+                        )
+                    } else {
+                        Text("No active loan.", fontSize = 13.sp, color = TextSecondary)
                     }
                 }
 

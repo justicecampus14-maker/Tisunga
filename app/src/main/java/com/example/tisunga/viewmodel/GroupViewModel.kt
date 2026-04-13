@@ -243,10 +243,53 @@ class GroupViewModel(private val sessionManager: SessionManager) : ViewModel() {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     groupDashboard = dashboard,
+                    selectedGroup = dashboard.group?.let { g ->
+                        Group(
+                            id = g.id,
+                            name = g.name,
+                            description = "",
+                            location = "",
+                            minContribution = 0.0,
+                            savingPeriod = 0,
+                            maxMembers = g.memberCount, // Using as proxy if exact field missing
+                            startDate = "",
+                            endDate = g.endDate ?: "",
+                            meetingDay = g.meetingDay ?: "",
+                            meetingTime = g.meetingTime ?: "",
+                            groupCode = g.groupCode ?: "",
+                            totalSavings = g.totalSavings
+                        )
+                    },
                     currentUserRole = dashboard.myRole?.lowercase() ?: "member"
                 )
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(isLoading = false)
+            }
+        }
+    }
+
+    fun updateMemberRole(groupId: String, userId: String, newRole: String) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true)
+            try {
+                apiService.updateMember(groupId, userId, mapOf("role" to newRole))
+                getGroupMembers(groupId)
+                _uiState.value = _uiState.value.copy(isLoading = false, successMessage = "Role updated")
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(isLoading = false, errorMessage = "Failed to update role")
+            }
+        }
+    }
+
+    fun removeMember(groupId: String, userId: String) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true)
+            try {
+                apiService.removeMember(groupId, userId)
+                getGroupMembers(groupId)
+                _uiState.value = _uiState.value.copy(isLoading = false, successMessage = "Member removed")
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(isLoading = false, errorMessage = "Failed to remove member")
             }
         }
     }
