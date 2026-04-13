@@ -1,128 +1,96 @@
 package com.example.tisunga.ui.screens.notifications
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.NotificationsActive
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.example.tisunga.R
+import com.example.tisunga.data.model.AppNotification
 import com.example.tisunga.ui.theme.*
+import com.example.tisunga.viewmodel.NotificationViewModel
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
-data class NotificationItem(
-    val id: Int,
-    val senderName: String,
-    val initials: String,
-    val messagePreview: String,
-    val date: String,
-    val time: String,
-    val isPriority: Boolean = false,
-    val avatarColor: Color = NavyBlue
-)
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NotificationsScreen(navController: NavController) {
-    var searchQuery by remember { mutableStateOf("") }
-    
-    val notifications = remember {
-        listOf(
-            NotificationItem(0, "Tisunga", "TS", "You have successfully created the Mphatso Group!", "Today", "Just now", true, GreenAccent),
-            NotificationItem(1, "Doman Group", "DG", "Chikula Phiri has contributed MK 20,000...", "3/20", "6:26PM"),
-            NotificationItem(2, "Tisunga", "TS", "Your loan application has been approved...", "3/20", "5:00PM", false, NavyBlue),
-            NotificationItem(3, "Chikondano Group", "CG", "Meeting reminder for tomorrow 3:00pm", "3/19", "2:15PM", false, Color(0xFF1565C0)),
-            NotificationItem(4, "Doman Group", "DG", "New event created: Funeral Contribution", "3/18", "10:00AM"),
-            NotificationItem(5, "Doman Group", "DG", "Disbursement requested by Chairperson", "3/17", "4:30PM")
-        )
-    }
+fun NotificationsScreen(
+    navController: NavController,
+    vm: NotificationViewModel
+) {
+    val state by vm.uiState.collectAsState()
 
-    val filteredNotifications = notifications.filter {
-        it.senderName.contains(searchQuery, ignoreCase = true) ||
-        it.messagePreview.contains(searchQuery, ignoreCase = true)
-    }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(BackgroundGray)
-    ) {
-        // Top Header
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            color = White,
-            shadowElevation = 2.dp
-        ) {
-            Column(modifier = Modifier.padding(bottom = 12.dp)) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Notifications", fontWeight = FontWeight.Bold) },
+                navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back_desc))
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
-                    Text(
-                        stringResource(R.string.notifications_title),
-                        modifier = Modifier.weight(1f),
-                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = NavyBlue
-                    )
-                    // Notification Icon
-                    IconButton(onClick = { /* Clear All logic */ }) {
-                        Icon(Icons.Default.NotificationsActive, contentDescription = null, tint = NavyBlue)
+                },
+                actions = {
+                    if (state.unreadCount > 0) {
+                        TextButton(onClick = { vm.markAllRead() }) {
+                            Text("Mark all read", fontSize = 13.sp, color = NavyBlue)
+                        }
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = White)
+            )
+        },
+        containerColor = BackgroundGray
+    ) { padding ->
+        when {
+            state.isLoading -> {
+                Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = NavyBlue)
+                }
+            }
+            state.errorMessage.isNotEmpty() -> {
+                Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(state.errorMessage, color = TextSecondary)
+                        Spacer(Modifier.height(12.dp))
+                        Button(onClick = { vm.load() }, colors = ButtonDefaults.buttonColors(containerColor = NavyBlue)) { 
+                            Text("Retry") 
+                        }
                     }
                 }
-
-                // Search Field
-                OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = { searchQuery = it },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
-                    placeholder = { Text("Search notifications...", fontSize = 14.sp) },
-                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, modifier = Modifier.size(20.dp)) },
-                    shape = RoundedCornerShape(12.dp),
-                    singleLine = true,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        unfocusedContainerColor = BackgroundGray,
-                        focusedContainerColor = BackgroundGray,
-                        unfocusedBorderColor = Color.Transparent,
-                        focusedBorderColor = NavyBlue
-                    )
-                )
             }
-        }
-
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            items(filteredNotifications) { notification ->
-                NotificationCard(notification)
+            state.notifications.isEmpty() -> {
+                Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+                    Text("No notifications yet", color = TextSecondary)
+                }
             }
-            
-            if (filteredNotifications.isEmpty() && searchQuery.isNotEmpty()) {
-                item {
-                    Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
-                        Text("No notifications found", color = TextSecondary)
+            else -> {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize().padding(padding),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    items(state.notifications, key = { it.id }) { notif ->
+                        NotificationCard(
+                            notification = notif,
+                            onClick = {
+                                if (!notif.isRead) vm.markOneRead(notif.id)
+                                // Routing logic can be added here if needed
+                            }
+                        )
                     }
                 }
             }
@@ -131,69 +99,97 @@ fun NotificationsScreen(navController: NavController) {
 }
 
 @Composable
-fun NotificationCard(notification: NotificationItem) {
+fun NotificationCard(
+    notification: AppNotification,
+    onClick: () -> Unit
+) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        colors = CardDefaults.cardColors(
+            containerColor = if (notification.isRead) White else Color(0xFFEEF4FF)
+        ),
+        elevation = CardDefaults.cardElevation(1.dp)
     ) {
         Row(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .background(
-                        color = notification.avatarColor.copy(alpha = 0.1f),
-                        shape = RoundedCornerShape(8.dp)
-                    ),
-                contentAlignment = Alignment.Center
+            Surface(
+                modifier = Modifier.size(48.dp),
+                shape = CircleShape,
+                color = NavyBlue.copy(alpha = 0.1f)
             ) {
-                Text(
-                    text = notification.initials,
-                    color = notification.avatarColor,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp
-                )
+                Box(contentAlignment = Alignment.Center) {
+                    Text(
+                        notification.title.take(1).uppercase(),
+                        color = NavyBlue,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp
+                    )
+                }
             }
 
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(start = 12.dp)
-            ) {
+            Spacer(Modifier.width(12.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = notification.senderName,
+                        text = notification.title,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 15.sp,
-                        color = TextPrimary
+                        fontSize = 14.sp,
+                        color = TextPrimary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        text = "${notification.date} • ${notification.time}",
+                        text = formatTimestamp(notification.createdAt),
                         fontSize = 11.sp,
-                        color = if (notification.isPriority) GreenAccent else TextSecondary,
-                        fontWeight = if (notification.isPriority) FontWeight.Bold else FontWeight.Normal
+                        color = TextSecondary
                     )
                 }
-                
-                Spacer(modifier = Modifier.height(2.dp))
-                
+
+                Spacer(Modifier.height(2.dp))
+
                 Text(
-                    text = notification.messagePreview,
+                    text = notification.body,
                     fontSize = 13.sp,
-                    color = if (notification.isPriority) TextPrimary else TextSecondary,
+                    color = TextSecondary,
                     maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    fontWeight = if (notification.isPriority) FontWeight.Medium else FontWeight.Normal
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+
+            if (!notification.isRead) {
+                Spacer(Modifier.width(8.dp))
+                Box(
+                    modifier = Modifier
+                        .size(10.dp)
+                        .background(NavyBlue, CircleShape)
                 )
             }
         }
     }
 }
+
+fun formatTimestamp(iso: String): String = try {
+    val instant = Instant.parse(iso)
+    val now = Instant.now()
+    val diffSeconds = now.epochSecond - instant.epochSecond
+    when {
+        diffSeconds < 60            -> "Just now"
+        diffSeconds < 3600          -> "${diffSeconds / 60}m ago"
+        diffSeconds < 86400         -> "${diffSeconds / 3600}h ago"
+        diffSeconds < 604800        -> "${diffSeconds / 86400}d ago"
+        else -> DateTimeFormatter
+            .ofPattern("MMM d")
+            .withZone(ZoneId.systemDefault())
+            .format(instant)
+    }
+} catch (e: Exception) { "" }

@@ -22,9 +22,9 @@ fun TransactionItem(transaction: Transaction) {
         elevation = CardDefaults.cardElevation(2.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text("Member Name", fontWeight = FontWeight.Bold, fontSize = 14.sp) // In real app, transaction should have member name
-            Text("Trans ID: ${transaction.transId} - ${transaction.type}", fontSize = 13.sp, color = TextSecondary)
-            Text(transaction.timestamp, fontSize = 12.sp, color = TextSecondary)
+            Text(transaction.memberName ?: "Member", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+            Text("Ref: ${transaction.tisuRef} - ${transaction.type}", fontSize = 13.sp, color = TextSecondary)
+            Text(transaction.createdAt, fontSize = 12.sp, color = TextSecondary)
         }
     }
 }

@@ -1,231 +1,197 @@
 package com.example.tisunga.ui.screens.savings
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.example.tisunga.R
-import com.example.tisunga.data.model.Contribution
-import com.example.tisunga.ui.components.BottomNavBar
-import com.example.tisunga.ui.components.SecondaryTopBar
 import com.example.tisunga.ui.theme.*
+import com.example.tisunga.viewmodel.ContributionViewModel
 import com.example.tisunga.viewmodel.SavingsViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MakeContributionScreen(navController: NavController, groupId: Int, viewModel: SavingsViewModel) {
+fun MakeContributionScreen(
+    navController: NavController,
+    groupId: String,
+    viewModel: ContributionViewModel
+) {
     val uiState by viewModel.uiState.collectAsState()
-    var phoneNumber by remember { mutableStateOf("+265 882752624") }
+    var amount by remember { mutableStateOf("") }
+    var phone by remember { mutableStateOf(viewModel.getUserPhone()) }
     
-    val contributionTypes = listOf("Savings", "Funeral", "Welfare", "Wedding")
-    var contributionType by remember { mutableStateOf(contributionTypes[0]) }
-    var amount by remember { mutableStateOf("2000") }
+    val contributionTypes = listOf(
+        "REGULAR" to "Regular Savings",
+        "SHARE_PURCHASE" to "Buy Shares",
+        "SOCIAL_FUND" to "Social Fund",
+        "LOAN_REPAYMENT" to "Loan Repayment"
+    )
+    var expanded by remember { mutableStateOf(false) }
+    var selectedType by remember { mutableStateOf(contributionTypes[0]) }
 
-    var phoneExpanded by remember { mutableStateOf(false) }
-    var typeExpanded by remember { mutableStateOf(false) }
-
-    LaunchedEffect(uiState.isSuccess) {
-        if (uiState.isSuccess) {
-            navController.popBackStack()
-            viewModel.resetState()
-        }
+    if (uiState.showPendingDialog) {
+        AlertDialog(
+            onDismissRequest = { },
+            confirmButton = {
+                TextButton(onClick = { 
+                    viewModel.dismissPendingDialog()
+                    navController.popBackStack() 
+                }) {
+                    Text("OK", color = NavyBlue)
+                }
+            },
+            title = { Text("Payment Initiated", fontWeight = FontWeight.Bold) },
+            text = {
+                Column {
+                    Text("Please check your phone ($phone) for a PIN prompt to authorize the payment of MK${amount}.")
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("Ref: ${uiState.initResponse?.transactionRef}", fontSize = 12.sp, color = Color.Gray)
+                }
+            },
+            icon = { Icon(Icons.Default.Info, contentDescription = null, tint = NavyBlue) }
+        )
     }
 
     Scaffold(
         topBar = {
-            SecondaryTopBar(
-                title = stringResource(R.string.make_contribution_title),
-                onBackClick = { navController.popBackStack() }
+            TopAppBar(
+                title = { Text("Make Contribution", fontSize = 20.sp, fontWeight = FontWeight.Bold) },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = White)
             )
-        },
-        bottomBar = { BottomNavBar(navController, type = "B") },
-        containerColor = BackgroundGray
+        }
     ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(24.dp)
-                .verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .background(BackgroundGray)
+                .padding(16.dp)
         ) {
-            Surface(
-                color = GreenLight.copy(alpha = 0.5f),
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.fillMaxWidth()
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = White)
             ) {
-                Text(
-                    stringResource(R.string.active_number_notice),
-                    color = GreenAccent,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Medium,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(16.dp)
-                )
-            }
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("New Contribution", fontWeight = FontWeight.Bold, color = NavyBlue)
+                    Spacer(modifier = Modifier.height(16.dp))
 
-            Spacer(modifier = Modifier.height(32.dp))
-
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                // Phone Number Field
-                ContributionFormField(label = stringResource(R.string.enter_phone_label)) {
-                    Box {
+                    Text("Contribution Type", fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                    ExposedDropdownMenuBox(
+                        expanded = expanded,
+                        onExpandedChange = { expanded = !expanded }
+                    ) {
                         OutlinedTextField(
-                            value = phoneNumber,
+                            value = selectedType.second,
                             onValueChange = {},
-                            modifier = Modifier.fillMaxWidth().clickable { phoneExpanded = true },
                             readOnly = true,
-                            shape = RoundedCornerShape(12.dp),
-                            trailingIcon = { 
-                                IconButton(onClick = { phoneExpanded = true }) {
-                                    Icon(Icons.Default.ArrowDropDown, null, tint = NavyBlue)
-                                }
-                            },
-                            colors = contributionFieldColors()
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                            modifier = Modifier.menuAnchor().fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp)
                         )
-                        DropdownMenu(
-                            expanded = phoneExpanded,
-                            onDismissRequest = { phoneExpanded = false },
-                            modifier = Modifier.background(White).fillMaxWidth(0.8f)
+                        ExposedDropdownMenu(
+                            expanded = expanded,
+                            onDismissRequest = { expanded = false }
                         ) {
-                            listOf("+265 882752624", "+265 999782230").forEach {
+                            contributionTypes.forEach { type ->
                                 DropdownMenuItem(
-                                    text = { Text(it, color = TextPrimary) },
-                                    onClick = { phoneNumber = it; phoneExpanded = false }
+                                    text = { Text(type.second) },
+                                    onClick = {
+                                        selectedType = type
+                                        expanded = false
+                                    }
                                 )
                             }
                         }
                     }
-                }
 
-                // Contribution Type Field
-                ContributionFormField(label = stringResource(R.string.contribution_type_label)) {
-                    Box {
-                        OutlinedTextField(
-                            value = contributionType,
-                            onValueChange = {},
-                            modifier = Modifier.fillMaxWidth().clickable { typeExpanded = true },
-                            readOnly = true,
-                            shape = RoundedCornerShape(12.dp),
-                            trailingIcon = { 
-                                IconButton(onClick = { typeExpanded = true }) {
-                                    Icon(Icons.Default.ArrowDropDown, null, tint = NavyBlue)
-                                }
-                            },
-                            colors = contributionFieldColors()
-                        )
-                        DropdownMenu(
-                            expanded = typeExpanded,
-                            onDismissRequest = { typeExpanded = false },
-                            modifier = Modifier.background(White).fillMaxWidth(0.8f)
-                        ) {
-                            contributionTypes.forEach {
-                                DropdownMenuItem(
-                                    text = { Text(it, color = TextPrimary) },
-                                    onClick = { contributionType = it; typeExpanded = false }
-                                )
-                            }
-                        }
-                    }
-                }
+                    Spacer(modifier = Modifier.height(16.dp))
 
-                // Amount Field
-                ContributionFormField(label = stringResource(R.string.amount_mk_input_label)) {
+                    Text("Phone Number", fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                    OutlinedTextField(
+                        value = phone,
+                        onValueChange = { phone = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                        placeholder = { Text("+265...") }
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Text("Amount (MK)", fontSize = 14.sp, fontWeight = FontWeight.Medium)
                     OutlinedTextField(
                         value = amount,
-                        onValueChange = { amount = it },
+                        onValueChange = { if (it.all { char -> char.isDigit() }) amount = it },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        colors = contributionFieldColors(),
-                        prefix = { Text("MK ", fontWeight = FontWeight.Bold, color = NavyBlue) },
-                        singleLine = true
+                        placeholder = { Text("Enter amount") }
                     )
-                }
-            }
 
-            Spacer(modifier = Modifier.height(40.dp))
-
-            Button(
-                onClick = { 
-                    val amtVal = amount.toDoubleOrNull() ?: 0.0
-                    if (amtVal > 0) {
-                        viewModel.makeContribution(
-                            Contribution(
-                                id = 0, groupId = groupId, userId = 0, userName = "",
-                                amount = amtVal, type = contributionType.lowercase(),
-                                timestamp = "", status = "pending", phoneNumber = phoneNumber
+                    Spacer(modifier = Modifier.height(12.dp))
+                    
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf("1000", "5000", "10000").forEach { quickAmount ->
+                            SuggestionChip(
+                                onClick = { amount = quickAmount },
+                                label = { Text("MK $quickAmount") }
                             )
-                        )
+                        }
                     }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = NavyBlue),
-                enabled = !uiState.isLoading
-            ) {
-                if (uiState.isLoading) {
-                    CircularProgressIndicator(color = White, modifier = Modifier.size(24.dp))
-                } else {
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    if (uiState.errorMessage != null) {
+                        Text(uiState.errorMessage!!, color = Color.Red, fontSize = 14.sp, modifier = Modifier.padding(bottom = 8.dp))
+                    }
+
+                    Button(
+                        onClick = { 
+                            val amtVal = amount.toDoubleOrNull() ?: 0.0
+                            if (amtVal > 0 && phone.isNotEmpty()) {
+                                viewModel.makeContribution(groupId, amtVal, phone, selectedType.first)
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth().height(52.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = NavyBlue),
+                        enabled = !uiState.isLoading && amount.isNotEmpty() && phone.isNotEmpty()
+                    ) {
+                        if (uiState.isLoading) {
+                            CircularProgressIndicator(color = White, modifier = Modifier.size(24.dp))
+                        } else {
+                            Text("Make Contribution", fontWeight = FontWeight.Bold)
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        stringResource(R.string.send_button),
-                        color = White,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold
+                        "You will receive a PIN prompt on your phone to authorize this transaction.",
+                        fontSize = 12.sp,
+                        textAlign = TextAlign.Center,
+                        color = Color.Gray,
+                        modifier = Modifier.fillMaxWidth()
                     )
                 }
             }
-            
-            Spacer(modifier = Modifier.height(24.dp))
-            
-            Text(
-                stringResource(R.string.receive_pin_msg),
-                color = TextSecondary,
-                fontWeight = FontWeight.Medium,
-                fontSize = 12.sp,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth()
-            )
         }
     }
 }
-
-@Composable
-fun ContributionFormField(label: String, content: @Composable () -> Unit) {
-    Column {
-        Text(
-            text = label,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Bold,
-            color = NavyBlue
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        content()
-    }
-}
-
-@Composable
-private fun contributionFieldColors() = OutlinedTextFieldDefaults.colors(
-    unfocusedBorderColor = DividerColor,
-    focusedBorderColor = NavyBlue,
-    unfocusedContainerColor = White,
-    focusedContainerColor = White
-)

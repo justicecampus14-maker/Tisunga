@@ -10,35 +10,40 @@
     <string name="forgot_password_link">Forgot your password?</string>
     <string name="no_account_text">Don\'t have an account? </string>
     <string name="signup_link">Sign up</string>
-    <string name="blocks_title">Create Account</string>
     <string name="create_account_title">Create Account</string>
     <string name="create_account_subtitle">Join us today and get started</string>
     <string name="first_name_label">First Name</string>
     <string name="middle_name_label">Middle Name (Optional)</string>
     <string name="last_name_label">Last Name</string>
-    <string name="national_id_label">National ID</string>
     <string name="error_fill_all_fields">Please fill all required fields</string>
     <string name="continue_button">Continue</string>
     <string name="already_have_account_text">Already have an account? </string>
     <string name="signin_link">Sign In</string>
     <string name="terms_and_privacy">By continuing, you agree to our Terms of Service and Privacy Policy</string>
     <string name="back_desc">Back</string>
-    <string name="verification_title">Enter Verification Code</string>
+    <string name="verification_title">Verification</string>
     <string name="verification_subtitle">Enter code we sent to your phone number</string>
+    <string name="enter_otp_subtitle">Enter the 6-digit code sent to your phone</string>
     <string name="verify_button">Verify</string>
     <string name="resend_code_link">Resend Code</string>
     <string name="create_password_title">Create Password</string>
     <string name="enter_password_label">Enter Password</string>
     <string name="reenter_password_label">Re-Enter password</string>
     <string name="error_passwords_dont_match">Passwords do not match</string>
-    <string name="error_password_length">Password must be at least 8 characters</string>
+    <string name="error_password_length">Password must be between 8 and 64 characters</string>
     <string name="error_password_uppercase">Password must include at least one capital letter</string>
-    <string name="error_password_number">Password must include at least one number</string>
     <string name="error_password_symbol">Password must include at least one symbol</string>
     <string name="forgot_password_title">Forget Password</string>
     <string name="enter_phone_subtitle">Enter your phone number</string>
     <string name="phone_placeholder">0882752624</string>
     <string name="send_button">Send</string>
+
+    <!-- Reset Password -->
+    <string name="reset_password_title">Reset Password</string>
+    <string name="reset_password_subtitle">Create a new password for your account</string>
+    <string name="new_password_label">New Password</string>
+    <string name="confirm_password_label">Confirm Password</string>
+    <string name="reset_password_button">Reset Password</string>
 
     <!-- Home Screen -->
     <string name="hi_user">Hi, %1$s</string>
@@ -58,7 +63,6 @@
     <string name="join_group_label">Join Group</string>
     <string name="view_loans_label">Loans</string>
     <string name="my_groups_title">My Groups</string>
-    <string name="discover_groups_link">Discover groups →</string>
     <string name="no_groups_msg">You don\'t belong to any group yet</string>
     <string name="group_total_savings">Group savings : MK %1$s</string>
     <string name="group_my_savings">My Savings: MK %1$s</string>
@@ -75,17 +79,16 @@
     <string name="filter_popular">Popular</string>
     <string name="group_logo_placeholder">Group\nlogo</string>
     <string name="description_placeholder">description placeholder</string>
-    <string name="view_and_join_button">View and Join</string>
     <string name="create_group_title">Create Group</string>
     <string name="chair_notice">Upon Creation You are the Chair for the group</string>
     <string name="group_name_label">Group Name*</string>
     <string name="group_name_hint">eg, Mphatsso Group</string>
-    <string name="description_label">Description*</string>
+    <string name="description_label">Description</string>
     <string name="description_hint">Mphatso group is a group that saves a minimum of k2000 each week .......</string>
-    <string name="location_label">Location*</string>
+    <string name="location_label">Location</string>
     <string name="location_hint">e.g Zomba, Chikanda</string>
-    <string name="min_contribution_label">Min Contribution*</string>
-    <string name="saving_period_label">Saving Period* (Months)</string>
+    <string name="min_contribution_label">Minimun Contribtuion (MK 2,000)</string>
+    <string name="saving_period_label">Saving Period (Months)</string>
     <string name="max_members_label">Max Members</string>
     <string name="visibility_label">Vissibility</string>
     <string name="visibility_public">Public</string>
@@ -151,8 +154,6 @@
     <string name="group_code_hint">2Q12Q</string>
     <string name="or_text">OR</string>
     <string name="ok_button">OK</string>
-    <string name="no_pending_requests">No pending requests</string>
-    <string name="close_button">Close</string>
 
     <!-- Onboarding -->
     <string name="welcome_to">WELCOME TO</string>
@@ -252,8 +253,9 @@
     <string name="enter_phone_label">Enter Phone_Number</string>
     <string name="group_name_label_simple">Group Name</string>
     <string name="contribution_type_label">Contribution Type</string>
-    <string name="contribution_type_savings">Savings</string>
-    <string name="social_welfare">Social Welfare</string>
+    <string name="contribution_type_save">Save</string>
+    <string name="contribution_type_special">Special</string>
+    <string name="contribution_type_event">Event Contribution</string>
     <string name="amount_mk_input_label">Amount (MK)</string>
     <string name="receive_pin_msg">You will receive a massage to enter your pin on your phone</string>
 
@@ -268,7 +270,7 @@
     <string name="transaction_date_placeholder">Friday, March 19, 2026 9:00am</string>
     <string name="transaction_time_placeholder">5:00PM</string>
     <string name="my_loan_title">My Loan</string>
-    <string name="group_loans_title">members Loans</string>
+    <string name="group_loans_title">Group Loans</string>
     <string name="requests_link">Requests</string>
     <string name="loan_approved_by_full">Approved by %1$s\n%2$s. %3$s</string>
     <string name="total_borrowed_label">Total borrowed: MK %1$s</string>
@@ -276,13 +278,4 @@
 
     <!-- Notifications Screen -->
     <string name="notifications_title">Notification</string>
-
-    <!-- Profile Screen -->
-    <string name="my_profile_title">My Profile</string>
-    <string name="save_changes_button">Save Changes</string>
-    <string name="profile_updated_msg">Profile updated successfully</string>
-    <string name="avatar_updated_msg">Avatar updated successfully</string>
-    <string name="complete_profile_dialog_title">Complete Your Profile</string>
-    <string name="complete_profile_dialog_msg">Welcome to Tisunga! Please complete your profile details (including National ID) to start using all features of the app.</string>
-    <string name="go_to_profile_button">Go to Profile</string>
 </resources>

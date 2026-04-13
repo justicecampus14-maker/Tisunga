@@ -32,69 +32,41 @@ class HomeViewModel(private val sessionManager: SessionManager) : ViewModel() {
     private var lastCreatedGroupName: String? = null
 
     fun loadHomeData() {
-        // If we just created a group in this session, don't let loadHomeData 
-        // reset the state to empty or loading.
-        if (hasCreatedGroupInSession && _uiState.value.myGroups.isNotEmpty()) {
-            return
-        }
-
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(
-                isLoading = _uiState.value.myGroups.isEmpty(),
+                isLoading = true,
                 userName = sessionManager.getUserName().ifEmpty { "Michael" },
                 userPhone = sessionManager.getUserPhone().ifEmpty { "0882752624" }
             )
             
             try {
-                val groups = apiService.getMyGroups()
-                if (groups.isNotEmpty()) {
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false, 
-                        myGroups = groups,
-                        recentTransactions = MockDataProvider.getMockTransactions()
-                    )
-                } else if (hasCreatedGroupInSession) {
-                    showMockData()
-                } else {
-                    _uiState.value = _uiState.value.copy(isLoading = false, myGroups = emptyList())
-                }
+                val response = apiService.getMyGroup()
+                val group = response.toGroup()
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false, 
+                    myGroups = listOf(group),
+                    recentTransactions = MockDataProvider.getMockTransactions() // Still using mock for transactions as requested
+                )
             } catch (e: Exception) {
-                if (hasCreatedGroupInSession) {
-                    showMockData()
-                } else {
-                    _uiState.value = _uiState.value.copy(isLoading = false, myGroups = emptyList())
-                }
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false, 
+                    myGroups = emptyList(),
+                    errorMessage = e.message ?: "Failed to load data"
+                )
             }
         }
     }
-    
-    private fun showMockData() {
-        val mockGroups = MockDataProvider.getMockGroups()
-        // Override the first group's name with the one from creation if available
-        val displayGroups = if (lastCreatedGroupName != null) {
-            listOf(mockGroups.first().copy(name = lastCreatedGroupName!!)) + mockGroups.drop(1)
-        } else {
-            mockGroups
-        }
 
-        _uiState.value = _uiState.value.copy(
-            isLoading = false,
-            myGroups = displayGroups,
-            recentTransactions = MockDataProvider.getMockTransactions()
-        )
-    }
-
-    fun refreshAfterCreation(groupName: String?) {
-        hasCreatedGroupInSession = true
-        lastCreatedGroupName = groupName
-        showMockData()
+    fun refreshAfterCreation() {
+        loadHomeData()
     }
 
     fun logout() {
         sessionManager.clearSession()
     }
 
-    fun getUserGroupRole(groupId: Int): String {
-        return sessionManager.getGroupRole(groupId) ?: "member"
+    fun getUserGroupRole(groupId: String): String {
+        // This should ideally come from the API or session
+        return "member"
     }
 }

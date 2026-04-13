@@ -6,24 +6,28 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material3.*
+import androidx.compose.material3.Badge
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.font.FontWeight.Companion.Bold
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.tisunga.ui.theme.NavyBlue
-import com.example.tisunga.ui.theme.TextPrimary
-import com.example.tisunga.ui.theme.White
+import com.example.tisunga.ui.theme.TextSecondary
 
 @Composable
-fun TopBar(userName: String, userPhone: String, onNotificationsClick: () -> Unit) {
+fun TopBar(
+    userName: String,
+    userPhone: String,
+    unreadCount: Int = 0,
+    onNotificationsClick: () -> Unit
+) {
     val initials = if (userName.isNotEmpty()) {
         userName.split(" ").filter { it.isNotEmpty() }.let { parts ->
             if (parts.size >= 2) {
@@ -76,37 +80,18 @@ fun TopBar(userName: String, userPhone: String, onNotificationsClick: () -> Unit
                     .size(28.dp)
                     .clickable { onNotificationsClick() }
             )
-            Box(
-                modifier = Modifier
-                    .size(10.dp)
-                    .background(Color.Red, CircleShape)
-                    .align(Alignment.TopEnd)
-            )
+            if (unreadCount > 0) {
+                Badge(
+                    modifier = Modifier.align(Alignment.TopEnd),
+                    containerColor = Color.Red
+                ) {
+                    Text(
+                        if (unreadCount > 99) "99+" else unreadCount.toString(),
+                        fontSize = 9.sp,
+                        color = Color.White
+                    )
+                }
+            }
         }
     }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun SecondaryTopBar(title: String, onBackClick: () -> Unit) {
-    TopAppBar(
-        title = { 
-            Text(
-                text = title, 
-                color = NavyBlue, 
-                fontWeight = FontWeight.Bold,
-                fontSize = 20.sp
-            ) 
-        },
-        navigationIcon = {
-            IconButton(onClick = onBackClick) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack, 
-                    contentDescription = "Back", 
-                    tint = NavyBlue
-                )
-            }
-        },
-        colors = TopAppBarDefaults.topAppBarColors(containerColor = White)
-    )
 }

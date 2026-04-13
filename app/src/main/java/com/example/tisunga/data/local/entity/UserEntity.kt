@@ -10,6 +10,5 @@ data class UserEntity(
     val middleName: String?,
     val lastName: String,
     val phone: String,
-    val nationalId: String?,
     val role: String
 )
