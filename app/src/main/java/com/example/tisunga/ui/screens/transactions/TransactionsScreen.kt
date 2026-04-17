@@ -159,7 +159,7 @@ fun TransactionItem(transaction: Transaction) {
                     Spacer(modifier = Modifier.width(12.dp))
                     Column {
                         Text(
-                            text = transaction.type.name.replace("_", " "),
+                            text = transaction.type?.name?.replace("_", " ") ?: "Transaction",
                             fontWeight = FontWeight.Bold,
                             fontSize = 15.sp
                         )

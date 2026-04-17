@@ -57,6 +57,14 @@ class SessionManager(context: Context) {
         return roles[groupId]
     }
 
+    fun saveMyGroupRole(groupId: String, role: String) {
+        val json = prefs.getString(GROUP_ROLES, null)
+        val type = object : TypeToken<MutableMap<String, String>>() {}.type
+        val roles: MutableMap<String, String> = if (json != null) gson.fromJson(json, type) else mutableMapOf()
+        roles[groupId] = role
+        prefs.edit().putString(GROUP_ROLES, gson.toJson(roles)).apply()
+    }
+
     fun isLoggedIn(): Boolean = !fetchAuthToken().isNullOrBlank()
 
     fun clearSession() = prefs.edit().clear().apply()
