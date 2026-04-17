@@ -131,13 +131,12 @@ fun GroupSummaryScreen(navController: NavController, viewModel: GroupViewModel) 
                     Spacer(modifier = Modifier.height(24.dp))
 
                     SummaryRow(stringResource(R.string.group_name_label_simple), group.name)
-                    SummaryRow(stringResource(R.string.location_label), group.location)
+                    SummaryRow(stringResource(R.string.location_label), group.location ?: "N/A")
                     SummaryRow(stringResource(R.string.min_contribution_label), stringResource(R.string.amount_mk, group.minContribution.toString()))
                     SummaryRow(stringResource(R.string.saving_period_label), stringResource(R.string.saving_period_months, group.savingPeriod))
                     SummaryRow(stringResource(R.string.max_members_label), "${group.maxMembers}")
-                    SummaryRow(stringResource(R.string.visibility_label), group.visibility)
-                    SummaryRow(stringResource(R.string.meeting_day_label), group.meetingDay)
-                    SummaryRow(stringResource(R.string.meeting_time_label), group.meetingTime)
+                    SummaryRow(stringResource(R.string.meeting_day_label), group.meetingDay ?: "N/A")
+                    SummaryRow(stringResource(R.string.meeting_time_label), group.meetingTime ?: "N/A")
 
                     if (uiState.errorMessage.isNotEmpty()) {
                         Spacer(modifier = Modifier.height(16.dp))

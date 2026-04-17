@@ -32,6 +32,8 @@ import com.example.tisunga.ui.navigation.Routes
 import com.example.tisunga.ui.theme.*
 import com.example.tisunga.viewmodel.HomeViewModel
 import com.example.tisunga.viewmodel.NotificationViewModel
+import com.example.tisunga.ui.screens.group.GroupDetailScreen
+import com.example.tisunga.viewmodel.GroupViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.Locale
@@ -48,53 +50,30 @@ fun AppDrawerContent(
     onLogout: () -> Unit
 ) {
     ModalDrawerSheet(
-        modifier = Modifier.width(280.dp),
-        drawerContainerColor = BackgroundGray,
-        drawerShape = RoundedCornerShape(topEnd = 16.dp, bottomEnd = 16.dp)
+        modifier = Modifier.width(300.dp),
+        drawerContainerColor = Color.White,
+        drawerShape = RoundedCornerShape(0.dp)
     ) {
-        // Drawer Header with User Initials
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(NavyBlue)
-                .statusBarsPadding()
-                .padding(24.dp)
+        Spacer(modifier = Modifier.height(48.dp))
+        
+        // Drawer Header with Hamburger (to match SideBar.png)
+        Row(
+            modifier = Modifier.padding(horizontal = 24.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Column {
-                Box(
-                    modifier = Modifier
-                        .size(64.dp)
-                        .background(White.copy(alpha = 0.2f), CircleShape),
-                    contentAlignment = Alignment.Center
-                ) {
-                    val initial = userName.take(1).uppercase()
-                    Text(
-                        text = initial.ifEmpty { "?" },
-                        color = White,
-                        fontSize = 28.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-                Spacer(modifier = Modifier.height(12.dp))
-                Text(
-                    text = userName,
-                    color = White,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = userPhone,
-                    color = White.copy(alpha = 0.7f),
-                    fontSize = 14.sp
-                )
-            }
+            Icon(
+                Icons.Default.Menu,
+                contentDescription = null,
+                modifier = Modifier.size(32.dp),
+                tint = NavyBlue
+            )
         }
         
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(32.dp))
         
         NavigationDrawerItem(
-            icon = { Icon(Icons.Default.Person, contentDescription = null) },
-            label = { Text("My Profile") },
+            icon = { Icon(Icons.Default.Person, contentDescription = null, modifier = Modifier.size(24.dp)) },
+            label = { Text("My Profile", fontSize = 16.sp) },
             selected = false,
             onClick = {
                 scope.launch {
@@ -102,37 +81,36 @@ fun AppDrawerContent(
                     navController.navigate(Routes.PROFILE)
                 }
             },
-            modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
+            modifier = Modifier.padding(horizontal = 12.dp),
             colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
         )
 
-        if (myGroups.isNotEmpty()) {
-            val currentGroup = myGroups.first()
-            val role = myRole?.lowercase() ?: "member"
-            val isPrivileged = role == "chairperson" || role == "secretary"
-
-            NavigationDrawerItem(
-                icon = { Icon(Icons.Default.Group, contentDescription = null) },
-                label = { Text("Group Members") },
-                selected = false,
-                onClick = {
-                    scope.launch {
-                        drawerState.close()
+        NavigationDrawerItem(
+            icon = { Icon(Icons.Default.Groups, contentDescription = null, modifier = Modifier.size(24.dp)) },
+            label = { Text("Group Members", fontSize = 16.sp) },
+            selected = false,
+            onClick = {
+                scope.launch {
+                    drawerState.close()
+                    val currentGroup = myGroups.firstOrNull()
+                    if (currentGroup != null) {
+                        val role = myRole?.uppercase() ?: "MEMBER"
+                        val isPrivileged = role == "CHAIR" || role == "SECRETARY"
                         if (isPrivileged) {
                             navController.navigate(Routes.GROUP_MEMBERS_CHAIR.replace("{groupId}", currentGroup.id))
                         } else {
                             navController.navigate(Routes.GROUP_MEMBERS.replace("{groupId}", currentGroup.id))
                         }
                     }
-                },
-                modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
-                colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
-            )
-        }
+                }
+            },
+            modifier = Modifier.padding(horizontal = 12.dp),
+            colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
+        )
         
         NavigationDrawerItem(
-            icon = { Icon(Icons.Default.Settings, contentDescription = null) },
-            label = { Text("Settings") },
+            icon = { Icon(Icons.Default.Settings, contentDescription = null, modifier = Modifier.size(24.dp)) },
+            label = { Text("Settings", fontSize = 16.sp) },
             selected = false,
             onClick = {
                 scope.launch {
@@ -140,29 +118,28 @@ fun AppDrawerContent(
                     navController.navigate(Routes.SETTINGS)
                 }
             },
-            modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
+            modifier = Modifier.padding(horizontal = 12.dp),
             colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
         )
 
         NavigationDrawerItem(
-            icon = { Icon(Icons.Default.Palette, contentDescription = null) },
-            label = { Text("Theme") },
+            icon = { Icon(Icons.Default.Palette, contentDescription = null, modifier = Modifier.size(24.dp)) },
+            label = { Text("Theme", fontSize = 16.sp) },
             selected = false,
             onClick = {
                 scope.launch {
                     drawerState.close()
-                    navController.navigate(Routes.SETTINGS)
                 }
             },
-            modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
+            modifier = Modifier.padding(horizontal = 12.dp),
             colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
         )
         
-        Spacer(Modifier.weight(1f))
+        Spacer(modifier = Modifier.height(32.dp))
 
         NavigationDrawerItem(
-            icon = { Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null, tint = RedAccent) },
-            label = { Text("Logout", color = RedAccent) },
+            icon = { Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null, tint = RedAccent, modifier = Modifier.size(24.dp)) },
+            label = { Text("Logout", color = RedAccent, fontSize = 16.sp) },
             selected = false,
             onClick = { 
                 scope.launch {
@@ -170,19 +147,18 @@ fun AppDrawerContent(
                     onLogout()
                 }
             },
-            modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
+            modifier = Modifier.padding(horizontal = 12.dp),
             colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
         )
-        
-        Spacer(modifier = Modifier.height(16.dp))
     }
 }
 
 @Composable
 fun HomeScreen(
-    navController: NavController, 
-    viewModel: HomeViewModel, 
-    notificationViewModel: NotificationViewModel
+    navController: NavController,
+    viewModel: HomeViewModel,
+    notificationViewModel: NotificationViewModel,
+    groupViewModel: GroupViewModel
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val notificationState by notificationViewModel.uiState.collectAsState()
@@ -194,62 +170,124 @@ fun HomeScreen(
         notificationViewModel.load()
     }
 
+    val myGroup = uiState.myGroups.firstOrNull()
+    LaunchedEffect(myGroup?.id) {
+        myGroup?.let { group ->
+            groupViewModel.seedSelectedGroup(group, uiState.myRole ?: "MEMBER")
+        }
+    }
+
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
             AppDrawerContent(
-                userName = uiState.userName,
-                userPhone = uiState.userPhone,
-                myGroups = uiState.myGroups,
-                myRole = uiState.myRole,
+                userName   = uiState.userName,
+                userPhone  = uiState.userPhone,
+                myGroups   = uiState.myGroups,
+                myRole     = uiState.myRole,
                 navController = navController,
-                drawerState = drawerState,
-                scope = scope,
+                drawerState   = drawerState,
+                scope         = scope,
                 onLogout = {
                     viewModel.logout()
-                    navController.navigate(Routes.SIGN_IN) {
-                        popUpTo(0) { inclusive = true }
-                    }
+                    navController.navigate(Routes.SIGN_IN) { popUpTo(0) { inclusive = true } }
                 }
             )
         }
     ) {
-        Scaffold(
-            topBar = {
-                HomeHeader(
-                    userPhone = uiState.userPhone,
-                    unreadCount = notificationState.unreadCount,
-                    navController = navController,
-                    onMenuClick = {
-                        scope.launch { drawerState.open() }
+        if (uiState.isLoading && uiState.myGroups.isEmpty()) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(color = NavyBlue)
+            }
+        } else {
+            Scaffold(
+                topBar = {
+                    HomeHeader(
+                        userPhone   = uiState.userPhone,
+                        unreadCount = notificationState.unreadCount,
+                        navController = navController,
+                        onMenuClick = { scope.launch { drawerState.open() } }
+                    )
+                },
+                bottomBar  = { BottomNavBar(navController) },
+                containerColor = BackgroundGray
+            ) { padding ->
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding)
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    if (myGroup != null) {
+                        GroupInfoCard(myGroup)
+                    } else {
+                        BannerSection()
                     }
-                )
-            },
-            bottomBar = { BottomNavBar(navController) },
-            containerColor = BackgroundGray
-        ) { padding ->
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .verticalScroll(rememberScrollState())
-            ) {
-                if (uiState.myGroups.isEmpty()) {
-                    BannerSection()
-                    QuickActionsSection(navController, null)
-                } else {
-                    GroupInfoCard(uiState.myGroups.first())
-                    QuickActionsSection(navController, uiState.myGroups.first())
+                    
+                    QuickActionsSection(navController, myGroup)
+                    
+                    RecentTransactionsSection(
+                        transactions = if (myGroup != null) uiState.recentTransactions else emptyList(),
+                        hasGroup = myGroup != null
+                    )
                 }
-
-                RecentTransactionsSection(uiState.recentTransactions)
             }
         }
     }
 }
 
 @Composable
-fun GroupInfoCard(group: Group) {
+fun QuickActionsNoGroup(navController: NavController) {
+    Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+        Surface(
+            shape = RoundedCornerShape(8.dp),
+            color = Color.White
+        ) {
+            Text(
+                stringResource(R.string.quick_action_title),
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+        }
+        Spacer(modifier = Modifier.height(12.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            QuickActionCard(
+                icon = Icons.Filled.GroupAdd,
+                label = stringResource(R.string.create_group_label),
+                modifier = Modifier.weight(1f),
+                onClick = {
+                    navController.navigate(Routes.CREATE_GROUP_STEP1)
+                }
+            )
+
+            QuickActionCard(
+                icon = Icons.Filled.Search,
+                label = "Join Group",
+                modifier = Modifier.weight(1f),
+                onClick = {
+                    // Logic for joining group
+                }
+            )
+
+            QuickActionCard(
+                icon = Icons.Filled.Help,
+                label = "Help",
+                modifier = Modifier.weight(1f),
+                onClick = {
+                    // Logic for help
+                }
+            )
+        }
+        Spacer(modifier = Modifier.height(20.dp))
+    }
+}
+
+@Composable
+fun GroupInfoCard(group: com.example.tisunga.data.model.Group) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -260,10 +298,11 @@ fun GroupInfoCard(group: Group) {
         elevation = CardDefaults.cardElevation(8.dp)
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
+            // Decorative Circle
             Box(
                 modifier = Modifier
-                    .size(150.dp)
-                    .offset(x = 220.dp, y = (-50).dp)
+                    .size(180.dp)
+                    .offset(x = 180.dp, y = (-40).dp)
                     .background(Color.White.copy(alpha = 0.1f), CircleShape)
             )
 
@@ -276,7 +315,7 @@ fun GroupInfoCard(group: Group) {
                 Text(
                     text = group.name,
                     color = Color.White,
-                    fontSize = 28.sp,
+                    fontSize = 32.sp,
                     fontWeight = FontWeight.Bold
                 )
 
@@ -287,27 +326,27 @@ fun GroupInfoCard(group: Group) {
                 ) {
                     Column {
                         Text(
-                            text = "Group Savings",
+                            text = "Group Wallet",
                             color = Color.White.copy(alpha = 0.7f),
                             fontSize = 14.sp
                         )
                         Text(
                             text = String.format(Locale.US, "MK %,.2f", group.totalSavings),
                             color = Color.White,
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.SemiBold
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Bold
                         )
                     }
                     Column(horizontalAlignment = Alignment.End) {
                         Text(
-                            text = "My Savings",
+                            text = "Your Balance",
                             color = Color.White.copy(alpha = 0.7f),
                             fontSize = 14.sp
                         )
                         Text(
                             text = String.format(Locale.US, "MK %,.2f", group.mySavings),
-                            color = Color(0xFFFFEB3B),
-                            fontSize = 20.sp,
+                            color = Color(0xFFFFEB3B), // Yellow for emphasis
+                            fontSize = 22.sp,
                             fontWeight = FontWeight.Bold
                         )
                     }
@@ -603,7 +642,7 @@ private fun QuickActionCard(
 }
 
 @Composable
-fun RecentTransactionsSection(transactions: List<Transaction>) {
+fun RecentTransactionsSection(transactions: List<Transaction>, hasGroup: Boolean) {
     Column(modifier = Modifier.padding(horizontal = 16.dp)) {
         Surface(
             shape = RoundedCornerShape(8.dp),
@@ -624,13 +663,24 @@ fun RecentTransactionsSection(transactions: List<Transaction>) {
             colors = CardDefaults.cardColors(containerColor = White),
             elevation = CardDefaults.cardElevation(2.dp)
         ) {
-            if (transactions.isEmpty()) {
+            if (!hasGroup) {
                 Box(
                     modifier = Modifier.fillMaxWidth().height(100.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = stringResource(R.string.no_groups_msg),
+                        text = "You don't belong to any group yet",
+                        color = TextSecondary,
+                        fontSize = 14.sp
+                    )
+                }
+            } else if (transactions.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxWidth().height(100.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "No recent transactions",
                         color = TextSecondary,
                         fontSize = 14.sp
                     )
@@ -660,9 +710,13 @@ fun TransactionRow(transaction: Transaction) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         val (icon, color) = when (transaction.type) {
-            com.example.tisunga.data.model.TransactionType.SAVINGS -> Icons.Default.AddCircle to Color(0xFF4CAF50)
-            com.example.tisunga.data.model.TransactionType.LOAN_OUT -> Icons.Default.RemoveCircle to Color(0xFFF44336)
-            com.example.tisunga.data.model.TransactionType.LOAN_IN -> Icons.Default.KeyboardArrowUp to Color(0xFF2196F3)
+            com.example.tisunga.data.model.TransactionType.SAVINGS,
+            com.example.tisunga.data.model.TransactionType.LOAN_IN,
+            com.example.tisunga.data.model.TransactionType.SHARE_PURCHASE -> Icons.Default.AddCircle to Color(0xFF4CAF50)
+            
+            com.example.tisunga.data.model.TransactionType.LOAN_OUT,
+            com.example.tisunga.data.model.TransactionType.EXPENSE -> Icons.Default.RemoveCircle to Color(0xFFF44336)
+            
             else -> Icons.Default.SwapHoriz to Color(0xFF757575)
         }
         
@@ -672,21 +726,21 @@ fun TransactionRow(transaction: Transaction) {
                 .background(color.copy(alpha = 0.1f), CircleShape),
             contentAlignment = Alignment.Center
         ) {
-            Icon(icon, null, modifier = Modifier.size(20.dp), tint = color)
+            Icon(icon, null, modifier = Modifier.size(24.dp), tint = color)
         }
         
         Spacer(modifier = Modifier.width(12.dp))
         
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = transaction.type.name.replace("_", " ").uppercase(Locale.US),
-                fontSize = 12.sp,
+                text = transaction.type?.name?.replace("_", " ") ?: "Transaction",
+                fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 color = color
             )
             Text(
                 text = transaction.description,
-                fontSize = 11.sp,
+                fontSize = 12.sp,
                 color = TextSecondary,
                 maxLines = 1
             )
@@ -694,7 +748,7 @@ fun TransactionRow(transaction: Transaction) {
         
         Text(
             text = String.format(Locale.US, "MK %,.0f", transaction.amount),
-            fontSize = 13.sp,
+            fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
             color = TextPrimary
         )

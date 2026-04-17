@@ -37,6 +37,7 @@ fun GroupCreationDraft.toGroup(id: String = "0") = Group(
     name = name,
     description = description,
     location = location,
+    groupCode = "",
     minContribution = minContribution,
     savingPeriod = savingPeriodMonths,
     maxMembers = maxMembers,
@@ -44,7 +45,10 @@ fun GroupCreationDraft.toGroup(id: String = "0") = Group(
     endDate = endDate,
     meetingDay = meetingDay,
     meetingTime = meetingTime,
-    visibility = "Public"
+    totalSavings = 0.0,
+    isActive = true,
+    mySavings = 0.0
+
 )
 
 data class GroupUiState(
@@ -247,17 +251,20 @@ class GroupViewModel(private val sessionManager: SessionManager) : ViewModel() {
                         Group(
                             id = g.id,
                             name = g.name,
-                            description = "",
-                            location = "",
+                            description = null,
+                            location = null,
+                            groupCode = g.groupCode ?: "",
                             minContribution = 0.0,
                             savingPeriod = 0,
                             maxMembers = g.memberCount, // Using as proxy if exact field missing
-                            startDate = "",
-                            endDate = g.endDate ?: "",
-                            meetingDay = g.meetingDay ?: "",
-                            meetingTime = g.meetingTime ?: "",
-                            groupCode = g.groupCode ?: "",
-                            totalSavings = g.totalSavings
+                            startDate = null,
+                            endDate = g.endDate,
+                            meetingDay = g.meetingDay,
+                            meetingTime = g.meetingTime,
+                            totalSavings = g.totalSavings,
+                            isActive = true,
+                            mySavings = dashboard.mySavings
+
                         )
                     },
                     currentUserRole = dashboard.myRole?.lowercase() ?: "member"
@@ -292,6 +299,18 @@ class GroupViewModel(private val sessionManager: SessionManager) : ViewModel() {
                 _uiState.value = _uiState.value.copy(isLoading = false, errorMessage = "Failed to remove member")
             }
         }
+    }
+
+
+    /**
+     * Called from HomeScreen when home data loads — seeds selectedGroup and role
+     * so GroupDetailScreen has data immediately without waiting for a dashboard call.
+     */
+    fun seedSelectedGroup(group: com.example.tisunga.data.model.Group, role: String) {
+        _uiState.value = _uiState.value.copy(
+            selectedGroup   = group,
+            currentUserRole = role.lowercase()
+        )
     }
 
     fun resetState() {

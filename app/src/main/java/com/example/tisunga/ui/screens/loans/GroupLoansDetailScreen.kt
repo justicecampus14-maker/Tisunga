@@ -61,7 +61,7 @@ fun GroupLoansDetailScreen(navController: NavController, groupId: String, viewMo
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            HomeHeader("0882752624", 0, navController, {})
+            HomeHeader("0882752624", 0, navController, onMenuClick = {})
 
             Row(
                 modifier = Modifier.padding(horizontal = 16.dp),

@@ -2,8 +2,10 @@ package com.example.tisunga.ui.navigation
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
@@ -22,7 +24,6 @@ import com.example.tisunga.ui.screens.savings.*
 import com.example.tisunga.ui.screens.transactions.TransactionsScreen
 import com.example.tisunga.utils.SessionManager
 import com.example.tisunga.viewmodel.*
-import androidx.compose.runtime.collectAsState
 
 // ── Routes ────────────────────────────────────────────────────────────────────
 
@@ -84,7 +85,6 @@ fun AppNavGraph(
     NavHost(navController = navController, startDestination = Routes.WELCOME) {
 
         // ── Auth / Onboarding ─────────────────────────────────────────────
-        // WelcomeScreen only takes navController — no homeViewModel param
         composable(Routes.WELCOME) {
             WelcomeScreen(navController)
         }
@@ -118,18 +118,24 @@ fun AppNavGraph(
         }
 
         // ── Home ──────────────────────────────────────────────────────────
-        // HomeScreen takes navController, homeViewModel and notificationViewModel
         composable(Routes.HOME) {
-            HomeScreen(navController, homeViewModel, notificationViewModel)
+            HomeScreen(navController, homeViewModel, notificationViewModel, groupViewModel)
         }
 
-        // ── Group — all groupId params are IntType ─────────────────────────
+        // ── Group ─────────────────────────────────────────────────────────
         composable(
             Routes.GROUP_DETAIL,
             arguments = listOf(navArgument("groupId") { type = NavType.StringType })
         ) { back ->
             val groupId = back.arguments?.getString("groupId") ?: ""
-            GroupDetailScreen(navController, groupId, groupViewModel)
+            GroupDetailScreen(
+                navController = navController,
+                groupId = groupId,
+                viewModel = groupViewModel,
+                homeViewModel = homeViewModel,
+                drawerState = rememberDrawerState(DrawerValue.Closed),
+                notificationViewModel = notificationViewModel
+            )
         }
 
         composable(
@@ -177,7 +183,6 @@ fun AppNavGraph(
             GroupSavingsScreen(navController, savingsViewModel, homeViewModel, notificationViewModel)
         }
 
-        // MakeContributionScreen takes (navController, groupId: String, viewModel: ContributionViewModel)
         composable(
             Routes.MAKE_CONTRIBUTION,
             arguments = listOf(navArgument("groupId") { type = NavType.StringType })
@@ -189,7 +194,6 @@ fun AppNavGraph(
             )
         }
 
-        // ContributionHistoryScreen takes (navController, groupId: String, viewModel: SavingsViewModel)
         composable(
             Routes.CONTRIBUTION_HISTORY,
             arguments = listOf(navArgument("groupId") { type = NavType.StringType })
@@ -198,7 +202,6 @@ fun AppNavGraph(
             ContributionHistoryScreen(navController, groupId, savingsViewModel)
         }
 
-        // DisbursementScreen takes (navController, groupId: String, viewModel: SavingsViewModel, sessionManager: SessionManager)
         composable(
             Routes.DISBURSEMENT,
             arguments = listOf(navArgument("groupId") { type = NavType.StringType })
@@ -214,7 +217,6 @@ fun AppNavGraph(
             AllLoansScreen(navController, loanViewModel, homeViewModel, notificationViewModel)
         }
 
-        // MyLoansScreen takes (navController, groupId: String, viewModel: LoanViewModel)
         composable(
             Routes.MY_LOANS,
             arguments = listOf(navArgument("groupId") { type = NavType.StringType })
@@ -249,19 +251,14 @@ fun AppNavGraph(
             ApplyLoanScreen(navController, groupId, loanViewModel)
         }
 
-        // RepayLoan: loanId is String in the Loan model — use StringType
         composable(
             Routes.REPAY_LOAN,
             arguments = listOf(navArgument("loanId") { type = NavType.StringType })
         ) { back ->
             val loanId = back.arguments?.getString("loanId") ?: ""
-            // Find the loan from the already-loaded list — safe because myLoans is
-            // populated before navigating here from MyLoansScreen
             val loanState = loanViewModel.uiState.collectAsState()
             val loan = loanState.value.myLoans.find { it.id == loanId }
             if (loan != null) {
-                // RepayLoanScreen does not exist yet — show placeholder
-                // Replace with: RepayLoanScreen(navController, loan, loanViewModel)
                 ComingSoonScreen("Repay Loan")
             } else {
                 navController.popBackStack()
@@ -277,7 +274,6 @@ fun AppNavGraph(
             EventsScreen(navController, groupId, eventViewModel)
         }
 
-        // EventDetailScreen does not exist yet — stub
         composable(
             Routes.EVENT_DETAIL,
             arguments = listOf(navArgument("eventId") { type = NavType.StringType })
@@ -286,7 +282,6 @@ fun AppNavGraph(
         }
 
         // ── Transactions ──────────────────────────────────────────────────
-        // TransactionsScreen takes (navController, groupId: String, viewModel: TransactionViewModel)
         composable(
             Routes.TRANSACTIONS,
             arguments = listOf(navArgument("groupId") { type = NavType.StringType })
@@ -325,12 +320,10 @@ fun AppNavGraph(
         }
 
         // ── Misc ──────────────────────────────────────────────────────────
-        // NotificationsScreen takes navController and notificationViewModel
         composable(Routes.NOTIFICATIONS) {
             NotificationsScreen(navController, notificationViewModel)
         }
 
-        // Profile / Settings / ChangePassword — screens not yet created
         composable(Routes.PROFILE)         { ComingSoonScreen("Profile") }
         composable(Routes.SETTINGS)        { ComingSoonScreen("Settings") }
         composable(Routes.CHANGE_PASSWORD) { ComingSoonScreen("Change Password") }

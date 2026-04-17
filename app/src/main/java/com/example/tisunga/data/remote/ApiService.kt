@@ -261,6 +261,28 @@ interface ApiService {
     suspend fun markNotificationRead(@Path("id") id: String): MessageResponse
 }
 
+/**
+ * Strips the { success, message, data } envelope that the backend wraps
+ * every response in, then deserialises the inner `data` value using the
+ * shared, fully-configured Gson instance from ApiClient.
+ *
+ * ── Why the old version was broken ──────────────────────────────────────
+ * The old factory called UnwrappingGsonConverterFactory(Gson()) — a plain,
+ * unconfigured Gson.  That instance didn't know about StringToDouble, so it
+ * threw a JsonSyntaxException when it hit "totalSavings":"0" (a string where
+ * a Double was expected).  The catch block then fell back to parsing the FULL
+ * envelope {"success":true,"message":"Success","data":{…}} into
+ * MyGroupResponse, which has no field named "success" / "message" / "data".
+ * Every field came out null, hasNoGroup() returned true, and the no-group UI
+ * was shown for every user — even those with a group.
+ *
+ * ── Fix ──────────────────────────────────────────────────────────────────
+ * 1. The factory now accepts the shared Gson (configured with StringToDouble)
+ *    via create(gson), so string-to-double conversion always works.
+ * 2. The silent catch-and-fallback is GONE.  If deserialization fails the
+ *    exception propagates to Retrofit / the ViewModel, where it is logged and
+ *    handled explicitly — no more invisible data loss.
+ */
 class UnwrappingGsonConverterFactory(private val gson: Gson) : Converter.Factory() {
     override fun responseBodyConverter(
         type: Type,
@@ -272,22 +294,26 @@ class UnwrappingGsonConverterFactory(private val gson: Gson) : Converter.Factory
         private val gson: Gson,
         private val type: Type
     ) : Converter<ResponseBody, T> {
+        @Suppress("UNCHECKED_CAST")
         override fun convert(value: ResponseBody): T {
             val raw = value.string()
-            return try {
-                val root = gson.fromJson(raw, JsonElement::class.java)
-                val target: JsonElement = if (root is JsonObject && root.has("data")) {
-                    root.get("data")
-                } else {
-                    root
-                }
-                gson.fromJson(target, type)
-            } catch (e: Exception) {
-                gson.fromJson(raw, type)
+            // Step 1: parse the full response as a generic JSON tree
+            val root = gson.fromJson(raw, JsonElement::class.java)
+            // Step 2: unwrap the "data" envelope if present
+            val target: JsonElement = if (root is JsonObject && root.has("data")) {
+                root.get("data")
+            } else {
+                root
             }
+            // Step 3: deserialise using the configured Gson — no fallback.
+            // A failure here is a real bug and should propagate, not be hidden.
+            return gson.fromJson(target, type)
         }
     }
+
     companion object {
-        fun create(): UnwrappingGsonConverterFactory = UnwrappingGsonConverterFactory(Gson())
+        /** Always pass the shared, configured Gson from ApiClient. */
+        fun create(gson: Gson): UnwrappingGsonConverterFactory =
+            UnwrappingGsonConverterFactory(gson)
     }
 }

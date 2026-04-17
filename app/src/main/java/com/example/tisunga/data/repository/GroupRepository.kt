@@ -9,19 +9,19 @@ class GroupRepository(private val apiService: ApiService) {
     suspend fun getGroupById(id: String) = apiService.getGroupById(id)
     
     suspend fun createGroup(group: Group) = apiService.createGroup(
-        mapOf(
+        mutableMapOf<String, Any>(
             "name" to group.name,
-            "description" to group.description,
-            "location" to group.location,
             "minContribution" to group.minContribution,
-            "savingPeriod" to group.savingPeriod,
-            "maxMembers" to group.maxMembers,
-            "visibility" to group.visibility,
-            "startDate" to group.startDate,
-            "endDate" to group.endDate,
-            "meetingDay" to group.meetingDay,
-            "meetingTime" to group.meetingTime
-        )
+            "savingPeriodMonths" to group.savingPeriod,
+            "maxMembers" to group.maxMembers
+        ).apply {
+            group.description?.let { if (it.isNotEmpty()) put("description", it) }
+            group.location?.let { if (it.isNotEmpty()) put("location", it) }
+            group.startDate?.let { if (it.isNotEmpty()) put("startDate", it) }
+            group.endDate?.let { if (it.isNotEmpty()) put("endDate", it) }
+            group.meetingDay?.let { if (it.isNotEmpty()) put("meetingDay", it) }
+            group.meetingTime?.let { if (it.isNotEmpty()) put("meetingTime", it) }
+        }
     )
 
     suspend fun getGroupMembers(groupId: String) = apiService.getGroupMembers(groupId)

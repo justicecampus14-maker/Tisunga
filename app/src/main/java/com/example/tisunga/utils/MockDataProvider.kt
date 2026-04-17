@@ -22,14 +22,13 @@ object MockDataProvider {
             minContribution = 2000.0,
             savingPeriod = 6,
             maxMembers = 15,
-            visibility = "public",
             startDate = "20th May 2026",
             endDate = "21st May 2027",
             meetingDay = "Friday",
             meetingTime = "3:00pm",
             totalSavings = 1000090.0,
             mySavings = 12500.0,
-            status = "active",
+            isActive = true,
             groupCode = "67WEISH6"
         ),
         Group(
@@ -40,14 +39,13 @@ object MockDataProvider {
             minContribution = 2000.0,
             savingPeriod = 12,
             maxMembers = 20,
-            visibility = "public",
             startDate = "1st Jan 2026",
             endDate = "31st Dec 2026",
             meetingDay = "Saturday",
             meetingTime = "2:00pm",
             totalSavings = 200000.0,
             mySavings = 5000.0,
-            status = "active",
+            isActive = true,
             groupCode = "ABCDEFGH"
         )
     )
