@@ -1,5 +1,6 @@
 package com.example.tisunga.ui.screens.group
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -26,21 +27,31 @@ import com.example.tisunga.ui.navigation.Routes
 import com.example.tisunga.ui.screens.home.HomeHeader
 import com.example.tisunga.ui.theme.*
 import com.example.tisunga.viewmodel.GroupViewModel
+import com.example.tisunga.viewmodel.HomeViewModel
+import com.example.tisunga.viewmodel.NotificationViewModel
+import kotlinx.coroutines.launch
 
 @Composable
-fun GroupDetailScreen(navController: NavController, groupId: String, viewModel: GroupViewModel) {
+fun GroupDetailScreen(
+    navController: NavController,
+    groupId: String,
+    viewModel: GroupViewModel,
+    homeViewModel: HomeViewModel,
+    drawerState: DrawerState,
+    notificationViewModel: NotificationViewModel
+) {
     val uiState by viewModel.uiState.collectAsState()
-    val context = androidx.compose.ui.platform.LocalContext.current
-    val sessionManager = remember { com.example.tisunga.utils.SessionManager(context) }
+    val homeUiState by homeViewModel.uiState.collectAsState()
+    val notificationState by notificationViewModel.uiState.collectAsState()
+    val scope = rememberCoroutineScope()
     
     // UI state derived from group dashboard
-    val groupName = uiState.selectedGroup?.name ?: stringResource(R.string.placeholder_group_name)
-    val userName = sessionManager.getUserName()
-    val userPhone = sessionManager.getUserPhone()
+    val groupName = uiState.selectedGroup?.name ?: homeUiState.myGroups.firstOrNull { it.id == groupId }?.name ?: stringResource(R.string.placeholder_group_name)
+    val userPhone = homeUiState.userPhone
     
     // Check if user is Chair or Secretary for this group
-    val groupRole = sessionManager.getGroupRole(groupId)
-    val isChair = groupRole == "CHAIR" || groupRole == "SECRETARY"
+    val groupRole = homeUiState.myRole?.uppercase() ?: "MEMBER"
+    val isChair = groupRole == "CHAIRPERSON" || groupRole == "SECRETARY"
 
     LaunchedEffect(groupId) {
         viewModel.getGroupDashboard(groupId)
@@ -48,7 +59,7 @@ fun GroupDetailScreen(navController: NavController, groupId: String, viewModel: 
     }
 
     Scaffold(
-        bottomBar = { BottomNavBar(navController, type = "B") },
+        bottomBar = { BottomNavBar(navController) },
         containerColor = BackgroundLightGray
     ) { padding ->
         Column(
@@ -56,7 +67,12 @@ fun GroupDetailScreen(navController: NavController, groupId: String, viewModel: 
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            HomeHeader(userPhone, 0, navController, {})
+            HomeHeader(
+                userPhone = userPhone,
+                unreadCount = notificationState.unreadCount,
+                navController = navController,
+                onMenuClick = { scope.launch { drawerState.open() } }
+            )
             
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
@@ -128,6 +144,7 @@ fun QuickActionsHeader(navController: NavController, groupId: String, isChair: B
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
+        @Suppress("DEPRECATION")
         Text(stringResource(R.string.quick_actions_title), fontSize = 15.sp, fontWeight = FontWeight.Bold)
         Text(
             stringResource(R.string.members_link),
@@ -231,3 +248,4 @@ fun TransactionSummaryCard(transaction: Transaction) {
         }
     }
 }
+

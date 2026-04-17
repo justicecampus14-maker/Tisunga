@@ -50,7 +50,7 @@ fun MyGroupCard(group: Group, onClick: () -> Unit, onSaveClick: () -> Unit) {
                     color = Color.Transparent
                 ) {
                     Text(
-                        group.status,
+                        if (group.isActive) "Active" else "Inactive",
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
                         color = NavyBlue,
                         fontSize = 12.sp
@@ -65,7 +65,7 @@ fun MyGroupCard(group: Group, onClick: () -> Unit, onSaveClick: () -> Unit) {
             ) {
                 Surface(color = BackgroundGray, shape = RoundedCornerShape(20.dp)) {
                     Text(
-                        group.description,
+                        group.description ?: "No description",
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
                         fontSize = 12.sp,
                         color = TextSecondary
@@ -105,7 +105,7 @@ fun DiscoverGroupItemCard(group: Group, onJoinClick: () -> Unit) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(group.name, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                     Spacer(modifier = Modifier.height(4.dp))
-                    Text(text = group.location, fontSize = 12.sp, color = TextSecondary)
+                    Text(text = group.location ?: "Unknown", fontSize = 12.sp, color = TextSecondary)
                     Text(text = "Period: ${group.savingPeriod} months", fontSize = 12.sp, color = TextSecondary)
                     Text(text = "Min: MK ${group.minContribution}", fontSize = 12.sp, color = NavyBlue, fontWeight = FontWeight.Bold)
                 }
@@ -128,7 +128,7 @@ fun DiscoverGroupItemCard(group: Group, onJoinClick: () -> Unit) {
             
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = "Meetings: ${group.meetingDay} @ ${group.meetingTime}",
+                    text = "Meetings: ${group.meetingDay ?: "N/A"} @ ${group.meetingTime ?: "N/A"}",
                     fontSize = 11.sp,
                     color = TextSecondary
                 )

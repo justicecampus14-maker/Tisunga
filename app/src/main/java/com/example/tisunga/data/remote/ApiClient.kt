@@ -1,9 +1,10 @@
 package com.example.tisunga.data.remote
 
 import android.content.Context
+import com.example.tisunga.data.model.StringToDouble
 import com.example.tisunga.utils.Constants
 import com.example.tisunga.utils.SessionManager
-import com.google.gson.Gson
+import com.google.gson.GsonBuilder
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.Response
@@ -34,10 +35,31 @@ object ApiClient {
                 .readTimeout(30, TimeUnit.SECONDS)
                 .build()
 
+            // ── ONE shared Gson, registered globally for all Double fields ──
+            // The backend sends numeric fields like totalSavings / mySavings /
+            // minContribution as JSON strings ("0", "2000").  Registering
+            // StringToDouble here means EVERY Double field in the app is handled
+            // correctly without needing @JsonAdapter on each one individually.
+           /* val gson = GsonBuilder()
+                .setLenient()
+                .registerTypeAdapter(Double::class.java,              StringToDouble())
+                .registerTypeAdapter(Double::class.javaPrimitiveType, StringToDouble())
+                .create()
+            */
+            val gson = GsonBuilder()
+                .setLenient()
+                .registerTypeAdapter(Double::class.java, StringToDouble())
+                .registerTypeAdapter(Double::class.javaPrimitiveType, StringToDouble())
+                .registerTypeHierarchyAdapter(Double::class.java, StringToDouble())
+                .create()
+
             retrofit = Retrofit.Builder()
                 .baseUrl(Constants.BASE_URL)
-                .addConverterFactory(UnwrappingGsonConverterFactory.create())
-                .addConverterFactory(GsonConverterFactory.create())
+                // Pass the SAME configured Gson to the unwrapping factory so it
+                // uses the same adapters — this is what was broken before.
+                .addConverterFactory(UnwrappingGsonConverterFactory.create(gson))
+                // Fallback for request body serialisation (POST bodies).
+                .addConverterFactory(GsonConverterFactory.create(gson))
                 .client(client)
                 .build()
         }

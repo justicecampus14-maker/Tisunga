@@ -47,7 +47,7 @@ fun GroupCard(group: Group, onClick: () -> Unit, onSaveNowClick: () -> Unit) {
                     color = Color.Transparent
                 ) {
                     Text(
-                        group.status,
+                        if (group.isActive) "Active" else "Inactive",
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
                         color = NavyBlue,
                         fontSize = 12.sp
@@ -62,7 +62,7 @@ fun GroupCard(group: Group, onClick: () -> Unit, onSaveNowClick: () -> Unit) {
             ) {
                 Surface(color = BackgroundGray, shape = RoundedCornerShape(20.dp)) {
                     Text(
-                        "description",
+                        group.description ?: "No description",
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
                         fontSize = 12.sp,
                         color = TextSecondary
