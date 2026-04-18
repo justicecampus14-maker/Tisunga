@@ -38,16 +38,16 @@ fun CreateGroupStep1Screen(navController: NavController, viewModel: GroupViewMod
     var location by remember { mutableStateOf("") }
     var minContribution by remember { mutableStateOf("2000") }
     var maxMembers by remember { mutableStateOf("10") }
-    
+
     var startDate by remember { mutableStateOf("") }
     var endDate by remember { mutableStateOf("") }
     var meetingDay by remember { mutableStateOf("Monday") }
     var meetingTime by remember { mutableStateOf("10:00") }
-    
+
     var showStartDatePicker by remember { mutableStateOf(false) }
     var showEndDatePicker by remember { mutableStateOf(false) }
-    
-    val dateFormatter = remember { 
+
+    val dateFormatter = remember {
         SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).apply {
             timeZone = TimeZone.getTimeZone("UTC")
         }
@@ -162,7 +162,9 @@ fun CreateGroupStep1Screen(navController: NavController, viewModel: GroupViewMod
                             unfocusedBorderColor = DividerColor,
                             focusedBorderColor = NavyBlue,
                             unfocusedContainerColor = BackgroundGray,
-                            focusedContainerColor = BackgroundGray
+                            focusedContainerColor = BackgroundGray,
+                            unfocusedPlaceholderColor = Color.Gray.copy(alpha = 0.5f),
+                            focusedPlaceholderColor = Color.Gray.copy(alpha = 0.5f)
                         )
                     )
 
@@ -181,7 +183,9 @@ fun CreateGroupStep1Screen(navController: NavController, viewModel: GroupViewMod
                             unfocusedBorderColor = DividerColor,
                             focusedBorderColor = NavyBlue,
                             unfocusedContainerColor = BackgroundGray,
-                            focusedContainerColor = BackgroundGray
+                            focusedContainerColor = BackgroundGray,
+                            unfocusedPlaceholderColor = Color.Gray.copy(alpha = 0.5f),
+                            focusedPlaceholderColor = Color.Gray.copy(alpha = 0.5f)
                         )
                     )
 
@@ -198,7 +202,9 @@ fun CreateGroupStep1Screen(navController: NavController, viewModel: GroupViewMod
                             unfocusedBorderColor = DividerColor,
                             focusedBorderColor = NavyBlue,
                             unfocusedContainerColor = BackgroundGray,
-                            focusedContainerColor = BackgroundGray
+                            focusedContainerColor = BackgroundGray,
+                            unfocusedPlaceholderColor = Color.Gray.copy(alpha = 0.5f),
+                            focusedPlaceholderColor = Color.Gray.copy(alpha = 0.5f)
                         )
                     )
                 }
@@ -224,12 +230,15 @@ fun CreateGroupStep1Screen(navController: NavController, viewModel: GroupViewMod
                                 value = minContribution,
                                 onValueChange = { minContribution = it },
                                 modifier = Modifier.fillMaxWidth(),
+                                placeholder = { Text("e.g. 2000") },
                                 shape = RoundedCornerShape(10.dp),
                                 colors = OutlinedTextFieldDefaults.colors(
                                     unfocusedBorderColor = DividerColor,
                                     focusedBorderColor = NavyBlue,
                                     unfocusedContainerColor = BackgroundGray,
-                                    focusedContainerColor = BackgroundGray
+                                    focusedContainerColor = BackgroundGray,
+                                    unfocusedPlaceholderColor = Color.Gray.copy(alpha = 0.5f),
+                                    focusedPlaceholderColor = Color.Gray.copy(alpha = 0.5f)
                                 )
                             )
                         }
@@ -239,12 +248,15 @@ fun CreateGroupStep1Screen(navController: NavController, viewModel: GroupViewMod
                                 value = maxMembers,
                                 onValueChange = { maxMembers = it },
                                 modifier = Modifier.fillMaxWidth(),
+                                placeholder = { Text("e.g. 10") },
                                 shape = RoundedCornerShape(10.dp),
                                 colors = OutlinedTextFieldDefaults.colors(
                                     unfocusedBorderColor = DividerColor,
                                     focusedBorderColor = NavyBlue,
                                     unfocusedContainerColor = BackgroundGray,
-                                    focusedContainerColor = BackgroundGray
+                                    focusedContainerColor = BackgroundGray,
+                                    unfocusedPlaceholderColor = Color.Gray.copy(alpha = 0.5f),
+                                    focusedPlaceholderColor = Color.Gray.copy(alpha = 0.5f)
                                 )
                             )
                         }
@@ -264,7 +276,8 @@ fun CreateGroupStep1Screen(navController: NavController, viewModel: GroupViewMod
                             colors = OutlinedTextFieldDefaults.colors(
                                 disabledBorderColor = DividerColor,
                                 disabledTextColor = TextPrimary,
-                                disabledContainerColor = BackgroundGray
+                                disabledContainerColor = BackgroundGray,
+                                disabledPlaceholderColor = Color.Gray.copy(alpha = 0.5f)
                             ),
                             trailingIcon = { Icon(Icons.Default.ArrowDropDown, null, tint = TextSecondary) }
                         )
@@ -313,7 +326,8 @@ fun CreateGroupStep1Screen(navController: NavController, viewModel: GroupViewMod
                                     colors = OutlinedTextFieldDefaults.colors(
                                         disabledBorderColor = DividerColor,
                                         disabledTextColor = TextPrimary,
-                                        disabledContainerColor = BackgroundGray
+                                        disabledContainerColor = BackgroundGray,
+                                        disabledPlaceholderColor = Color.Gray.copy(alpha = 0.5f)
                                     )
                                 )
                                 Box(modifier = Modifier.matchParentSize().clickable { showStartDatePicker = true })
@@ -334,7 +348,8 @@ fun CreateGroupStep1Screen(navController: NavController, viewModel: GroupViewMod
                                     colors = OutlinedTextFieldDefaults.colors(
                                         disabledBorderColor = DividerColor,
                                         disabledTextColor = TextPrimary,
-                                        disabledContainerColor = BackgroundGray
+                                        disabledContainerColor = BackgroundGray,
+                                        disabledPlaceholderColor = Color.Gray.copy(alpha = 0.5f)
                                     )
                                 )
                                 Box(modifier = Modifier.matchParentSize().clickable { showEndDatePicker = true })
@@ -358,7 +373,8 @@ fun CreateGroupStep1Screen(navController: NavController, viewModel: GroupViewMod
                                     colors = OutlinedTextFieldDefaults.colors(
                                         disabledBorderColor = DividerColor,
                                         disabledTextColor = TextPrimary,
-                                        disabledContainerColor = BackgroundGray
+                                        disabledContainerColor = BackgroundGray,
+                                        disabledPlaceholderColor = Color.Gray.copy(alpha = 0.5f)
                                     ),
                                     trailingIcon = { Icon(Icons.Default.ArrowDropDown, null, tint = TextSecondary) }
                                 )
@@ -388,7 +404,9 @@ fun CreateGroupStep1Screen(navController: NavController, viewModel: GroupViewMod
                                     unfocusedBorderColor = DividerColor,
                                     focusedBorderColor = NavyBlue,
                                     unfocusedContainerColor = BackgroundGray,
-                                    focusedContainerColor = White
+                                    focusedContainerColor = White,
+                                    unfocusedPlaceholderColor = Color.Gray.copy(alpha = 0.5f),
+                                    focusedPlaceholderColor = Color.Gray.copy(alpha = 0.5f)
                                 )
                             )
                         }

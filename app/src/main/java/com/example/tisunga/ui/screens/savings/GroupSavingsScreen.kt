@@ -24,6 +24,7 @@ import com.example.tisunga.ui.navigation.Routes
 import com.example.tisunga.ui.screens.home.AppDrawerContent
 import com.example.tisunga.ui.screens.home.HomeHeader
 import com.example.tisunga.ui.theme.*
+import com.example.tisunga.utils.FormatUtils
 import com.example.tisunga.viewmodel.GroupSavingsSummary
 import com.example.tisunga.viewmodel.HomeViewModel
 import com.example.tisunga.viewmodel.NotificationViewModel
@@ -111,20 +112,33 @@ fun SavingsSummaryCard(totalSavings: Double) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFE0E0E0)), // Light gray
-        elevation = CardDefaults.cardElevation(0.dp)
+        colors = CardDefaults.cardColors(containerColor = White),
+        elevation = CardDefaults.cardElevation(2.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(stringResource(R.string.total_savings_label), fontSize = 14.sp)
             Text(
-                stringResource(R.string.amount_mk, com.example.tisunga.utils.FormatUtils.formatNumber(totalSavings)),
-                fontSize = 28.sp,
+                stringResource(R.string.total_savings_label),
+                fontSize = 12.sp,
                 color = TextSecondary,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Medium
             )
+            Spacer(modifier = Modifier.height(4.dp))
+            Box(
+                modifier = Modifier
+                    .background(BackgroundGray, RoundedCornerShape(10.dp))
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+            ) {
+                Text(
+                    FormatUtils.formatMoney(totalSavings),
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = NavyBlue
+                )
+            }
+            Spacer(modifier = Modifier.height(12.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(stringResource(R.string.last_saved_label, "02/23/26"), fontSize = 12.sp, color = TextSecondary)
-                Text(stringResource(R.string.saving_groups_count, 2), fontSize = 12.sp, color = TextSecondary)
+                Text(stringResource(R.string.last_saved_label, "02/23/26"), fontSize = 11.sp, color = TextSecondary)
+                Text(stringResource(R.string.saving_groups_count, 2), fontSize = 11.sp, color = TextSecondary)
             }
         }
     }
@@ -139,19 +153,32 @@ fun GroupSavingsCard(summary: GroupSavingsSummary, onSaveClick: () -> Unit) {
         elevation = CardDefaults.cardElevation(2.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(stringResource(R.string.total_savings_label), fontSize = 14.sp)
             Text(
-                stringResource(R.string.amount_mk, com.example.tisunga.utils.FormatUtils.formatNumber(summary.totalSavings)),
-                fontSize = 26.sp,
+                stringResource(R.string.total_savings_label),
+                fontSize = 12.sp,
                 color = TextSecondary,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Medium
             )
-            
-            if (summary.withdrawDate != null) {
-                Text(stringResource(R.string.withdraw_date_label, summary.withdrawDate), fontWeight = FontWeight.Bold, fontSize = 13.sp)
+            Spacer(modifier = Modifier.height(4.dp))
+            Box(
+                modifier = Modifier
+                    .background(BackgroundGray, RoundedCornerShape(10.dp))
+                    .padding(horizontal = 12.dp, vertical = 6.dp)
+            ) {
+                Text(
+                    FormatUtils.formatMoney(summary.totalSavings),
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = NavyBlue
+                )
             }
             
-            Spacer(modifier = Modifier.height(8.dp))
+            if (summary.withdrawDate != null) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(stringResource(R.string.withdraw_date_label, summary.withdrawDate), fontWeight = FontWeight.Bold, fontSize = 12.sp)
+            }
+            
+            Spacer(modifier = Modifier.height(12.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Row {
                     Text(stringResource(R.string.last_saved_label, summary.lastSavedDate), fontSize = 11.sp, color = TextSecondary)
