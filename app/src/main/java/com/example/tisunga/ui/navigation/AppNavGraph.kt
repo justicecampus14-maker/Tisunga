@@ -214,7 +214,7 @@ fun AppNavGraph(
 
         // ── Loans ─────────────────────────────────────────────────────────
         composable(Routes.ALL_LOANS) {
-            AllLoansScreen(navController, loanViewModel, homeViewModel, notificationViewModel)
+            AllLoansScreen(navController, loanViewModel, homeViewModel)
         }
 
         composable(
@@ -223,7 +223,7 @@ fun AppNavGraph(
         ) { back ->
             val groupId = back.arguments?.getString("groupId") ?: ""
             MyLoansScreen(
-                navController, groupId, loanViewModel
+                navController, groupId, loanViewModel, homeViewModel
             )
         }
 

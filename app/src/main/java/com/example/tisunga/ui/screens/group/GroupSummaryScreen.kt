@@ -20,6 +20,7 @@ import com.example.tisunga.R
 import com.example.tisunga.data.model.Group
 import com.example.tisunga.ui.navigation.Routes
 import com.example.tisunga.ui.theme.*
+import com.example.tisunga.utils.FormatUtils
 import com.example.tisunga.viewmodel.GroupViewModel
 import com.example.tisunga.viewmodel.toGroup
 
@@ -132,7 +133,11 @@ fun GroupSummaryScreen(navController: NavController, viewModel: GroupViewModel) 
 
                     SummaryRow(stringResource(R.string.group_name_label_simple), group.name)
                     SummaryRow(stringResource(R.string.location_label), group.location ?: "N/A")
-                    SummaryRow(stringResource(R.string.min_contribution_label), stringResource(R.string.amount_mk, group.minContribution.toString()))
+                    SummaryRow(
+                        stringResource(R.string.min_contribution_label), 
+                        FormatUtils.formatMoney(group.minContribution),
+                        isFinancial = true
+                    )
                     SummaryRow(stringResource(R.string.saving_period_label), stringResource(R.string.saving_period_months, group.savingPeriod))
                     SummaryRow(stringResource(R.string.max_members_label), "${group.maxMembers}")
                     SummaryRow(stringResource(R.string.meeting_day_label), group.meetingDay ?: "N/A")
@@ -149,7 +154,7 @@ fun GroupSummaryScreen(navController: NavController, viewModel: GroupViewModel) 
 }
 
 @Composable
-fun SummaryRow(label: String, value: String) {
+fun SummaryRow(label: String, value: String, isFinancial: Boolean = false) {
     Column(modifier = Modifier.padding(vertical = 8.dp)) {
         Text(
             text = label,
@@ -157,11 +162,27 @@ fun SummaryRow(label: String, value: String) {
             color = PurpleSubtitle,
             fontWeight = FontWeight.Medium
         )
-        Text(
-            text = value,
-            fontSize = 16.sp,
-            color = TextPrimary,
-            fontWeight = FontWeight.Bold
-        )
+        Spacer(modifier = Modifier.height(4.dp))
+        if (isFinancial) {
+            Box(
+                modifier = Modifier
+                    .background(BackgroundGray, RoundedCornerShape(10.dp))
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+            ) {
+                Text(
+                    text = value,
+                    fontSize = 16.sp,
+                    color = NavyBlue,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        } else {
+            Text(
+                text = value,
+                fontSize = 16.sp,
+                color = TextPrimary,
+                fontWeight = FontWeight.Bold
+            )
+        }
     }
 }

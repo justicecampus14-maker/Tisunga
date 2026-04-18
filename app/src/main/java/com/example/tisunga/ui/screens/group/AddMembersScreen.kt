@@ -45,6 +45,13 @@ fun AddMembersScreen(
     // Session list — purely for "Recently Added" UI feedback in this session
     val sessionMembers = remember { mutableStateListOf<MembershipResponse>() }
 
+    // Ensure we have the group data (for the group code)
+    LaunchedEffect(groupId) {
+        if (uiState.selectedGroup == null || uiState.selectedGroup?.id != groupId) {
+            viewModel.getGroupDashboard(groupId)
+        }
+    }
+
     // Show snackbar on success or error
     LaunchedEffect(uiState.successMessage) {
         if (uiState.successMessage.isNotEmpty()) {

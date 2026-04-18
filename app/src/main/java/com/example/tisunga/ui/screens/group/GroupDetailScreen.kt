@@ -123,9 +123,9 @@ fun GroupSummaryCard(groupName: String) {
                     .width(180.dp)
                     .background(Color(0xFFDDDDDD), RoundedCornerShape(4.dp))
             )
-            
+
             Spacer(modifier = Modifier.height(12.dp))
-            
+
             Text(stringResource(R.string.my_savings_label), fontSize = 14.sp)
             Box(
                 modifier = Modifier

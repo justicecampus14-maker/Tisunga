@@ -57,7 +57,6 @@ fun SignInScreen(navController: NavController, viewModel: AuthViewModel) {
         ) {
             Spacer(modifier = Modifier.height(40.dp))
             Text(text = stringResource(R.string.signin_title), fontSize = 28.sp, fontWeight = FontWeight.Bold, color = NavyBlue)
-            Text(text = stringResource(R.string.signin_subtitle), fontSize = 14.sp, color = TextSecondary)
             
             Spacer(modifier = Modifier.height(32.dp))
             
@@ -79,7 +78,7 @@ fun SignInScreen(navController: NavController, viewModel: AuthViewModel) {
                         },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
-                        placeholder = { Text(stringResource(R.string.phone_number_placeholder)) },
+                        placeholder = { Text(stringResource(R.string.phone_number_placeholder), color = Color.Gray.copy(alpha = 0.5f)) },
                         leadingIcon = { 
                             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 8.dp)) {
                                 Text("🇲🇼")
@@ -91,7 +90,9 @@ fun SignInScreen(navController: NavController, viewModel: AuthViewModel) {
                             unfocusedBorderColor = DividerColor,
                             focusedBorderColor = NavyBlue,
                             unfocusedContainerColor = BackgroundGray,
-                            focusedContainerColor = BackgroundGray
+                            focusedContainerColor = BackgroundGray,
+                            unfocusedPlaceholderColor = Color.Gray.copy(alpha = 0.5f),
+                            focusedPlaceholderColor = Color.Gray.copy(alpha = 0.5f)
                         ),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                         singleLine = true
@@ -106,7 +107,7 @@ fun SignInScreen(navController: NavController, viewModel: AuthViewModel) {
                         onValueChange = { password = it },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
-                        placeholder = { Text(stringResource(R.string.password_label)) },
+                        placeholder = { Text(stringResource(R.string.password_label), color = Color.Gray.copy(alpha = 0.5f)) },
                         leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
                         trailingIcon = {
                             IconButton(onClick = { passwordVisible = !passwordVisible }) {
@@ -121,7 +122,9 @@ fun SignInScreen(navController: NavController, viewModel: AuthViewModel) {
                             unfocusedBorderColor = DividerColor,
                             focusedBorderColor = NavyBlue,
                             unfocusedContainerColor = BackgroundGray,
-                            focusedContainerColor = BackgroundGray
+                            focusedContainerColor = BackgroundGray,
+                            unfocusedPlaceholderColor = Color.Gray.copy(alpha = 0.5f),
+                            focusedPlaceholderColor = Color.Gray.copy(alpha = 0.5f)
                         ),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                         singleLine = true

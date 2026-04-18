@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import com.example.tisunga.ui.theme.*
+import com.example.tisunga.utils.FormatUtils
 import com.example.tisunga.viewmodel.LoanViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -138,21 +139,23 @@ fun ApplyLoanScreen(navController: NavController, groupId: String, viewModel: Lo
                             it.toDoubleOrNull()?.let { valAmt -> viewModel.calculateInterest(valAmt, duration) }
                         },
                         modifier = Modifier.fillMaxWidth(),
-                        placeholder = { Text("e.g. 50000") },
+                        placeholder = { Text("e.g. 50000", color = Color.Gray.copy(alpha = 0.5f)) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         shape = RoundedCornerShape(12.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             unfocusedContainerColor = BackgroundGray,
                             focusedContainerColor = White,
-                            focusedBorderColor = NavyBlue
+                            focusedBorderColor = NavyBlue,
+                            unfocusedPlaceholderColor = Color.Gray.copy(alpha = 0.5f),
+                            focusedPlaceholderColor = Color.Gray.copy(alpha = 0.5f)
                         )
                     )
 
                     if (amount.isNotEmpty()) {
                         Spacer(modifier = Modifier.height(16.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            InfoBox(label = "Interest (5%)", value = "MK ${String.format("%,.0f", uiState.calculatedInterest)}", Modifier.weight(1f))
-                            InfoBox(label = "Total Repayable", value = "MK ${String.format("%,.0f", uiState.calculatedRepayable)}", Modifier.weight(1f))
+                            InfoBox(label = "Interest (5%)", value = FormatUtils.formatMoney(uiState.calculatedInterest), Modifier.weight(1f))
+                            InfoBox(label = "Total Repayable", value = FormatUtils.formatMoney(uiState.calculatedRepayable), Modifier.weight(1f))
                         }
                     }
 
@@ -196,12 +199,14 @@ fun ApplyLoanScreen(navController: NavController, groupId: String, viewModel: Lo
                         value = purpose,
                         onValueChange = { purpose = it },
                         modifier = Modifier.fillMaxWidth().height(100.dp),
-                        placeholder = { Text("What is this loan for?") },
+                        placeholder = { Text("What is this loan for?", color = Color.Gray.copy(alpha = 0.5f)) },
                         shape = RoundedCornerShape(12.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             unfocusedContainerColor = BackgroundGray,
                             focusedContainerColor = White,
-                            focusedBorderColor = NavyBlue
+                            focusedBorderColor = NavyBlue,
+                            unfocusedPlaceholderColor = Color.Gray.copy(alpha = 0.5f),
+                            focusedPlaceholderColor = Color.Gray.copy(alpha = 0.5f)
                         )
                     )
 
@@ -245,10 +250,11 @@ fun ApplyLoanScreen(navController: NavController, groupId: String, viewModel: Lo
 fun InfoBox(label: String, value: String, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier
-            .background(BackgroundGray, RoundedCornerShape(12.dp))
-            .padding(12.dp)
+            .background(BackgroundGray, RoundedCornerShape(10.dp))
+            .padding(horizontal = 12.dp, vertical = 8.dp)
     ) {
-        Text(label, fontSize = 11.sp, color = TextSecondary)
-        Text(value, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = TextPrimary)
+        Text(label, fontSize = 11.sp, color = TextSecondary, fontWeight = FontWeight.Medium)
+        Spacer(modifier = Modifier.height(2.dp))
+        Text(value, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = NavyBlue)
     }
 }

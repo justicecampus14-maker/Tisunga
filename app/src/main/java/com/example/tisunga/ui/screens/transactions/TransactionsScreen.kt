@@ -23,6 +23,7 @@ import androidx.navigation.NavController
 import com.example.tisunga.data.model.Transaction
 import com.example.tisunga.data.model.TransactionType
 import com.example.tisunga.ui.theme.*
+import com.example.tisunga.utils.FormatUtils
 import com.example.tisunga.viewmodel.TransactionViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -172,13 +173,13 @@ fun TransactionItem(transaction: Transaction) {
                 }
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
-                        text = (if (isCredit) "+" else "-") + "MK ${String.format("%,.2f", transaction.amount)}",
+                        text = (if (isCredit) "+" else "-") + FormatUtils.formatMoney(transaction.amount),
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 16.sp,
                         color = color
                     )
                     Text(
-                        text = "Bal: MK ${String.format("%,.2f", transaction.balanceAfter)}",
+                        text = "Bal: ${FormatUtils.formatMoney(transaction.balanceAfter)}",
                         fontSize = 11.sp,
                         color = Color.Gray
                     )

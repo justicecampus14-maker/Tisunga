@@ -303,8 +303,8 @@ class GroupViewModel(private val sessionManager: SessionManager) : ViewModel() {
 
 
     /**
-     * Called from HomeScreen when home data loads — seeds selectedGroup and role
-     * so GroupDetailScreen has data immediately without waiting for a dashboard call.
+     Called from HomeScreen when home data loads — seeds selectedGroup and role
+     so GroupDetailScreen has data immediately without waiting for a dashboard call.
      */
     fun seedSelectedGroup(group: com.example.tisunga.data.model.Group, role: String) {
         _uiState.value = _uiState.value.copy(
