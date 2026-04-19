@@ -55,7 +55,7 @@ fun AppDrawerContent(
         drawerShape = RoundedCornerShape(0.dp)
     ) {
         Spacer(modifier = Modifier.height(48.dp))
-        
+
         // Drawer Header with Hamburger (to match SideBar.png)
         Row(
             modifier = Modifier.padding(horizontal = 24.dp),
@@ -68,9 +68,9 @@ fun AppDrawerContent(
                 tint = NavyBlue
             )
         }
-        
+
         Spacer(modifier = Modifier.height(32.dp))
-        
+
         NavigationDrawerItem(
             icon = { Icon(Icons.Default.Person, contentDescription = null, modifier = Modifier.size(24.dp)) },
             label = { Text("My Profile", fontSize = 16.sp) },
@@ -107,7 +107,7 @@ fun AppDrawerContent(
             modifier = Modifier.padding(horizontal = 12.dp),
             colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
         )
-        
+
         NavigationDrawerItem(
             icon = { Icon(Icons.Default.Settings, contentDescription = null, modifier = Modifier.size(24.dp)) },
             label = { Text("Settings", fontSize = 16.sp) },
@@ -134,14 +134,14 @@ fun AppDrawerContent(
             modifier = Modifier.padding(horizontal = 12.dp),
             colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
         )
-        
+
         Spacer(modifier = Modifier.height(32.dp))
 
         NavigationDrawerItem(
             icon = { Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null, tint = RedAccent, modifier = Modifier.size(24.dp)) },
             label = { Text("Logout", color = RedAccent, fontSize = 16.sp) },
             selected = false,
-            onClick = { 
+            onClick = {
                 scope.launch {
                     drawerState.close()
                     onLogout()
@@ -223,9 +223,9 @@ fun HomeScreen(
                     } else {
                         BannerSection()
                     }
-                    
+
                     QuickActionsSection(navController, myGroup)
-                    
+
                     RecentTransactionsSection(
                         transactions = if (myGroup != null) uiState.recentTransactions else emptyList(),
                         hasGroup = myGroup != null
@@ -326,7 +326,7 @@ fun GroupInfoCard(group: com.example.tisunga.data.model.Group) {
                 ) {
                     Column {
                         Text(
-                            text = "Group Wallet",
+                            text = "Group Savings",
                             color = Color.White.copy(alpha = 0.7f),
                             fontSize = 14.sp
                         )
@@ -339,7 +339,7 @@ fun GroupInfoCard(group: com.example.tisunga.data.model.Group) {
                     }
                     Column(horizontalAlignment = Alignment.End) {
                         Text(
-                            text = "Your Balance",
+                            text = "My Savings",
                             color = Color.White.copy(alpha = 0.7f),
                             fontSize = 14.sp
                         )
@@ -423,7 +423,7 @@ fun HomeHeader(userPhone: String, unreadCount: Int, navController: NavController
 @Composable
 private fun BannerSection() {
     val pagerState = rememberPagerState(pageCount = { 3 })
-    
+
     LaunchedEffect(Unit) {
         while (true) {
             delay(5000)
@@ -431,7 +431,7 @@ private fun BannerSection() {
             pagerState.animateScrollToPage(nextPage)
         }
     }
-    
+
     Column(modifier = Modifier.fillMaxWidth()) {
         HorizontalPager(
             state = pagerState,
@@ -444,9 +444,9 @@ private fun BannerSection() {
         ) { page ->
             BannerCard(page)
         }
-        
+
         Spacer(modifier = Modifier.height(12.dp))
-        
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.Center
@@ -516,7 +516,7 @@ fun BannerCard(page: Int) {
                     fontWeight = FontWeight.SemiBold
                 )
             }
-            
+
             Icon(
                 Icons.Default.Groups,
                 contentDescription = null,
@@ -536,8 +536,8 @@ private fun QuickActionsSection(navController: NavController, group: Group?) {
             color=Color.White
         ) {
             Text(stringResource(R.string.quick_action_title),
-                 modifier=Modifier.padding(horizontal=12.dp, vertical=6.dp),
-                 fontSize=14.sp, fontWeight=FontWeight.SemiBold)
+                modifier=Modifier.padding(horizontal=12.dp, vertical=6.dp),
+                fontSize=14.sp, fontWeight=FontWeight.SemiBold)
         }
         Spacer(modifier = Modifier.height(12.dp))
         Row(
@@ -630,14 +630,14 @@ private fun QuickActionCard(
             Box(Modifier.fillMaxSize(),
                 contentAlignment=Alignment.Center) {
                 Icon(icon, null,
-                     modifier=Modifier.size(32.dp).alpha(if (enabled) 1f else 0.3f),
-                     tint=NavyBlue)
+                    modifier=Modifier.size(32.dp).alpha(if (enabled) 1f else 0.3f),
+                    tint=NavyBlue)
             }
         }
         Spacer(modifier = Modifier.height(6.dp))
         Text(label, fontSize=11.sp,
-             textAlign=TextAlign.Center,
-             color=if (enabled) TextPrimary else TextSecondary.copy(alpha = 0.5f))
+            textAlign=TextAlign.Center,
+            color=if (enabled) TextPrimary else TextSecondary.copy(alpha = 0.5f))
     }
 }
 
@@ -656,7 +656,7 @@ fun RecentTransactionsSection(transactions: List<Transaction>, hasGroup: Boolean
             )
         }
         Spacer(modifier = Modifier.height(12.dp))
-        
+
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
@@ -713,13 +713,13 @@ fun TransactionRow(transaction: Transaction) {
             com.example.tisunga.data.model.TransactionType.SAVINGS,
             com.example.tisunga.data.model.TransactionType.LOAN_IN,
             com.example.tisunga.data.model.TransactionType.SHARE_PURCHASE -> Icons.Default.AddCircle to Color(0xFF4CAF50)
-            
+
             com.example.tisunga.data.model.TransactionType.LOAN_OUT,
             com.example.tisunga.data.model.TransactionType.EXPENSE -> Icons.Default.RemoveCircle to Color(0xFFF44336)
-            
+
             else -> Icons.Default.SwapHoriz to Color(0xFF757575)
         }
-        
+
         Box(
             modifier = Modifier
                 .size(40.dp)
@@ -728,9 +728,9 @@ fun TransactionRow(transaction: Transaction) {
         ) {
             Icon(icon, null, modifier = Modifier.size(24.dp), tint = color)
         }
-        
+
         Spacer(modifier = Modifier.width(12.dp))
-        
+
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = transaction.type?.name?.replace("_", " ") ?: "Transaction",
@@ -745,7 +745,7 @@ fun TransactionRow(transaction: Transaction) {
                 maxLines = 1
             )
         }
-        
+
         Text(
             text = String.format(Locale.US, "MK %,.0f", transaction.amount),
             fontSize = 14.sp,

@@ -77,6 +77,12 @@ fun BottomNavBar(
                             launchSingleTop = true
                             restoreState = true
                         }
+                    } else if (item.route == Routes.HOME) {
+                        // If already on Home but perhaps on a sub-route, or just to be safe
+                        navController.navigate(Routes.HOME) {
+                            popUpTo(0) { inclusive = true }
+                            launchSingleTop = true
+                        }
                     }
                 },
                 colors = NavigationBarItemDefaults.colors(

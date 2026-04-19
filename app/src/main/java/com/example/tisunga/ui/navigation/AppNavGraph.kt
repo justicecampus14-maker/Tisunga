@@ -2,10 +2,8 @@ package com.example.tisunga.ui.navigation
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.*
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
@@ -24,6 +22,8 @@ import com.example.tisunga.ui.screens.savings.*
 import com.example.tisunga.ui.screens.transactions.TransactionsScreen
 import com.example.tisunga.utils.SessionManager
 import com.example.tisunga.viewmodel.*
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 
 // ── Routes ────────────────────────────────────────────────────────────────────
 
@@ -80,11 +80,13 @@ fun AppNavGraph(
     eventViewModel: EventViewModel,
     homeViewModel: HomeViewModel,
     notificationViewModel: NotificationViewModel,
-    transactionViewModel: TransactionViewModel
+    transactionViewModel: TransactionViewModel,
+    meetingViewModel: MeetingViewModel
 ) {
     NavHost(navController = navController, startDestination = Routes.WELCOME) {
 
         // ── Auth / Onboarding ─────────────────────────────────────────────
+        // WelcomeScreen only takes navController — no homeViewModel param
         composable(Routes.WELCOME) {
             WelcomeScreen(navController)
         }
@@ -118,22 +120,24 @@ fun AppNavGraph(
         }
 
         // ── Home ──────────────────────────────────────────────────────────
+        // HomeScreen takes navController, homeViewModel, notificationViewModel and groupViewModel
         composable(Routes.HOME) {
             HomeScreen(navController, homeViewModel, notificationViewModel, groupViewModel)
         }
 
-        // ── Group ─────────────────────────────────────────────────────────
+        // ── Group — all groupId params are IntType ─────────────────────────
         composable(
             Routes.GROUP_DETAIL,
             arguments = listOf(navArgument("groupId") { type = NavType.StringType })
         ) { back ->
             val groupId = back.arguments?.getString("groupId") ?: ""
+            val drawerState = androidx.compose.material3.rememberDrawerState(androidx.compose.material3.DrawerValue.Closed)
             GroupDetailScreen(
                 navController = navController,
                 groupId = groupId,
                 viewModel = groupViewModel,
                 homeViewModel = homeViewModel,
-                drawerState = rememberDrawerState(DrawerValue.Closed),
+                drawerState = drawerState,
                 notificationViewModel = notificationViewModel
             )
         }
@@ -183,6 +187,7 @@ fun AppNavGraph(
             GroupSavingsScreen(navController, savingsViewModel, homeViewModel, notificationViewModel)
         }
 
+        // MakeContributionScreen takes (navController, groupId: String, viewModel: ContributionViewModel)
         composable(
             Routes.MAKE_CONTRIBUTION,
             arguments = listOf(navArgument("groupId") { type = NavType.StringType })
@@ -194,6 +199,7 @@ fun AppNavGraph(
             )
         }
 
+        // ContributionHistoryScreen takes (navController, groupId: String, viewModel: SavingsViewModel)
         composable(
             Routes.CONTRIBUTION_HISTORY,
             arguments = listOf(navArgument("groupId") { type = NavType.StringType })
@@ -202,6 +208,7 @@ fun AppNavGraph(
             ContributionHistoryScreen(navController, groupId, savingsViewModel)
         }
 
+        // DisbursementScreen takes (navController, groupId: String, viewModel: SavingsViewModel, sessionManager: SessionManager)
         composable(
             Routes.DISBURSEMENT,
             arguments = listOf(navArgument("groupId") { type = NavType.StringType })
@@ -214,9 +221,10 @@ fun AppNavGraph(
 
         // ── Loans ─────────────────────────────────────────────────────────
         composable(Routes.ALL_LOANS) {
-            AllLoansScreen(navController, loanViewModel, homeViewModel)
+            AllLoansScreen(navController, loanViewModel, homeViewModel, notificationViewModel)
         }
 
+        // MyLoansScreen takes (navController, groupId: String, viewModel: LoanViewModel, homeViewModel: HomeViewModel)
         composable(
             Routes.MY_LOANS,
             arguments = listOf(navArgument("groupId") { type = NavType.StringType })
@@ -232,7 +240,12 @@ fun AppNavGraph(
             arguments = listOf(navArgument("groupId") { type = NavType.StringType })
         ) { back ->
             val groupId = back.arguments?.getString("groupId") ?: ""
-            GroupLoansScreen(navController, groupId, loanViewModel)
+            GroupLoansScreen(
+                navController = navController,
+                groupId       = groupId,
+                viewModel     = loanViewModel,
+                groupViewModel = groupViewModel
+            )
         }
 
         composable(
@@ -248,20 +261,28 @@ fun AppNavGraph(
             arguments = listOf(navArgument("groupId") { type = NavType.StringType })
         ) { back ->
             val groupId = back.arguments?.getString("groupId") ?: ""
-            ApplyLoanScreen(navController, groupId, loanViewModel)
+            ApplyLoanScreen(navController, groupId, loanViewModel, groupViewModel, homeViewModel)
         }
 
+        // RepayLoanScreen — wired to real screen
         composable(
             Routes.REPAY_LOAN,
             arguments = listOf(navArgument("loanId") { type = NavType.StringType })
         ) { back ->
-            val loanId = back.arguments?.getString("loanId") ?: ""
+            val loanId    = back.arguments?.getString("loanId") ?: ""
             val loanState = loanViewModel.uiState.collectAsState()
-            val loan = loanState.value.myLoans.find { it.id == loanId }
+            val loan      = loanState.value.myLoans.find { it.id == loanId }
+            val userPhone = sessionManager.getUserPhone()
             if (loan != null) {
-                ComingSoonScreen("Repay Loan")
+                com.example.tisunga.ui.screens.loans.RepayLoanScreen(
+                    navController = navController,
+                    loan          = loan,
+                    userPhone     = userPhone,
+                    viewModel     = loanViewModel
+                )
             } else {
-                navController.popBackStack()
+                // Loan not in cache — go back
+                LaunchedEffect(Unit) { navController.popBackStack() }
             }
         }
 
@@ -274,6 +295,7 @@ fun AppNavGraph(
             EventsScreen(navController, groupId, eventViewModel)
         }
 
+        // EventDetailScreen does not exist yet — stub
         composable(
             Routes.EVENT_DETAIL,
             arguments = listOf(navArgument("eventId") { type = NavType.StringType })
@@ -282,6 +304,7 @@ fun AppNavGraph(
         }
 
         // ── Transactions ──────────────────────────────────────────────────
+        // TransactionsScreen takes (navController, groupId: String, viewModel: TransactionViewModel)
         composable(
             Routes.TRANSACTIONS,
             arguments = listOf(navArgument("groupId") { type = NavType.StringType })
@@ -320,10 +343,12 @@ fun AppNavGraph(
         }
 
         // ── Misc ──────────────────────────────────────────────────────────
+        // NotificationsScreen takes navController and notificationViewModel
         composable(Routes.NOTIFICATIONS) {
             NotificationsScreen(navController, notificationViewModel)
         }
 
+        // Profile / Settings / ChangePassword — screens not yet created
         composable(Routes.PROFILE)         { ComingSoonScreen("Profile") }
         composable(Routes.SETTINGS)        { ComingSoonScreen("Settings") }
         composable(Routes.CHANGE_PASSWORD) { ComingSoonScreen("Change Password") }

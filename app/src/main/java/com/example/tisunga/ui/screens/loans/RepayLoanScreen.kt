@@ -37,14 +37,23 @@ fun RepayLoanScreen(
     var amount by remember { mutableStateOf("") }
     var phone by remember { mutableStateOf(userPhone) }
 
-    LaunchedEffect(uiState.isSuccess) {
-        if (uiState.isSuccess) {
+    val snackbarHostState = remember { SnackbarHostState() }
+    LaunchedEffect(uiState.successMessage) {
+        if (uiState.successMessage.isNotEmpty()) {
+            snackbarHostState.showSnackbar(uiState.successMessage)
+            viewModel.resetState()
             navController.popBackStack()
+        }
+    }
+    LaunchedEffect(uiState.errorMessage) {
+        if (uiState.errorMessage.isNotEmpty()) {
+            snackbarHostState.showSnackbar(uiState.errorMessage)
             viewModel.resetState()
         }
     }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Repay Loan", fontSize = 20.sp, fontWeight = FontWeight.Bold) },
@@ -99,9 +108,9 @@ fun RepayLoanScreen(
                         fontWeight = FontWeight.ExtraBold,
                         color = TextPrimary
                     )
-                    
+
                     Spacer(modifier = Modifier.height(16.dp))
-                    
+
                     val progress = (1 - (loan.remainingBalance / loan.totalRepayable)).toFloat().coerceIn(0f, 1f)
                     LinearProgressIndicator(
                         progress = { progress },
@@ -109,7 +118,7 @@ fun RepayLoanScreen(
                         color = GreenAccent,
                         strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
                     )
-                    
+
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Text("${(progress * 100).toInt()}% repaid", fontSize = 12.sp, color = TextSecondary)
@@ -171,7 +180,7 @@ fun RepayLoanScreen(
                     Spacer(modifier = Modifier.height(32.dp))
 
                     Button(
-                        onClick = { 
+                        onClick = {
                             val amt = amount.toDoubleOrNull() ?: 0.0
                             if (amt > 0 && phone.isNotEmpty()) {
                                 viewModel.repayLoan(loan.id, amt, phone)
@@ -180,15 +189,15 @@ fun RepayLoanScreen(
                         modifier = Modifier.fillMaxWidth().height(56.dp),
                         shape = RoundedCornerShape(14.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = NavyBlue),
-                        enabled = !uiState.isLoading && amount.isNotEmpty() && phone.isNotEmpty()
+                        enabled = !uiState.isRepaying && amount.isNotEmpty() && phone.isNotEmpty()
                     ) {
-                        if (uiState.isLoading) {
+                        if (uiState.isRepaying) {
                             CircularProgressIndicator(color = White, modifier = Modifier.size(24.dp))
                         } else {
                             Text("Initiate Payment", color = White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                         }
                     }
-                    
+
                     if (uiState.errorMessage.isNotEmpty()) {
                         Text(
                             uiState.errorMessage,
@@ -202,7 +211,7 @@ fun RepayLoanScreen(
             }
 
             Spacer(modifier = Modifier.height(24.dp))
-            
+
             Row(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
                 verticalAlignment = Alignment.CenterVertically

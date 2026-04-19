@@ -43,6 +43,7 @@ class MainActivity : ComponentActivity() {
                     val homeViewModel: HomeViewModel         = viewModel(factory = factory)
                     val notificationViewModel: NotificationViewModel = viewModel(factory = factory)
                     val transactionViewModel: TransactionViewModel = viewModel(factory = factory)
+                    val meetingViewModel: MeetingViewModel = viewModel(factory = factory)
 
                     // FIX 13: AppNavGraph in the zip only accepts these 6 ViewModels — no extras
                     AppNavGraph(
@@ -55,7 +56,8 @@ class MainActivity : ComponentActivity() {
                         eventViewModel        = eventViewModel,
                         homeViewModel         = homeViewModel,
                         notificationViewModel = notificationViewModel,
-                        transactionViewModel  = transactionViewModel
+                        transactionViewModel  = transactionViewModel,
+                        meetingViewModel      = meetingViewModel
                     )
                 }
             }
