@@ -41,7 +41,7 @@ fun DisbursementScreen(
     var showRejectDialog by remember { mutableStateOf(false) }
     var dialogType by remember { mutableStateOf("") } // "request" or "approve"
     var rejectionReason by remember { mutableStateOf("") }
-    
+
     val userRole = sessionManager.getGroupRole(groupId)?.lowercase() ?: "member"
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -96,7 +96,7 @@ fun DisbursementScreen(
                         CurrentDisbursementCard(
                             disbursement = uiState.currentDisbursement,
                             role = userRole,
-                            totalGroupSavings = uiState.totalSavings,
+                            totalGroupSavings = uiState.totalGroupSavings,
                             onRequest = {
                                 dialogType = "request"
                                 showConfirmDialog = true
@@ -141,15 +141,15 @@ fun DisbursementScreen(
     // Confirmation Dialog
     if (showConfirmDialog) {
         val count = if (dialogType == "request") uiState.memberCount else uiState.currentDisbursement?.memberShares?.size ?: 0
-        val amountStr = if (dialogType == "request") FormatUtils.formatMoney(uiState.totalSavings) else FormatUtils.formatMoney(uiState.currentDisbursement?.amount ?: 0.0)
-        
+        val amountStr = if (dialogType == "request") FormatUtils.formatMoney(uiState.totalGroupSavings) else FormatUtils.formatMoney(uiState.currentDisbursement?.amount ?: 0.0)
+
         TisungaConfirmDialog(
-            title = if (dialogType == "request") 
-                stringResource(R.string.request_disbursement_button) 
+            title = if (dialogType == "request")
+                stringResource(R.string.request_disbursement_button)
             else stringResource(R.string.approve_disbursement_button),
-            message = if (dialogType == "request") 
+            message = if (dialogType == "request")
                 stringResource(R.string.request_disbursement_confirm_msg, amountStr, count)
-                else stringResource(R.string.approve_disbursement_confirm_msg, amountStr, count),
+            else stringResource(R.string.approve_disbursement_confirm_msg, amountStr, count),
             isDestructive = dialogType == "approve",
             onConfirm = {
                 if (dialogType == "request") {
@@ -253,10 +253,10 @@ fun CurrentDisbursementCard(
                     }
                     StatusBadge(disbursement.status)
                 }
-                
+
                 Spacer(Modifier.height(8.dp))
                 Text("Requested by ${disbursement.requestedByName ?: "Chairperson"}", fontSize = 12.sp, color = TextSecondary)
-                
+
                 if (disbursement.status == "PENDING") {
                     Spacer(Modifier.height(16.dp))
                     if (role == "treasurer") {

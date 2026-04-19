@@ -10,7 +10,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -24,14 +26,27 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import com.example.tisunga.ui.theme.*
-import com.example.tisunga.utils.FormatUtils
+import com.example.tisunga.viewmodel.GroupViewModel
 import com.example.tisunga.viewmodel.LoanViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ApplyLoanScreen(navController: NavController, groupId: String, viewModel: LoanViewModel) {
+fun ApplyLoanScreen(
+    navController: NavController,
+    groupId: String,
+    viewModel: LoanViewModel,
+    groupViewModel: GroupViewModel,
+    homeViewModel: com.example.tisunga.viewmodel.HomeViewModel? = null
+) {
     val uiState by viewModel.uiState.collectAsState()
-    
+    val groupState by groupViewModel.uiState.collectAsState()
+
+    // Priority: live dashboard → seeded selectedGroup → HomeViewModel group (prevents "always insufficient")
+    val totalSavings = groupState.groupDashboard?.group?.totalSavings
+        ?: groupState.selectedGroup?.totalSavings
+        ?: homeViewModel?.uiState?.collectAsState()?.value?.myGroups?.firstOrNull()?.totalSavings
+        ?: 0.0
+
     var amount by remember { mutableStateOf("") }
     var duration by remember { mutableStateOf(1) }
     var purpose by remember { mutableStateOf("") }
@@ -106,18 +121,33 @@ fun ApplyLoanScreen(navController: NavController, groupId: String, viewModel: Lo
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
+            LaunchedEffect(groupId) {
+                groupViewModel.getGroupDashboard(groupId)
+            }
+
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = Color(0xFFE3F2FD))
             ) {
-                Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Info, null, tint = NavyBlue)
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Text(
-                        "Interest is calculated at 5% per month. Approval usually takes 24-48 hours.",
-                        fontSize = 13.sp, color = NavyBlue, fontWeight = FontWeight.Medium
-                    )
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Info, null, tint = NavyBlue)
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                            "Interest is 5% flat. The CHAIR or SECRETARY will review your request.",
+                            fontSize = 13.sp, color = NavyBlue, fontWeight = FontWeight.Medium
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Warning, null, tint = NavyBlue, modifier = Modifier.size(20.dp))
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                            "Group Balance: MK ${String.format("%,.0f", totalSavings)}",
+                            fontSize = 13.sp, color = NavyBlue, fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
 
@@ -134,28 +164,26 @@ fun ApplyLoanScreen(navController: NavController, groupId: String, viewModel: Lo
                     Spacer(modifier = Modifier.height(8.dp))
                     OutlinedTextField(
                         value = amount,
-                        onValueChange = { 
+                        onValueChange = {
                             amount = it
                             it.toDoubleOrNull()?.let { valAmt -> viewModel.calculateInterest(valAmt, duration) }
                         },
                         modifier = Modifier.fillMaxWidth(),
-                        placeholder = { Text("e.g. 50000", color = Color.Gray.copy(alpha = 0.5f)) },
+                        placeholder = { Text("e.g. 50000") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         shape = RoundedCornerShape(12.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             unfocusedContainerColor = BackgroundGray,
                             focusedContainerColor = White,
-                            focusedBorderColor = NavyBlue,
-                            unfocusedPlaceholderColor = Color.Gray.copy(alpha = 0.5f),
-                            focusedPlaceholderColor = Color.Gray.copy(alpha = 0.5f)
+                            focusedBorderColor = NavyBlue
                         )
                     )
 
                     if (amount.isNotEmpty()) {
                         Spacer(modifier = Modifier.height(16.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            InfoBox(label = "Interest (5%)", value = FormatUtils.formatMoney(uiState.calculatedInterest), Modifier.weight(1f))
-                            InfoBox(label = "Total Repayable", value = FormatUtils.formatMoney(uiState.calculatedRepayable), Modifier.weight(1f))
+                            InfoBox(label = "Interest (5%)", value = "MK ${String.format("%,.0f", uiState.calculatedInterest)}", Modifier.weight(1f))
+                            InfoBox(label = "Total Repayable", value = "MK ${String.format("%,.0f", uiState.calculatedRepayable)}", Modifier.weight(1f))
                         }
                     }
 
@@ -175,14 +203,14 @@ fun ApplyLoanScreen(navController: NavController, groupId: String, viewModel: Lo
                                     .height(44.dp),
                                 shape = RoundedCornerShape(10.dp),
                                 color = if (isSelected) NavyBlue else BackgroundGray,
-                                onClick = { 
+                                onClick = {
                                     duration = months
                                     amount.toDoubleOrNull()?.let { valAmt -> viewModel.calculateInterest(valAmt, duration) }
                                 }
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
                                     Text(
-                                        "$months", 
+                                        "$months",
                                         color = if (isSelected) White else TextPrimary,
                                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                                     )
@@ -199,46 +227,86 @@ fun ApplyLoanScreen(navController: NavController, groupId: String, viewModel: Lo
                         value = purpose,
                         onValueChange = { purpose = it },
                         modifier = Modifier.fillMaxWidth().height(100.dp),
-                        placeholder = { Text("What is this loan for?", color = Color.Gray.copy(alpha = 0.5f)) },
+                        placeholder = { Text("What is this loan for?") },
                         shape = RoundedCornerShape(12.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             unfocusedContainerColor = BackgroundGray,
                             focusedContainerColor = White,
-                            focusedBorderColor = NavyBlue,
-                            unfocusedPlaceholderColor = Color.Gray.copy(alpha = 0.5f),
-                            focusedPlaceholderColor = Color.Gray.copy(alpha = 0.5f)
+                            focusedBorderColor = NavyBlue
                         )
                     )
 
                     Spacer(modifier = Modifier.height(32.dp))
 
+                    val amtVal = amount.toDoubleOrNull() ?: 0.0
+                    val isInsufficient = amtVal > totalSavings
+
                     Button(
-                        onClick = { 
-                            val amtVal = amount.toDoubleOrNull() ?: 0.0
-                            if (amtVal > 0) {
+                        onClick = {
+                            if (amtVal > 0 && !isInsufficient) {
                                 viewModel.applyForLoan(groupId, amtVal, duration, purpose)
                             }
                         },
                         modifier = Modifier.fillMaxWidth().height(56.dp),
                         shape = RoundedCornerShape(14.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = NavyBlue),
-                        enabled = !uiState.isLoading && amount.isNotEmpty()
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (isInsufficient) Color.Gray else NavyBlue
+                        ),
+                        enabled = !uiState.isLoading && amount.isNotEmpty() && !isInsufficient
                     ) {
                         if (uiState.isLoading) {
                             CircularProgressIndicator(color = White, modifier = Modifier.size(24.dp))
                         } else {
-                            Text("Submit Application", color = White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                            Text(
+                                if (isInsufficient) "Insufficient Group Balance" else "Submit Application",
+                                color = White, fontSize = 16.sp, fontWeight = FontWeight.Bold
+                            )
                         }
                     }
-                    
+
+                    if (isInsufficient) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(10.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFFFFEBEE))
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(Icons.Default.Error, null, tint = Color.Red, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    "The requested amount (MK ${String.format("%,.0f", amtVal)}) exceeds the available group balance (MK ${String.format("%,.0f", totalSavings)}).",
+                                    color = Color.Red, fontSize = 12.sp, lineHeight = 16.sp
+                                )
+                            }
+                        }
+                    }
+
                     if (uiState.errorMessage.isNotEmpty()) {
-                        Text(
-                            uiState.errorMessage,
-                            color = Color.Red,
-                            fontSize = 12.sp,
-                            modifier = Modifier.padding(top = 8.dp).fillMaxWidth(),
-                            textAlign = TextAlign.Center
-                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(10.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFFFFEBEE))
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(Icons.Default.Error, null,
+                                    tint = Color.Red, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    uiState.errorMessage,
+                                    color = Color.Red,
+                                    fontSize = 12.sp,
+                                    lineHeight = 16.sp
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -250,11 +318,10 @@ fun ApplyLoanScreen(navController: NavController, groupId: String, viewModel: Lo
 fun InfoBox(label: String, value: String, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier
-            .background(BackgroundGray, RoundedCornerShape(10.dp))
-            .padding(horizontal = 12.dp, vertical = 8.dp)
+            .background(BackgroundGray, RoundedCornerShape(12.dp))
+            .padding(12.dp)
     ) {
-        Text(label, fontSize = 11.sp, color = TextSecondary, fontWeight = FontWeight.Medium)
-        Spacer(modifier = Modifier.height(2.dp))
-        Text(value, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = NavyBlue)
+        Text(label, fontSize = 11.sp, color = TextSecondary)
+        Text(value, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = TextPrimary)
     }
 }
