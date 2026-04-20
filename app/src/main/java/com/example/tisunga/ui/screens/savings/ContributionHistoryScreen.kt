@@ -46,7 +46,11 @@ fun ContributionHistoryScreen(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = White)
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onSurface
+                )
             )
         }
     ) { padding ->
@@ -54,16 +58,16 @@ fun ContributionHistoryScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .background(BackgroundGray)
+                .background(MaterialTheme.colorScheme.background)
         ) {
             TabRow(
                 selectedTabIndex = selectedTab,
-                containerColor = White,
-                contentColor = NavyBlue,
+                containerColor = MaterialTheme.colorScheme.surface,
+                contentColor = MaterialTheme.colorScheme.primary,
                 indicator = { tabPositions ->
-                    TabRowDefaults.Indicator(
+                    TabRowDefaults.SecondaryIndicator(
                         Modifier.tabIndicatorOffset(tabPositions[selectedTab]),
-                        color = NavyBlue
+                        color = MaterialTheme.colorScheme.primary
                     )
                 }
             ) {
@@ -81,7 +85,7 @@ fun ContributionHistoryScreen(
 
             if (uiState.isLoading) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = NavyBlue)
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                 }
             } else {
                 val list = if (selectedTab == 0) uiState.myHistory else uiState.groupHistory
@@ -89,9 +93,9 @@ fun ContributionHistoryScreen(
                 if (list.isEmpty()) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(Icons.Default.History, contentDescription = null, modifier = Modifier.size(64.dp), tint = Color.LightGray)
+                            Icon(Icons.Default.History, contentDescription = null, modifier = Modifier.size(64.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f))
                             Spacer(modifier = Modifier.height(8.dp))
-                            Text("No contributions found", color = Color.Gray)
+                            Text("No contributions found", color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 } else {
@@ -115,14 +119,14 @@ fun ContributionCard(contribution: Contribution, isMyHistory: Boolean) {
     val statusColor = when (contribution.status) {
         "COMPLETED" -> GreenAccent
         "PENDING" -> Color(0xFFFFA500)
-        "FAILED" -> Color.Red
+        "FAILED" -> MaterialTheme.colorScheme.error
         else -> Color.Gray
     }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(2.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -135,25 +139,26 @@ fun ContributionCard(contribution: Contribution, isMyHistory: Boolean) {
                     Text(
                         text = contribution.type.replace("_", " "),
                         fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp
+                        fontSize = 16.sp,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         text = if (isMyHistory) contribution.group?.name ?: "Personal" 
                                else "${contribution.user?.firstName} ${contribution.user?.lastName}",
                         fontSize = 13.sp,
-                        color = Color.Gray
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
                 Text(
                     text = "MK ${String.format("%,.2f", contribution.amount)}",
                     fontWeight = FontWeight.ExtraBold,
                     fontSize = 16.sp,
-                    color = NavyBlue
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
             
             Spacer(modifier = Modifier.height(12.dp))
-            HorizontalDivider(color = BackgroundGray)
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             Spacer(modifier = Modifier.height(12.dp))
 
             Row(
@@ -162,9 +167,9 @@ fun ContributionCard(contribution: Contribution, isMyHistory: Boolean) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column {
-                    Text(contribution.createdAt.take(16).replace("T", " "), fontSize = 12.sp, color = Color.Gray)
+                    Text(contribution.createdAt.take(16).replace("T", " "), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     if (contribution.transactionRef != null) {
-                        Text("Ref: ${contribution.transactionRef}", fontSize = 10.sp, color = Color.LightGray)
+                        Text("Ref: ${contribution.transactionRef}", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f))
                     }
                 }
                 
@@ -185,7 +190,7 @@ fun ContributionCard(contribution: Contribution, isMyHistory: Boolean) {
             if (contribution.status == "FAILED" && contribution.failureReason != null) {
                 Text(
                     text = contribution.failureReason,
-                    color = Color.Red,
+                    color = MaterialTheme.colorScheme.error,
                     fontSize = 11.sp,
                     modifier = Modifier.padding(top = 8.dp)
                 )

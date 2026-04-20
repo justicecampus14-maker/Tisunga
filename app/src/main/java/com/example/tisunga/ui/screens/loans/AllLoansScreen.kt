@@ -92,7 +92,7 @@ fun AllLoansScreen(
             title = { Text("Reject Loan?", fontWeight = FontWeight.Bold) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Provide a reason so the member understands the decision.", fontSize = 13.sp, color = TextSecondary)
+                    Text("Provide a reason so the member understands the decision.", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     OutlinedTextField(
                         value = rejectReason,
                         onValueChange = { rejectReason = it },
@@ -141,7 +141,7 @@ fun AllLoansScreen(
         }
     ) {
         Scaffold(
-            containerColor = BackgroundGray,
+            containerColor = MaterialTheme.colorScheme.background,
             topBar = {
                 HomeHeader(
                     userPhone = homeUiState.userPhone,
@@ -158,8 +158,8 @@ fun AllLoansScreen(
                         onClick = { navController.navigate("apply_loan/$groupId") },
                         icon    = { Icon(Icons.Default.Add, null) },
                         text    = { Text("Apply for Loan") },
-                        containerColor = NavyBlue,
-                        contentColor   = Color.White,
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor   = MaterialTheme.colorScheme.onPrimary,
                         shape = RoundedCornerShape(16.dp)
                     )
                 }
@@ -175,7 +175,7 @@ fun AllLoansScreen(
                 if (uiState.isLoading) {
                     LinearProgressIndicator(
                         modifier = Modifier.fillMaxWidth(),
-                        color = NavyBlue
+                        color = MaterialTheme.colorScheme.primary
                     )
                 }
 
@@ -251,7 +251,7 @@ fun AllLoansScreen(
                                 onClick = { navController.navigate("group_loans/$groupId") },
                                 modifier = Modifier.fillMaxWidth()
                             ) {
-                                Text("+${activeGroupLoans.size - 3} more loans", color = NavyBlue)
+                                Text("+${activeGroupLoans.size - 3} more loans", color = MaterialTheme.colorScheme.primary)
                             }
                         }
                     }
@@ -282,21 +282,21 @@ private fun SectionHeader(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text(title, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+            Text(title, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground)
             if (badge != null) {
                 Box(
                     modifier = Modifier
-                        .background(RedAccent, RoundedCornerShape(10.dp))
+                        .background(MaterialTheme.colorScheme.error, RoundedCornerShape(10.dp))
                         .padding(horizontal = 7.dp, vertical = 2.dp)
                 ) {
-                    Text(badge, fontSize = 11.sp, color = Color.White, fontWeight = FontWeight.Bold)
+                    Text(badge, fontSize = 11.sp, color = MaterialTheme.colorScheme.onError, fontWeight = FontWeight.Bold)
                 }
             }
         }
         if (action != null) {
             Text(
                 action.first,
-                fontSize = 14.sp, fontWeight = FontWeight.Bold, color = NavyBlue,
+                fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.clickable { action.second() }
             )
         }
@@ -316,7 +316,7 @@ private fun PendingApprovalCard(
     Card(
         modifier  = Modifier.fillMaxWidth(),
         shape     = RoundedCornerShape(16.dp),
-        colors    = CardDefaults.cardColors(containerColor = Color.White),
+        colors    = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(2.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -339,27 +339,27 @@ private fun PendingApprovalCard(
                     Box(
                         modifier = Modifier
                             .size(40.dp)
-                            .background(NavyBlue.copy(alpha = 0.1f), CircleShape),
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(initials.ifEmpty { "?" }, fontWeight = FontWeight.Bold,
-                            color = NavyBlue, fontSize = 14.sp)
+                            color = MaterialTheme.colorScheme.primary, fontSize = 14.sp)
                     }
                     Column {
-                        Text(loan.borrowerName, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                        Text(loan.borrowerName, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurface)
                         Text(
                             loan.purpose?.ifBlank { "Personal loan" } ?: "Personal loan",
-                            fontSize = 12.sp, color = TextSecondary
+                            fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
                 Text(
                     "MK ${String.format(Locale.US, "%,.0f", loan.principalAmount)}",
-                    fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = NavyBlue
+                    fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = MaterialTheme.colorScheme.primary
                 )
             }
 
-            HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = BackgroundGray)
+            HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = MaterialTheme.colorScheme.outlineVariant)
 
             // Loan details row
             Row(
@@ -386,11 +386,11 @@ private fun PendingApprovalCard(
                     enabled  = !isRejecting && !isApproving,
                     modifier = Modifier.weight(1f).height(44.dp),
                     shape    = RoundedCornerShape(10.dp),
-                    colors   = ButtonDefaults.outlinedButtonColors(contentColor = RedAccent),
-                    border   = androidx.compose.foundation.BorderStroke(1.dp, RedAccent.copy(alpha = 0.4f))
+                    colors   = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                    border   = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.4f))
                 ) {
                     if (isRejecting) {
-                        CircularProgressIndicator(Modifier.size(16.dp), color = RedAccent, strokeWidth = 2.dp)
+                        CircularProgressIndicator(Modifier.size(16.dp), color = MaterialTheme.colorScheme.error, strokeWidth = 2.dp)
                     } else {
                         Icon(Icons.Default.Close, null, Modifier.size(14.dp))
                         Spacer(Modifier.width(4.dp))
@@ -402,14 +402,14 @@ private fun PendingApprovalCard(
                     enabled  = !isApproving && !isRejecting,
                     modifier = Modifier.weight(1f).height(44.dp),
                     shape    = RoundedCornerShape(10.dp),
-                    colors   = ButtonDefaults.buttonColors(containerColor = GreenAccent)
+                    colors   = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
                 ) {
                     if (isApproving) {
-                        CircularProgressIndicator(Modifier.size(16.dp), color = Color.White, strokeWidth = 2.dp)
+                        CircularProgressIndicator(Modifier.size(16.dp), color = MaterialTheme.colorScheme.onSecondary, strokeWidth = 2.dp)
                     } else {
-                        Icon(Icons.Default.Check, null, Modifier.size(14.dp), tint = Color.White)
+                        Icon(Icons.Default.Check, null, Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSecondary)
                         Spacer(Modifier.width(4.dp))
-                        Text("Approve", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                        Text("Approve", color = MaterialTheme.colorScheme.onSecondary, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                     }
                 }
             }
@@ -429,7 +429,7 @@ private fun ActiveLoanCard(loan: Loan, onRepayClick: () -> Unit) {
     Card(
         modifier  = Modifier.fillMaxWidth(),
         shape     = RoundedCornerShape(20.dp),
-        colors    = CardDefaults.cardColors(containerColor = NavyBlue),
+        colors    = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary),
         elevation = CardDefaults.cardElevation(4.dp)
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
@@ -439,15 +439,15 @@ private fun ActiveLoanCard(loan: Loan, onRepayClick: () -> Unit) {
                 verticalAlignment = Alignment.Top
             ) {
                 Column {
-                    Text("Outstanding Balance", color = Color.White.copy(alpha = 0.7f), fontSize = 12.sp)
+                    Text("Outstanding Balance", color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f), fontSize = 12.sp)
                     Text(
                         "MK ${String.format(Locale.US, "%,.0f", loan.remainingBalance)}",
-                        color = Color.White, fontSize = 26.sp, fontWeight = FontWeight.ExtraBold
+                        color = MaterialTheme.colorScheme.onPrimary, fontSize = 26.sp, fontWeight = FontWeight.ExtraBold
                     )
                 }
-                Surface(shape = RoundedCornerShape(8.dp), color = GreenAccent.copy(alpha = 0.2f)) {
+                Surface(shape = RoundedCornerShape(8.dp), color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f)) {
                     Text("ACTIVE", modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                        color = GreenAccent, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        color = MaterialTheme.colorScheme.secondary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                 }
             }
 
@@ -458,13 +458,13 @@ private fun ActiveLoanCard(loan: Loan, onRepayClick: () -> Unit) {
                 progress   = { pct },
                 modifier   = Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)),
                 color      = Color(0xFFFFEB3B),
-                trackColor = Color.White.copy(alpha = 0.2f)
+                trackColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.2f)
             )
 
             Spacer(Modifier.height(6.dp))
 
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("${(pct * 100).toInt()}% repaid", color = Color.White.copy(alpha = 0.7f), fontSize = 11.sp)
+                Text("${(pct * 100).toInt()}% repaid", color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f), fontSize = 11.sp)
                 if (!loan.dueDate.isNullOrBlank())
                     Text("Due ${loan.dueDate.take(10)}", color = Color(0xFFFFEB3B), fontSize = 11.sp, fontWeight = FontWeight.Bold)
             }
@@ -474,9 +474,9 @@ private fun ActiveLoanCard(loan: Loan, onRepayClick: () -> Unit) {
             // Approver row
             if (!loan.approverName.isNullOrBlank()) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.VerifiedUser, null, tint = GreenAccent, modifier = Modifier.size(14.dp))
+                    Icon(Icons.Default.VerifiedUser, null, tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(14.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text("Approved by ${loan.approverName}", color = Color.White.copy(alpha = 0.7f), fontSize = 11.sp)
+                    Text("Approved by ${loan.approverName}", color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f), fontSize = 11.sp)
                 }
                 Spacer(Modifier.height(12.dp))
             }
@@ -486,8 +486,8 @@ private fun ActiveLoanCard(loan: Loan, onRepayClick: () -> Unit) {
                 modifier = Modifier.fillMaxWidth().height(44.dp),
                 shape    = RoundedCornerShape(12.dp),
                 colors   = ButtonDefaults.buttonColors(
-                    containerColor = Color.White,
-                    contentColor   = NavyBlue
+                    containerColor = MaterialTheme.colorScheme.onPrimary,
+                    contentColor   = MaterialTheme.colorScheme.primary
                 )
             ) {
                 Icon(Icons.Default.Payment, null, Modifier.size(16.dp))
@@ -505,9 +505,9 @@ private fun PendingOwnLoanCard(loan: Loan) {
     Card(
         modifier  = Modifier.fillMaxWidth(),
         shape     = RoundedCornerShape(16.dp),
-        colors    = CardDefaults.cardColors(containerColor = Color(0xFFFFF8E1)),
+        colors    = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
         elevation = CardDefaults.cardElevation(1.dp),
-        border    = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFFCC02).copy(alpha = 0.5f))
+        border    = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f))
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(16.dp),
@@ -515,15 +515,15 @@ private fun PendingOwnLoanCard(loan: Loan) {
             horizontalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             Icon(Icons.Default.HourglassTop, null,
-                tint = Color(0xFFE65100), modifier = Modifier.size(32.dp))
+                tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(32.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text("Pending Review", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                Text("Pending Review", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurface)
                 Text(
                     "MK ${String.format(Locale.US, "%,.0f", loan.principalAmount)} — awaiting CHAIR / SECRETARY approval.",
-                    fontSize = 12.sp, color = TextSecondary, lineHeight = 16.sp
+                    fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, lineHeight = 16.sp
                 )
                 loan.purpose?.let {
-                    Text("Purpose: $it", fontSize = 11.sp, color = TextSecondary, modifier = Modifier.padding(top = 2.dp))
+                    Text("Purpose: $it", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 2.dp))
                 }
             }
         }
@@ -537,7 +537,7 @@ private fun NoLoanCard(hasGroup: Boolean, onApply: () -> Unit) {
     Card(
         modifier  = Modifier.fillMaxWidth(),
         shape     = RoundedCornerShape(16.dp),
-        colors    = CardDefaults.cardColors(containerColor = Color.White),
+        colors    = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(1.dp)
     ) {
         Column(
@@ -545,13 +545,13 @@ private fun NoLoanCard(hasGroup: Boolean, onApply: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Icon(Icons.Default.CreditCard, null,
-                tint = TextSecondary.copy(alpha = 0.4f), modifier = Modifier.size(48.dp))
+                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f), modifier = Modifier.size(48.dp))
             Spacer(Modifier.height(12.dp))
-            Text("No active loan", fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = TextPrimary)
+            Text("No active loan", fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurface)
             Text(
                 if (hasGroup) "You can apply once you need funds from the group."
                 else "Join or create a group to access loans.",
-                fontSize = 12.sp, color = TextSecondary,
+                fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center, modifier = Modifier.padding(top = 4.dp)
             )
             if (hasGroup) {
@@ -559,11 +559,11 @@ private fun NoLoanCard(hasGroup: Boolean, onApply: () -> Unit) {
                 OutlinedButton(
                     onClick = onApply,
                     shape = RoundedCornerShape(10.dp),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, NavyBlue)
+                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
                 ) {
-                    Icon(Icons.Default.Add, null, Modifier.size(16.dp), tint = NavyBlue)
+                    Icon(Icons.Default.Add, null, Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
                     Spacer(Modifier.width(6.dp))
-                    Text("Apply for a Loan", color = NavyBlue, fontWeight = FontWeight.SemiBold)
+                    Text("Apply for a Loan", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
                 }
             }
         }
@@ -582,17 +582,17 @@ fun GroupLoanCard(loan: Loan) {
     else 0f
 
     val statusColor = when (loan.status) {
-        "ACTIVE"    -> GreenAccent
+        "ACTIVE"    -> MaterialTheme.colorScheme.secondary
         "PENDING"   -> Color(0xFFF59E0B)
-        "COMPLETED" -> NavyBlue
-        "REJECTED"  -> RedAccent
+        "COMPLETED" -> MaterialTheme.colorScheme.primary
+        "REJECTED"  -> MaterialTheme.colorScheme.error
         else        -> Color.Gray
     }
 
     Card(
         modifier  = Modifier.fillMaxWidth(),
         shape     = RoundedCornerShape(12.dp),
-        colors    = CardDefaults.cardColors(containerColor = Color.White),
+        colors    = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(1.dp)
     ) {
         Column(modifier = Modifier.padding(14.dp)) {
@@ -605,7 +605,8 @@ fun GroupLoanCard(loan: Loan) {
                     loan.borrowerName.ifBlank { "Member" },
                     fontWeight = FontWeight.SemiBold,
                     fontSize   = 14.sp,
-                    modifier   = Modifier.weight(1f)
+                    modifier   = Modifier.weight(1f),
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -613,7 +614,7 @@ fun GroupLoanCard(loan: Loan) {
                 ) {
                     Text(
                         "MK ${String.format(Locale.US, "%,.0f", loan.principalAmount)}",
-                        fontWeight = FontWeight.Bold, fontSize = 14.sp, color = NavyBlue
+                        fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.primary
                     )
                     Surface(
                         shape = RoundedCornerShape(5.dp),
@@ -634,17 +635,17 @@ fun GroupLoanCard(loan: Loan) {
                     progress   = { pct },
                     modifier   = Modifier.fillMaxWidth().height(5.dp)
                         .clip(RoundedCornerShape(3.dp)),
-                    color      = GreenAccent,
-                    trackColor = BackgroundGray
+                    color      = MaterialTheme.colorScheme.secondary,
+                    trackColor = MaterialTheme.colorScheme.surfaceVariant
                 )
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(top = 3.dp),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text("${(pct * 100).toInt()}% repaid", fontSize = 10.sp, color = TextSecondary)
+                    Text("${(pct * 100).toInt()}% repaid", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(
                         "MK ${String.format(Locale.US, "%,.0f", loan.remainingBalance)} left",
-                        fontSize = 10.sp, color = TextSecondary
+                        fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
@@ -657,8 +658,8 @@ fun GroupLoanCard(loan: Loan) {
 @Composable
 fun LoanDetail(label: String, value: String) {
     Column(horizontalAlignment = Alignment.Start) {
-        Text(label, fontSize = 10.sp, color = Color.Gray)
-        Text(value, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
+        Text(label, fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(value, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
     }
 }
 
@@ -667,7 +668,7 @@ fun TabItem(label: String, isSelected: Boolean, onClick: () -> Unit) {
     Surface(
         modifier        = Modifier.width(85.dp).height(36.dp).clickable { onClick() },
         shape           = RoundedCornerShape(8.dp),
-        color           = if (isSelected) White else Color.LightGray.copy(alpha = 0.2f),
+        color           = if (isSelected) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
         shadowElevation = if (isSelected) 2.dp else 0.dp
     ) {
         Box(contentAlignment = Alignment.Center) {
@@ -675,7 +676,7 @@ fun TabItem(label: String, isSelected: Boolean, onClick: () -> Unit) {
                 label,
                 fontSize   = 13.sp,
                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                color      = if (isSelected) TextPrimary else TextSecondary
+                color      = if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }

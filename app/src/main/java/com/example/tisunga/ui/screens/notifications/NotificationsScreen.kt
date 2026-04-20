@@ -46,35 +46,39 @@ fun NotificationsScreen(
                 actions = {
                     if (state.unreadCount > 0) {
                         TextButton(onClick = { vm.markAllRead() }) {
-                            Text("Mark all read", fontSize = 13.sp, color = NavyBlue)
+                            Text("Mark all read", fontSize = 13.sp, color = MaterialTheme.colorScheme.primary)
                         }
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = White)
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onSurface
+                )
             )
         },
-        containerColor = BackgroundGray
+        containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
         when {
             state.isLoading -> {
                 Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = NavyBlue)
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                 }
             }
             state.errorMessage.isNotEmpty() -> {
                 Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(state.errorMessage, color = TextSecondary)
+                        Text(state.errorMessage, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(Modifier.height(12.dp))
-                        Button(onClick = { vm.load() }, colors = ButtonDefaults.buttonColors(containerColor = NavyBlue)) { 
-                            Text("Retry") 
+                        Button(onClick = { vm.load() }, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)) { 
+                            Text("Retry", color = MaterialTheme.colorScheme.onPrimary) 
                         }
                     }
                 }
             }
             state.notifications.isEmpty() -> {
                 Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                    Text("No notifications yet", color = TextSecondary)
+                    Text("No notifications yet", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
             else -> {
@@ -88,7 +92,6 @@ fun NotificationsScreen(
                             notification = notif,
                             onClick = {
                                 if (!notif.isRead) vm.markOneRead(notif.id)
-                                // Routing logic can be added here if needed
                             }
                         )
                     }
@@ -103,15 +106,16 @@ fun NotificationCard(
     notification: AppNotification,
     onClick: () -> Unit
 ) {
+    val isRead = notification.isRead
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (notification.isRead) White else Color(0xFFEEF4FF)
+            containerColor = if (isRead) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f)
         ),
-        elevation = CardDefaults.cardElevation(1.dp)
+        elevation = CardDefaults.cardElevation(if (isRead) 1.dp else 2.dp)
     ) {
         Row(
             modifier = Modifier.padding(14.dp),
@@ -120,12 +124,12 @@ fun NotificationCard(
             Surface(
                 modifier = Modifier.size(48.dp),
                 shape = CircleShape,
-                color = NavyBlue.copy(alpha = 0.1f)
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Text(
                         notification.title.take(1).uppercase(),
-                        color = NavyBlue,
+                        color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold,
                         fontSize = 18.sp
                     )
@@ -144,14 +148,14 @@ fun NotificationCard(
                         text = notification.title,
                         fontWeight = FontWeight.Bold,
                         fontSize = 14.sp,
-                        color = TextPrimary,
+                        color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
                         text = formatTimestamp(notification.createdAt),
                         fontSize = 11.sp,
-                        color = TextSecondary
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
 
@@ -160,7 +164,7 @@ fun NotificationCard(
                 Text(
                     text = notification.body,
                     fontSize = 13.sp,
-                    color = TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -171,7 +175,7 @@ fun NotificationCard(
                 Box(
                     modifier = Modifier
                         .size(10.dp)
-                        .background(NavyBlue, CircleShape)
+                        .background(MaterialTheme.colorScheme.primary, CircleShape)
                 )
             }
         }

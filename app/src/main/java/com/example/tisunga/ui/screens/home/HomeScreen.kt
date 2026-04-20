@@ -51,7 +51,7 @@ fun AppDrawerContent(
 ) {
     ModalDrawerSheet(
         modifier = Modifier.width(300.dp),
-        drawerContainerColor = Color.White,
+        drawerContainerColor = MaterialTheme.colorScheme.surface,
         drawerShape = RoundedCornerShape(0.dp)
     ) {
         Spacer(modifier = Modifier.height(48.dp))
@@ -65,7 +65,7 @@ fun AppDrawerContent(
                 Icons.Default.Menu,
                 contentDescription = null,
                 modifier = Modifier.size(32.dp),
-                tint = NavyBlue
+                tint = MaterialTheme.colorScheme.primary
             )
         }
 
@@ -129,6 +129,7 @@ fun AppDrawerContent(
             onClick = {
                 scope.launch {
                     drawerState.close()
+                    navController.navigate(Routes.THEME)
                 }
             },
             modifier = Modifier.padding(horizontal = 12.dp),
@@ -197,7 +198,7 @@ fun HomeScreen(
     ) {
         if (uiState.isLoading && uiState.myGroups.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = NavyBlue)
+                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
             }
         } else {
             Scaffold(
@@ -210,7 +211,7 @@ fun HomeScreen(
                     )
                 },
                 bottomBar  = { BottomNavBar(navController) },
-                containerColor = BackgroundGray
+                containerColor = MaterialTheme.colorScheme.background
             ) { padding ->
                 Column(
                     modifier = Modifier
@@ -241,7 +242,7 @@ fun QuickActionsNoGroup(navController: NavController) {
     Column(modifier = Modifier.padding(horizontal = 16.dp)) {
         Surface(
             shape = RoundedCornerShape(8.dp),
-            color = Color.White
+            color = MaterialTheme.colorScheme.surface
         ) {
             Text(
                 stringResource(R.string.quick_action_title),
@@ -294,7 +295,7 @@ fun GroupInfoCard(group: com.example.tisunga.data.model.Group) {
             .padding(horizontal = 16.dp, vertical = 8.dp)
             .height(200.dp),
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = NavyBlue),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary),
         elevation = CardDefaults.cardElevation(8.dp)
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
@@ -314,7 +315,7 @@ fun GroupInfoCard(group: com.example.tisunga.data.model.Group) {
             ) {
                 Text(
                     text = group.name,
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onPrimary,
                     fontSize = 32.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -327,12 +328,12 @@ fun GroupInfoCard(group: com.example.tisunga.data.model.Group) {
                     Column {
                         Text(
                             text = "Group Savings",
-                            color = Color.White.copy(alpha = 0.7f),
+                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f),
                             fontSize = 14.sp
                         )
                         Text(
                             text = String.format(Locale.US, "MK %,.2f", group.totalSavings),
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.onPrimary,
                             fontSize = 22.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -340,7 +341,7 @@ fun GroupInfoCard(group: com.example.tisunga.data.model.Group) {
                     Column(horizontalAlignment = Alignment.End) {
                         Text(
                             text = "My Savings",
-                            color = Color.White.copy(alpha = 0.7f),
+                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f),
                             fontSize = 14.sp
                         )
                         Text(
@@ -361,7 +362,7 @@ fun HomeHeader(userPhone: String, unreadCount: Int, navController: NavController
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(BackgroundGray)
+            .background(MaterialTheme.colorScheme.background)
             .statusBarsPadding()
             .padding(16.dp)
     ) {
@@ -372,7 +373,7 @@ fun HomeHeader(userPhone: String, unreadCount: Int, navController: NavController
             Icon(
                 Icons.Default.Menu,
                 contentDescription = "Menu",
-                tint = NavyBlue,
+                tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(32.dp)
             )
         }
@@ -380,14 +381,14 @@ fun HomeHeader(userPhone: String, unreadCount: Int, navController: NavController
         Surface(
             modifier = Modifier.align(Alignment.Center),
             shape = RoundedCornerShape(20.dp),
-            color = Color(0xFFE8E8E8)
+            color = MaterialTheme.colorScheme.surfaceVariant
         ) {
             Row(
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(userPhone, fontSize = 13.sp)
-                Icon(Icons.Filled.KeyboardArrowDown, null, Modifier.size(16.dp))
+                Text(userPhone, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Icon(Icons.Filled.KeyboardArrowDown, null, Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
 
@@ -397,7 +398,8 @@ fun HomeHeader(userPhone: String, unreadCount: Int, navController: NavController
                 null,
                 modifier = Modifier
                     .size(28.dp)
-                    .clickable { navController.navigate(Routes.NOTIFICATIONS) }
+                    .clickable { navController.navigate(Routes.NOTIFICATIONS) },
+                tint = MaterialTheme.colorScheme.onBackground
             )
             if (unreadCount > 0) {
                 Box(
@@ -457,8 +459,8 @@ private fun BannerSection() {
                         .padding(horizontal = 3.dp)
                         .size(if (pagerState.currentPage == index) 8.dp else 6.dp)
                         .background(
-                            if (pagerState.currentPage == index) NavyBlue
-                            else Color(0xFFCCCCCC),
+                            if (pagerState.currentPage == index) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.outlineVariant,
                             CircleShape
                         )
                 )
@@ -533,7 +535,7 @@ private fun QuickActionsSection(navController: NavController, group: Group?) {
     Column(modifier=Modifier.padding(horizontal=16.dp)) {
         Surface(
             shape=RoundedCornerShape(8.dp),
-            color=Color.White
+            color=MaterialTheme.colorScheme.surface
         ) {
             Text(stringResource(R.string.quick_action_title),
                 modifier=Modifier.padding(horizontal=12.dp, vertical=6.dp),
@@ -622,8 +624,8 @@ private fun QuickActionCard(
                 .clickable(enabled = enabled) { onClick() },
             shape = RoundedCornerShape(14.dp),
             colors = CardDefaults.cardColors(
-                containerColor = Color.White,
-                disabledContainerColor = Color.White.copy(alpha = 0.6f)
+                containerColor = MaterialTheme.colorScheme.surface,
+                disabledContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.6f)
             ),
             elevation = CardDefaults.cardElevation(if (enabled) 2.dp else 0.dp)
         ) {
@@ -631,13 +633,13 @@ private fun QuickActionCard(
                 contentAlignment=Alignment.Center) {
                 Icon(icon, null,
                     modifier=Modifier.size(32.dp).alpha(if (enabled) 1f else 0.3f),
-                    tint=NavyBlue)
+                    tint=MaterialTheme.colorScheme.primary)
             }
         }
         Spacer(modifier = Modifier.height(6.dp))
         Text(label, fontSize=11.sp,
             textAlign=TextAlign.Center,
-            color=if (enabled) TextPrimary else TextSecondary.copy(alpha = 0.5f))
+            color=if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f))
     }
 }
 
@@ -646,7 +648,7 @@ fun RecentTransactionsSection(transactions: List<Transaction>, hasGroup: Boolean
     Column(modifier = Modifier.padding(horizontal = 16.dp)) {
         Surface(
             shape = RoundedCornerShape(8.dp),
-            color = Color.White
+            color = MaterialTheme.colorScheme.surface
         ) {
             Text(
                 text = stringResource(R.string.recent_transactions_title),
@@ -660,7 +662,7 @@ fun RecentTransactionsSection(transactions: List<Transaction>, hasGroup: Boolean
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = White),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             elevation = CardDefaults.cardElevation(2.dp)
         ) {
             if (!hasGroup) {
@@ -670,7 +672,7 @@ fun RecentTransactionsSection(transactions: List<Transaction>, hasGroup: Boolean
                 ) {
                     Text(
                         text = "You don't belong to any group yet",
-                        color = TextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 14.sp
                     )
                 }
@@ -681,7 +683,7 @@ fun RecentTransactionsSection(transactions: List<Transaction>, hasGroup: Boolean
                 ) {
                     Text(
                         text = "No recent transactions",
-                        color = TextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 14.sp
                     )
                 }
@@ -693,7 +695,7 @@ fun RecentTransactionsSection(transactions: List<Transaction>, hasGroup: Boolean
                             HorizontalDivider(
                                 modifier = Modifier.padding(vertical = 12.dp),
                                 thickness = 0.5.dp,
-                                color = Color.LightGray.copy(alpha = 0.5f)
+                                color = MaterialTheme.colorScheme.outlineVariant
                             )
                         }
                     }
@@ -741,7 +743,7 @@ fun TransactionRow(transaction: Transaction) {
             Text(
                 text = transaction.description,
                 fontSize = 12.sp,
-                color = TextSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1
             )
         }
@@ -750,7 +752,7 @@ fun TransactionRow(transaction: Transaction) {
             text = String.format(Locale.US, "MK %,.0f", transaction.amount),
             fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
-            color = TextPrimary
+            color = MaterialTheme.colorScheme.onSurface
         )
     }
 }

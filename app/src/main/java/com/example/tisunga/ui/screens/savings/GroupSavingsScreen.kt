@@ -78,11 +78,11 @@ fun GroupSavingsScreen(
                 )
             },
             bottomBar      = { BottomNavBar(navController) },
-            containerColor = BackgroundLightGray
+            containerColor = MaterialTheme.colorScheme.background
         ) { padding ->
             if (uiState.isLoading) {
                 Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = NavyBlue)
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                 }
                 return@Scaffold
             }
@@ -97,7 +97,12 @@ fun GroupSavingsScreen(
                 item { Spacer(modifier = Modifier.height(8.dp)) }
 
                 item {
-                    Text(stringResource(R.string.savings_title), fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                    Text(
+                        text = stringResource(R.string.savings_title),
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
                 }
 
                 // ── Top summary card: Group Savings + My Savings ──────────
@@ -114,9 +119,10 @@ fun GroupSavingsScreen(
                     item {
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            stringResource(R.string.group_savings_title),
+                            text = stringResource(R.string.group_savings_title),
                             fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onBackground
                         )
                     }
 
@@ -126,7 +132,12 @@ fun GroupSavingsScreen(
                 } else if (summary != null) {
                     // No disbursement yet — show basic group card
                     item {
-                        Text(stringResource(R.string.group_savings_title), fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                        Text(
+                            text = stringResource(R.string.group_savings_title),
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
                         Spacer(modifier = Modifier.height(8.dp))
                         GroupSavingsCard(summary = summary) {
                             groupId?.let { navController.navigate("make_contribution/$it/${summary.groupName}") }
@@ -147,7 +158,7 @@ fun SavingsSummaryCard(groupTotal: Double, mySavings: Double) {
     Card(
         modifier  = Modifier.fillMaxWidth(),
         shape     = RoundedCornerShape(16.dp),
-        colors    = CardDefaults.cardColors(containerColor = NavyBlue),
+        colors    = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary),
         elevation = CardDefaults.cardElevation(4.dp)
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
@@ -160,7 +171,7 @@ fun SavingsSummaryCard(groupTotal: Double, mySavings: Double) {
                     Text(
                         "Group Savings",
                         fontSize = 12.sp,
-                        color = Color.White.copy(alpha = 0.75f),
+                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f),
                         fontWeight = FontWeight.Medium
                     )
                     Spacer(modifier = Modifier.height(4.dp))
@@ -168,7 +179,7 @@ fun SavingsSummaryCard(groupTotal: Double, mySavings: Double) {
                         FormatUtils.formatMoney(groupTotal),
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.White
+                        color = MaterialTheme.colorScheme.onPrimary
                     )
                 }
                 // My Savings column
@@ -176,7 +187,7 @@ fun SavingsSummaryCard(groupTotal: Double, mySavings: Double) {
                     Text(
                         "My Savings",
                         fontSize = 12.sp,
-                        color = Color.White.copy(alpha = 0.75f),
+                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f),
                         fontWeight = FontWeight.Medium
                     )
                     Spacer(modifier = Modifier.height(4.dp))
@@ -184,7 +195,7 @@ fun SavingsSummaryCard(groupTotal: Double, mySavings: Double) {
                         FormatUtils.formatMoney(mySavings),
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFFFFEB3B)  // yellow highlight
+                        color = Color(0xFFFFEB3B)  // yellow highlight remains for emphasis
                     )
                 }
             }
@@ -199,7 +210,7 @@ fun MemberSavingsCard(row: MemberSavingsRow) {
     Card(
         modifier  = Modifier.fillMaxWidth(),
         shape     = RoundedCornerShape(12.dp),
-        colors    = CardDefaults.cardColors(containerColor = White),
+        colors    = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(1.dp)
     ) {
         Row(
@@ -222,34 +233,39 @@ fun MemberSavingsCard(row: MemberSavingsRow) {
                 Box(
                     modifier = Modifier
                         .size(40.dp)
-                        .background(NavyBlue.copy(alpha = 0.12f), CircleShape),
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f), CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(initials, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = NavyBlue)
+                    Text(
+                        text = initials,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.primary
+                    )
                 }
 
                 Spacer(modifier = Modifier.width(12.dp))
 
                 Column {
                     Text(
-                        row.userName.ifBlank { "Member" },
+                        text = row.userName.ifBlank { "Member" },
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 14.sp,
-                        color = TextPrimary
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        row.userPhone,
+                        text = row.userPhone,
                         fontSize = 12.sp,
-                        color = TextSecondary
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
 
             Text(
-                FormatUtils.formatMoney(row.amount),
+                text = FormatUtils.formatMoney(row.amount),
                 fontWeight = FontWeight.Bold,
                 fontSize = 15.sp,
-                color = NavyBlue
+                color = MaterialTheme.colorScheme.primary
             )
         }
     }
@@ -262,31 +278,45 @@ fun GroupSavingsCard(summary: GroupSavingsSummary, onSaveClick: () -> Unit) {
     Card(
         modifier  = Modifier.fillMaxWidth(),
         shape     = RoundedCornerShape(16.dp),
-        colors    = CardDefaults.cardColors(containerColor = White),
+        colors    = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(2.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(summary.groupName, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            Text(
+                text = summary.groupName,
+                fontWeight = FontWeight.Bold,
+                fontSize = 16.sp,
+                color = MaterialTheme.colorScheme.onSurface
+            )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                "Total: ${FormatUtils.formatMoney(summary.totalSavings)}",
-                fontSize = 14.sp, color = NavyBlue, fontWeight = FontWeight.SemiBold
+                text = "Total: ${FormatUtils.formatMoney(summary.totalSavings)}",
+                fontSize = 14.sp,
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.SemiBold
             )
             Text(
-                "My Savings: ${FormatUtils.formatMoney(summary.mySavings)}",
-                fontSize = 13.sp, color = TextSecondary
+                text = "My Savings: ${FormatUtils.formatMoney(summary.mySavings)}",
+                fontSize = 13.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             if (summary.withdrawDate != null) {
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
-                    stringResource(R.string.withdraw_date_label, summary.withdrawDate),
-                    fontWeight = FontWeight.Bold, fontSize = 12.sp
+                    text = stringResource(R.string.withdraw_date_label, summary.withdrawDate),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
             }
             Spacer(modifier = Modifier.height(12.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                 TextButton(onClick = onSaveClick) {
-                    Text(stringResource(R.string.save_now_link), color = BlueLink, fontWeight = FontWeight.Bold)
+                    Text(
+                        text = stringResource(R.string.save_now_link),
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
         }
