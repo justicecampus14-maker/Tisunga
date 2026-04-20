@@ -39,11 +39,11 @@ class MainActivity : ComponentActivity() {
                     val groupViewModel: GroupViewModel       = viewModel(factory = factory)
                     val loanViewModel: LoanViewModel         = viewModel(factory = factory)
                     val savingsViewModel: SavingsViewModel   = viewModel(factory = factory)
-                    val eventViewModel: EventViewModel       = viewModel(factory = factory)
                     val homeViewModel: HomeViewModel         = viewModel(factory = factory)
                     val notificationViewModel: NotificationViewModel = viewModel(factory = factory)
                     val transactionViewModel: TransactionViewModel = viewModel(factory = factory)
                     val meetingViewModel: MeetingViewModel = viewModel(factory = factory)
+                    val activitiesViewModel: ActivitiesViewModel = viewModel(factory = factory)
 
                     // FIX 13: AppNavGraph in the zip only accepts these 6 ViewModels — no extras
                     AppNavGraph(
@@ -53,11 +53,11 @@ class MainActivity : ComponentActivity() {
                         groupViewModel        = groupViewModel,
                         loanViewModel         = loanViewModel,
                         savingsViewModel      = savingsViewModel,
-                        eventViewModel        = eventViewModel,
                         homeViewModel         = homeViewModel,
                         notificationViewModel = notificationViewModel,
                         transactionViewModel  = transactionViewModel,
-                        meetingViewModel      = meetingViewModel
+                        meetingViewModel      = meetingViewModel,
+                        activitiesViewModel   = activitiesViewModel
                     )
                 }
             }
@@ -72,12 +72,12 @@ class ViewModelFactory(private val sessionManager: SessionManager) : ViewModelPr
             modelClass.isAssignableFrom(GroupViewModel::class.java)   -> GroupViewModel(sessionManager) as T
             modelClass.isAssignableFrom(LoanViewModel::class.java)    -> LoanViewModel(sessionManager) as T
             modelClass.isAssignableFrom(SavingsViewModel::class.java) -> SavingsViewModel(sessionManager) as T
-            modelClass.isAssignableFrom(EventViewModel::class.java)   -> EventViewModel(sessionManager) as T
             modelClass.isAssignableFrom(HomeViewModel::class.java)    -> HomeViewModel(sessionManager) as T
             modelClass.isAssignableFrom(NotificationViewModel::class.java) -> NotificationViewModel() as T
             modelClass.isAssignableFrom(TransactionViewModel::class.java) -> TransactionViewModel() as T
             modelClass.isAssignableFrom(MeetingViewModel::class.java) -> MeetingViewModel(sessionManager) as T
             modelClass.isAssignableFrom(ContributionViewModel::class.java) -> ContributionViewModel(sessionManager) as T
+            modelClass.isAssignableFrom(ActivitiesViewModel::class.java) -> ActivitiesViewModel() as T
             else -> throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
         }
     }
