@@ -12,7 +12,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.example.tisunga.ui.screens.auth.*
-import com.example.tisunga.ui.screens.events.EventsScreen
+import com.example.tisunga.ui.screens.events.ActivitiesScreen
 import com.example.tisunga.ui.screens.group.*
 import com.example.tisunga.ui.screens.home.HomeScreen
 import com.example.tisunga.ui.screens.loans.*
@@ -56,6 +56,7 @@ object Routes {
     const val APPLY_LOAN            = "apply_loan/{groupId}"
     const val REPAY_LOAN            = "repay_loan/{loanId}"
     const val EVENTS                = "events/{groupId}"
+    const val ACTIVITIES            = "activities/{groupId}"
     const val EVENT_DETAIL          = "event_detail/{eventId}"
     const val TRANSACTIONS          = "transactions/{groupId}"
     const val NOTIFICATIONS         = "notifications"
@@ -227,6 +228,7 @@ fun AppNavGraph(
             )
         }
 
+        @Suppress("RedundantSamConstructor")
         composable(
             Routes.GROUP_LOANS,
             arguments = listOf(navArgument("groupId") { type = NavType.StringType })
@@ -276,13 +278,23 @@ fun AppNavGraph(
             }
         }
 
-        // ── Events ────────────────────────────────────────────────────────
+        // ── Events & Activities ──────────────────────────────────────────
+        composable(
+            Routes.ACTIVITIES,
+            arguments = listOf(navArgument("groupId") { type = NavType.StringType })
+        ) { back ->
+            val groupId = back.arguments?.getString("groupId") ?: ""
+            val activitiesViewModel: ActivitiesViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+            ActivitiesScreen(navController, groupId, activitiesViewModel)
+        }
+
         composable(
             Routes.EVENTS,
             arguments = listOf(navArgument("groupId") { type = NavType.StringType })
         ) { back ->
             val groupId = back.arguments?.getString("groupId") ?: ""
-            EventsScreen(navController, groupId, eventViewModel)
+            val activitiesViewModel: ActivitiesViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+            ActivitiesScreen(navController, groupId, activitiesViewModel)
         }
 
         // ── Transactions ──────────────────────────────────────────────────
