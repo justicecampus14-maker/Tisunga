@@ -82,3 +82,12 @@ data class GroupSummary(
     @SerializedName("groupCode")    val groupCode: String?,
     @SerializedName("endDate")      val endDate: String?
 )
+
+data class MemberSavingsDto(
+    @SerializedName("userId")    val userId: String,
+    @SerializedName("userName")  val userName: String,
+    @SerializedName("userPhone") val userPhone: String,
+    @SerializedName("role")      val role: String = "MEMBER",
+    @SerializedName("amount")    val amount: Double = 0.0
+)
+

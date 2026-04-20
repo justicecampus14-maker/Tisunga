@@ -87,6 +87,9 @@ interface ApiService {
     @GET("groups/{groupId}/members")
     suspend fun getGroupMembers(@Path("groupId") id: String): List<MembershipResponse>
 
+    @GET("groups/{groupId}/members/savings")
+    suspend fun getMemberSavings(@Path("groupId") groupId: String): List<MemberSavingsDto>
+
     @PATCH("groups/{groupId}/members/{userId}")
     suspend fun updateMember(
         @Path("groupId") groupId: String,
@@ -194,7 +197,7 @@ interface ApiService {
     @POST("loans/{loanId}/repay")
     suspend fun repayLoan(@Path("loanId") id: String, @Body body: Map<String, Double>): Loan
 
-    @POST("loans/{loanId}/repay/typed")
+    @POST("loans/{loanId}/repay")
     suspend fun repayLoanTyped(@Path("loanId") id: String, @Body request: RepayLoanRequest): Loan
 
     // ── EVENTS ────────────────────────────────────────────────────────────

@@ -13,101 +13,100 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-/** Represents one member's savings row on the Savings screen */
+/** One row on the Savings screen member-list */
 data class MemberSavingsRow(
-    val userId: String,
-    val userName: String,
+    val userId:    String,
+    val userName:  String,
     val userPhone: String,
-    val amount: Double
+    val role:      String  = "MEMBER",
+    val amount:    Double
 )
 
 data class GroupSavingsSummary(
-    val groupId: String,
-    val groupName: String,
-    val totalSavings: Double,       // sum of all contributions (not affected by loans)
-    val mySavings: Double,          // current user's personal savings
+    val groupId:      String,
+    val groupName:    String,
+    val totalSavings: Double,
+    val mySavings:    Double,
     val lastSavedDate: String,
-    val memberCount: Int,
+    val memberCount:  Int,
     val withdrawDate: String? = null,
     val memberSavings: List<MemberSavingsRow> = emptyList()
 )
 
 data class SavingsUiState(
-    val isLoading: Boolean = false,
-    val contributions: List<Contribution> = emptyList(),
-    val myHistory: List<Contribution> = emptyList(),
-    val groupHistory: List<Contribution> = emptyList(),
-    val totalGroupSavings: Double = 0.0,    // real group total from backend
-    val mySavings: Double = 0.0,            // real personal savings from backend
-    val groupSavings: List<GroupSavingsSummary> = emptyList(),
-    val memberCount: Int = 0,
+    val isLoading:         Boolean  = false,
+    val contributions:     List<Contribution> = emptyList(),
+    val myHistory:         List<Contribution> = emptyList(),
+    val groupHistory:      List<Contribution> = emptyList(),
+    val totalGroupSavings: Double   = 0.0,
+    val mySavings:         Double   = 0.0,
+    val groupSavings:      List<GroupSavingsSummary> = emptyList(),
+    val memberCount:       Int      = 0,
     val currentDisbursement: Disbursement? = null,
-    val history: List<Disbursement> = emptyList(),
-    val isSuccess: Boolean = false,
-    val successMessage: String = "",
-    val errorMessage: String = ""
+    val history:           List<Disbursement> = emptyList(),
+    val isSuccess:         Boolean  = false,
+    val successMessage:    String   = "",
+    val errorMessage:      String   = ""
 )
 
 class SavingsViewModel(private val sessionManager: SessionManager) : ViewModel() {
+
     private val _uiState = MutableStateFlow(SavingsUiState())
     val uiState: StateFlow<SavingsUiState> = _uiState.asStateFlow()
 
     private val apiService = ApiClient.getClient()
 
+    // ── Main Savings Screen loader ────────────────────────────────────────────
+
     /**
-     * Load the Savings screen data for the given group.
-     * Sources:
-     *   - GET /groups/{groupId}/dashboard  → totalSavings (group), mySavings (user), memberCount
-     *   - GET /groups/{groupId}/members    → per-member savings list
+     * Loads everything the Savings screen needs:
+     *   1. GET /groups/{groupId}/dashboard   → totalSavings, mySavings, memberCount
+     *      (backend now computes reliable totals from confirmed contributions when
+     *       group.totalSavings is 0 due to webhook not having fired)
+     *   2. GET /groups/{groupId}/members/savings → per-member savings list
+     *      (NEW endpoint — replaces the disbursement workaround)
      */
     fun loadSavingsData(groupId: String) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = "")
             try {
                 val dashboard = apiService.getGroupDashboard(groupId)
-                val groupTotal = dashboard.group?.totalSavings ?: 0.0
-                val myPersonal = dashboard.mySavings
-                val count      = dashboard.group?.memberCount ?: 0
 
-                // Per-member savings: from disbursement memberShares if available,
-                // otherwise fall back to the members list (no individual amounts available)
+                val groupTotal  = dashboard.group?.totalSavings ?: 0.0
+                val myPersonal  = dashboard.mySavings
+                val count       = dashboard.group?.memberCount  ?: 0
+
+                // ── Per-member savings via the new dedicated endpoint ──────────
+                // This replaces the old disbursement-data workaround which only
+                // returned data when an active disbursement existed.
                 val memberRows: List<MemberSavingsRow> = try {
-                    val disbursement = apiService.getCurrentDisbursement(groupId)
-                    disbursement.memberShares.map { share ->
+                    apiService.getMemberSavings(groupId).map { dto ->
                         MemberSavingsRow(
-                            userId    = share.userId,
-                            userName  = share.userName,
-                            userPhone = share.userPhone,
-                            amount    = share.memberSavings
+                            userId    = dto.userId,
+                            userName  = dto.userName,
+                            userPhone = dto.userPhone,
+                            role      = dto.role,
+                            amount    = dto.amount
                         )
-                    }.sortedByDescending { it.amount }
-                } catch (_: Exception) {
-                    // No active disbursement — show members with 0 savings as placeholder
-                    try {
-                        apiService.getGroupMembers(groupId).map { m ->
-                            MemberSavingsRow(
-                                userId    = m.user?.id ?: "",
-                                userName  = listOfNotNull(m.user?.firstName, m.user?.lastName).joinToString(" "),
-                                userPhone = m.user?.phone ?: "",
-                                amount    = 0.0
-                            )
-                        }
-                    } catch (_: Exception) { emptyList() }
+                    }
+                } catch (e: Exception) {
+                    // Endpoint not yet deployed — fall back to an empty list so the
+                    // screen still renders the group-total and my-savings cards.
+                    emptyList()
                 }
 
-                // End date as withdraw date from group's endDate
-                val endDate = try {
+                val endDate: String? = try {
                     apiService.getGroupById(groupId).endDate
                 } catch (_: Exception) { null }
 
                 val summary = GroupSavingsSummary(
-                    groupId      = groupId,
-                    groupName    = dashboard.group?.name ?: "",
-                    totalSavings = groupTotal,
-                    mySavings    = myPersonal,
+                    groupId       = groupId,
+                    groupName     = dashboard.group?.name ?: "",
+                    totalSavings  = groupTotal,
+                    mySavings     = myPersonal,
                     lastSavedDate = "–",
-                    memberCount  = count,
-                    withdrawDate = endDate,
+                    memberCount   = count,
+                    withdrawDate  = endDate,
                     memberSavings = memberRows
                 )
 
@@ -127,15 +126,17 @@ class SavingsViewModel(private val sessionManager: SessionManager) : ViewModel()
         }
     }
 
+    /** Alias kept for compatibility with call-sites that used this name */
+    fun getGroupSavingsData(groupId: String) = loadSavingsData(groupId)
+
+    // ── Contribution history ──────────────────────────────────────────────────
+
     fun getMyContributions() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
             try {
                 val contributions = apiService.getMyContributions()
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    contributions = contributions
-                )
+                _uiState.value = _uiState.value.copy(isLoading = false, contributions = contributions)
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(isLoading = false)
             }
@@ -150,7 +151,7 @@ class SavingsViewModel(private val sessionManager: SessionManager) : ViewModel()
                 _uiState.value = _uiState.value.copy(isLoading = false, myHistory = contributions)
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
-                    isLoading = false,
+                    isLoading    = false,
                     errorMessage = e.message ?: "Failed to load history"
                 )
             }
@@ -165,7 +166,7 @@ class SavingsViewModel(private val sessionManager: SessionManager) : ViewModel()
                 _uiState.value = _uiState.value.copy(isLoading = false, groupHistory = contributions)
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
-                    isLoading = false,
+                    isLoading    = false,
                     errorMessage = e.message ?: "Failed to load group history"
                 )
             }
@@ -197,9 +198,7 @@ class SavingsViewModel(private val sessionManager: SessionManager) : ViewModel()
         }
     }
 
-    fun getGroupSavingsData(groupId: String) {
-        loadSavingsData(groupId)
-    }
+    // ── Disbursement ──────────────────────────────────────────────────────────
 
     fun loadDisbursementHistory(groupId: String) {
         viewModelScope.launch {
@@ -216,10 +215,10 @@ class SavingsViewModel(private val sessionManager: SessionManager) : ViewModel()
             try {
                 val result = apiService.requestDisbursement(groupId)
                 _uiState.value = _uiState.value.copy(
-                    isLoading  = false,
+                    isLoading           = false,
                     currentDisbursement = result.toDomain(),
-                    isSuccess  = true,
-                    successMessage = "Disbursement requested. Treasurer has been notified."
+                    isSuccess           = true,
+                    successMessage      = "Disbursement requested. Treasurer has been notified."
                 )
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
@@ -236,9 +235,9 @@ class SavingsViewModel(private val sessionManager: SessionManager) : ViewModel()
             try {
                 apiService.approveDisbursement(groupId, disbursementId)
                 _uiState.value = _uiState.value.copy(
-                    isLoading  = false,
-                    isSuccess  = true,
-                    successMessage = "Disbursement approved! Funds are being sent to members.",
+                    isLoading           = false,
+                    isSuccess           = true,
+                    successMessage      = "Disbursement approved! Funds are being sent to members.",
                     currentDisbursement = _uiState.value.currentDisbursement?.copy(status = "APPROVED")
                 )
             } catch (e: Exception) {
@@ -256,11 +255,11 @@ class SavingsViewModel(private val sessionManager: SessionManager) : ViewModel()
             try {
                 apiService.rejectDisbursement(groupId, disbursementId, RejectDisbursementRequest(reason))
                 _uiState.value = _uiState.value.copy(
-                    isLoading  = false,
-                    isSuccess  = true,
-                    successMessage = "Disbursement request rejected.",
+                    isLoading           = false,
+                    isSuccess           = true,
+                    successMessage      = "Disbursement request rejected.",
                     currentDisbursement = _uiState.value.currentDisbursement?.copy(
-                        status = "REJECTED",
+                        status          = "REJECTED",
                         rejectionReason = reason
                     )
                 )
@@ -274,8 +273,14 @@ class SavingsViewModel(private val sessionManager: SessionManager) : ViewModel()
     }
 
     fun resetState() {
-        _uiState.value = _uiState.value.copy(isSuccess = false, successMessage = "", errorMessage = "")
+        _uiState.value = _uiState.value.copy(
+            isSuccess      = false,
+            successMessage = "",
+            errorMessage   = ""
+        )
     }
+
+    // ── Mapping helpers ───────────────────────────────────────────────────────
 
     private fun com.example.tisunga.data.remote.dto.DisbursementResponse.toDomain() = Disbursement(
         id              = id,
@@ -290,7 +295,10 @@ class SavingsViewModel(private val sessionManager: SessionManager) : ViewModel()
         approvedAt      = approvedAt,
         rejectionReason = rejectionReason,
         memberShares    = memberShares.map {
-            MemberSharePayout(it.userId, it.userName, it.userPhone, it.memberSavings, it.shareAmount, it.status)
+            MemberSharePayout(
+                it.userId, it.userName, it.userPhone,
+                it.memberSavings, it.shareAmount, it.status
+            )
         }
     )
 }
