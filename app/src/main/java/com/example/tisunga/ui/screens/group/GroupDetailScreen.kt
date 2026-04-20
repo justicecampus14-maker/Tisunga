@@ -173,8 +173,8 @@ fun QuickActionsGrid(navController: NavController, groupId: String, isChair: Boo
             ActionCard(Icons.Default.Badge, stringResource(R.string.action_view_savings), Modifier.weight(1f)) {
                 navController.navigate(Routes.GROUP_SAVINGS)
             }
-            ActionCard(Icons.Default.Event, "Events", Modifier.weight(1f)) {
-                navController.navigate(Routes.EVENTS.replace("{groupId}", groupId))
+            ActionCard(Icons.Default.Event, "Activities", Modifier.weight(1f)) {
+                navController.navigate(Routes.ACTIVITIES.replace("{groupId}", groupId))
             }
         }
         Spacer(modifier = Modifier.height(12.dp))
@@ -189,8 +189,8 @@ fun QuickActionsGrid(navController: NavController, groupId: String, isChair: Boo
                     navController.navigate(Routes.MY_LOANS.replace("{groupId}", groupId))
                 }
             }
-            ActionCard(Icons.Default.Groups, "Meetings", Modifier.weight(1f)) {
-                navController.navigate(Routes.MEETINGS.replace("{groupId}", groupId))
+            ActionCard(Icons.Default.Groups, "History", Modifier.weight(1f)) {
+                navController.navigate(Routes.CONTRIBUTION_HISTORY.replace("{groupId}", groupId))
             }
             // Spacer to keep the grid balanced
             Box(modifier = Modifier.weight(1f))

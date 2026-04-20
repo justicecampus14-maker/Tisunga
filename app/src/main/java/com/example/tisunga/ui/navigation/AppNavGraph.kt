@@ -12,7 +12,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.example.tisunga.ui.screens.auth.*
-import com.example.tisunga.ui.screens.events.EventsScreen
+import com.example.tisunga.ui.screens.events.ActivitiesScreen
 import com.example.tisunga.ui.screens.group.*
 import com.example.tisunga.ui.screens.home.HomeScreen
 import com.example.tisunga.ui.screens.loans.*
@@ -56,6 +56,7 @@ object Routes {
     const val EVENTS                = "events/{groupId}"
     const val TRANSACTIONS          = "transactions/{groupId}"
     const val NOTIFICATIONS         = "notifications"
+    const val ACTIVITIES            = "activities/{groupId}"
 
     // ── Coming soon (screens not yet created) ──────────────────────────────
     const val MEETINGS              = "meetings/{groupId}"
@@ -77,11 +78,11 @@ fun AppNavGraph(
     groupViewModel: GroupViewModel,
     loanViewModel: LoanViewModel,
     savingsViewModel: SavingsViewModel,
-    eventViewModel: EventViewModel,
     homeViewModel: HomeViewModel,
     notificationViewModel: NotificationViewModel,
     transactionViewModel: TransactionViewModel,
-    meetingViewModel: MeetingViewModel
+    meetingViewModel: MeetingViewModel,
+    activitiesViewModel: ActivitiesViewModel
 ) {
     NavHost(navController = navController, startDestination = Routes.WELCOME) {
 
@@ -286,20 +287,27 @@ fun AppNavGraph(
             }
         }
 
-        // ── Events ────────────────────────────────────────────────────────
+        // ── Events (Now Activities) ──────────────────────────────────────
+        composable(
+            Routes.ACTIVITIES,
+            arguments = listOf(navArgument("groupId") { type = NavType.StringType })
+        ) { back ->
+            val groupId = back.arguments?.getString("groupId") ?: ""
+            ActivitiesScreen(navController, groupId, activitiesViewModel)
+        }
+
         composable(
             Routes.EVENTS,
             arguments = listOf(navArgument("groupId") { type = NavType.StringType })
         ) { back ->
             val groupId = back.arguments?.getString("groupId") ?: ""
-            EventsScreen(navController, groupId, eventViewModel)
+            ActivitiesScreen(navController, groupId, activitiesViewModel)
         }
 
-        // EventDetailScreen does not exist yet — stub
         composable(
             Routes.EVENT_DETAIL,
             arguments = listOf(navArgument("eventId") { type = NavType.StringType })
-        ) { back ->
+        ) { 
             ComingSoonScreen("Event Detail")
         }
 
