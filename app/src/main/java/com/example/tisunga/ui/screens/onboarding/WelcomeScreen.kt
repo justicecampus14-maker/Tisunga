@@ -41,7 +41,7 @@ fun WelcomeScreen(navController: NavController) {
                 verticalArrangement = Arrangement.Center
             ) {
                 Spacer(modifier = Modifier.weight(1f))
-                
+
                 Text(
                     text = stringResource(R.string.welcome_to),
                     fontSize = 24.sp,
@@ -58,9 +58,9 @@ fun WelcomeScreen(navController: NavController) {
                     color = NavyBlue,
                     textAlign = TextAlign.Center
                 )
-                
+
                 Spacer(modifier = Modifier.height(32.dp))
-                
+
                 Text(
                     text = "Secure your future through group savings and easy access to loans.",
                     fontSize = 16.sp,
@@ -69,7 +69,7 @@ fun WelcomeScreen(navController: NavController) {
                     color = TextSecondary,
                     modifier = Modifier.padding(horizontal = 24.dp)
                 )
-                
+
                 Spacer(modifier = Modifier.weight(1.2f))
             }
 
@@ -92,9 +92,9 @@ fun WelcomeScreen(navController: NavController) {
                         horizontalArrangement = Arrangement.Center
                     ) {
                         Text(
-                            stringResource(R.string.get_started_button), 
-                            color = White, 
-                            fontSize = 18.sp, 
+                            stringResource(R.string.get_started_button),
+                            color = White,
+                            fontSize = 18.sp,
                             fontWeight = FontWeight.Bold
                         )
                         Spacer(modifier = Modifier.width(8.dp))

@@ -5,7 +5,7 @@ import com.google.gson.annotations.SerializedName
 data class Notification(
     @SerializedName("id")        val id: String,
     @SerializedName("userId")    val userId: String,
-    @SerializedName("groupId")   val groupId: Int?,
+    @SerializedName("groupId")   val groupId: String?,
     @SerializedName("type")      val type: NotificationType,
     @SerializedName("title")     val title: String,
     @SerializedName("body")      val body: String,
@@ -25,16 +25,16 @@ enum class NotificationType {
 }
 
 data class NotificationData(
-    @SerializedName("loanId")         val loanId: Int?,
-    @SerializedName("groupId")        val groupId: Int?,
-    @SerializedName("eventId")        val eventId: Int?,
-    @SerializedName("meetingId")      val meetingId: Int?,
-    @SerializedName("disbursementId") val disbursementId: Int?,
+    @SerializedName("loanId")         val loanId: String?,
+    @SerializedName("groupId")        val groupId: String?,
+    @SerializedName("eventId")        val eventId: String?,
+    @SerializedName("meetingId")      val meetingId: String?,
+    @SerializedName("disbursementId") val disbursementId: String?,
     @SerializedName("transactionRef") val transactionRef: String?,
     @SerializedName("amount")         val amount: String?
 )
 
 data class NotificationGroup(
-    @SerializedName("id")   val id: Int,
+    @SerializedName("id")   val id: String,
     @SerializedName("name") val name: String
 )

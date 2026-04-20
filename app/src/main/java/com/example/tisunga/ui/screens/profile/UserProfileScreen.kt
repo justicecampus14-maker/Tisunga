@@ -29,7 +29,6 @@ import com.example.tisunga.ui.components.SecondaryTopBar
 import com.example.tisunga.ui.theme.*
 import com.example.tisunga.utils.Constants
 import com.example.tisunga.viewmodel.UserProfileViewModel
-import kotlinx.coroutines.delay
 
 @Composable
 fun UserProfileScreen(navController: NavController, viewModel: UserProfileViewModel) {
@@ -77,11 +76,11 @@ fun UserProfileScreen(navController: NavController, viewModel: UserProfileViewMo
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
-        containerColor = BackgroundGray
+        containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
         if (uiState.isLoading) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = NavyBlue)
+                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
             }
         } else {
             Column(
@@ -98,8 +97,8 @@ fun UserProfileScreen(navController: NavController, viewModel: UserProfileViewMo
                         modifier = Modifier
                             .fillMaxSize()
                             .clip(CircleShape)
-                            .background(NavyBlue.copy(alpha = 0.1f))
-                            .border(2.dp, White, CircleShape)
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
+                            .border(2.dp, MaterialTheme.colorScheme.surface, CircleShape)
                     ) {
                         val avatarUrl = uiState.user?.avatarUrl
                         if (avatarUrl != null) {
@@ -121,7 +120,7 @@ fun UserProfileScreen(navController: NavController, viewModel: UserProfileViewMo
                                 Icons.Default.Person, 
                                 null, 
                                 modifier = Modifier.fillMaxSize().padding(24.dp),
-                                tint = NavyBlue
+                                tint = MaterialTheme.colorScheme.primary
                             )
                         }
                     }
@@ -132,14 +131,14 @@ fun UserProfileScreen(navController: NavController, viewModel: UserProfileViewMo
                             .size(36.dp)
                             .clip(CircleShape)
                             .clickable { launcher.launch("image/*") },
-                        color = NavyBlue,
+                        color = MaterialTheme.colorScheme.primary,
                         shadowElevation = 4.dp
                     ) {
                         Icon(
                             imageVector = Icons.Default.CameraAlt,
                             contentDescription = "Change Avatar",
                             modifier = Modifier.padding(8.dp),
-                            tint = White
+                            tint = MaterialTheme.colorScheme.onPrimary
                         )
                     }
                 }
@@ -172,20 +171,20 @@ fun UserProfileScreen(navController: NavController, viewModel: UserProfileViewMo
                             text = stringResource(R.string.phone_number_label),
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
-                            color = NavyBlue
+                            color = MaterialTheme.colorScheme.primary
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Surface(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(12.dp),
-                            color = White.copy(alpha = 0.5f),
-                            border = BorderStroke(1.dp, DividerColor)
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
                         ) {
                             Text(
                                 text = uiState.user?.phone ?: "",
                                 modifier = Modifier.padding(16.dp),
                                 fontSize = 16.sp,
-                                color = TextSecondary
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
@@ -199,15 +198,15 @@ fun UserProfileScreen(navController: NavController, viewModel: UserProfileViewMo
                         .fillMaxWidth()
                         .height(56.dp),
                     shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = NavyBlue),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                     enabled = !uiState.isUpdating && firstName.isNotBlank() && lastName.isNotBlank()
                 ) {
                     if (uiState.isUpdating) {
-                        CircularProgressIndicator(color = White, modifier = Modifier.size(24.dp))
+                        CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(24.dp))
                     } else {
                         Text(
                             text = stringResource(R.string.save_changes_button),
-                            color = White,
+                            color = MaterialTheme.colorScheme.onPrimary,
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -225,7 +224,7 @@ fun ProfileField(label: String, value: String, onValueChange: (String) -> Unit) 
             text = label,
             fontSize = 12.sp,
             fontWeight = FontWeight.Bold,
-            color = NavyBlue
+            color = MaterialTheme.colorScheme.primary
         )
         Spacer(modifier = Modifier.height(8.dp))
         OutlinedTextField(
@@ -234,10 +233,12 @@ fun ProfileField(label: String, value: String, onValueChange: (String) -> Unit) 
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
             colors = OutlinedTextFieldDefaults.colors(
-                unfocusedBorderColor = DividerColor,
-                focusedBorderColor = NavyBlue,
-                unfocusedContainerColor = White,
-                focusedContainerColor = White
+                unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                focusedContainerColor = MaterialTheme.colorScheme.surface,
+                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                focusedTextColor = MaterialTheme.colorScheme.onSurface
             ),
             singleLine = true
         )

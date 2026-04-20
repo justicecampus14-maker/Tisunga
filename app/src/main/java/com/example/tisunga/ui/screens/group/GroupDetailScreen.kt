@@ -24,6 +24,7 @@ import com.example.tisunga.R
 import com.example.tisunga.data.model.Transaction
 import com.example.tisunga.ui.components.BottomNavBar
 import com.example.tisunga.ui.navigation.Routes
+import com.example.tisunga.ui.screens.home.AppDrawerContent
 import com.example.tisunga.ui.screens.home.HomeHeader
 import com.example.tisunga.ui.theme.*
 import com.example.tisunga.viewmodel.GroupViewModel
@@ -37,12 +38,12 @@ fun GroupDetailScreen(
     groupId: String,
     viewModel: GroupViewModel,
     homeViewModel: HomeViewModel,
-    drawerState: DrawerState,
     notificationViewModel: NotificationViewModel
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val homeUiState by homeViewModel.uiState.collectAsState()
     val notificationState by notificationViewModel.uiState.collectAsState()
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     
     // UI state derived from group dashboard
@@ -58,46 +59,65 @@ fun GroupDetailScreen(
         viewModel.getGroupTransactions(groupId)
     }
 
-    Scaffold(
-        bottomBar = { BottomNavBar(navController) },
-        containerColor = BackgroundLightGray
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-        ) {
-            HomeHeader(
-                userPhone = userPhone,
-                unreadCount = notificationState.unreadCount,
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            AppDrawerContent(
+                userName   = homeUiState.userName,
+                userPhone  = homeUiState.userPhone,
+                myGroups   = homeUiState.myGroups,
+                myRole     = homeUiState.myRole,
                 navController = navController,
-                onMenuClick = { scope.launch { drawerState.open() } }
+                drawerState   = drawerState,
+                scope         = scope,
+                onLogout = {
+                    homeViewModel.logout()
+                    navController.navigate(Routes.SIGN_IN) { popUpTo(0) { inclusive = true } }
+                }
             )
-            
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(bottom = 16.dp)
+        }
+    ) {
+        Scaffold(
+            bottomBar = { BottomNavBar(navController) },
+            containerColor = BackgroundLightGray
+        ) { padding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
             ) {
-                item {
-                    GroupSummaryCard(groupName)
-                    Spacer(modifier = Modifier.height(20.dp))
-                }
+                HomeHeader(
+                    userPhone = userPhone,
+                    unreadCount = notificationState.unreadCount,
+                    navController = navController,
+                    onMenuClick = { scope.launch { drawerState.open() } }
+                )
                 
-                item {
-                    QuickActionsHeader(navController, groupId, isChair)
-                    Spacer(modifier = Modifier.height(12.dp))
-                    QuickActionsGrid(navController, groupId, isChair, groupName)
-                    Spacer(modifier = Modifier.height(20.dp))
-                }
-                
-                item {
-                    TransactionsHeader(navController, groupId)
-                    Spacer(modifier = Modifier.height(12.dp))
-                }
-                
-                items(uiState.transactions.take(2)) { transaction ->
-                    TransactionSummaryCard(transaction)
-                    Spacer(modifier = Modifier.height(12.dp))
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(bottom = 16.dp)
+                ) {
+                    item {
+                        GroupSummaryCard(groupName)
+                        Spacer(modifier = Modifier.height(20.dp))
+                    }
+                    
+                    item {
+                        QuickActionsHeader(navController, groupId, isChair)
+                        Spacer(modifier = Modifier.height(12.dp))
+                        QuickActionsGrid(navController, groupId, isChair, groupName)
+                        Spacer(modifier = Modifier.height(20.dp))
+                    }
+                    
+                    item {
+                        TransactionsHeader(navController, groupId)
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
+                    
+                    items(uiState.transactions.take(2)) { transaction ->
+                        TransactionSummaryCard(transaction)
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
                 }
             }
         }
@@ -248,4 +268,3 @@ fun TransactionSummaryCard(transaction: Transaction) {
         }
     }
 }
-

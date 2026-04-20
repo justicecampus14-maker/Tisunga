@@ -230,11 +230,11 @@ class SavingsViewModel(private val sessionManager: SessionManager) : ViewModel()
         }
     }
 
-    fun approveDisbursement(groupId: String, disbursementId: Int) {
+    fun approveDisbursement(groupId: String, disbursementId: String) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = "")
             try {
-                apiService.approveDisbursement(groupId, disbursementId.toString())
+                apiService.approveDisbursement(groupId, disbursementId)
                 _uiState.value = _uiState.value.copy(
                     isLoading  = false,
                     isSuccess  = true,
@@ -250,11 +250,11 @@ class SavingsViewModel(private val sessionManager: SessionManager) : ViewModel()
         }
     }
 
-    fun rejectDisbursement(groupId: String, disbursementId: Int, reason: String) {
+    fun rejectDisbursement(groupId: String, disbursementId: String, reason: String) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = "")
             try {
-                apiService.rejectDisbursement(groupId, disbursementId.toString(), RejectDisbursementRequest(reason))
+                apiService.rejectDisbursement(groupId, disbursementId, RejectDisbursementRequest(reason))
                 _uiState.value = _uiState.value.copy(
                     isLoading  = false,
                     isSuccess  = true,
@@ -278,19 +278,19 @@ class SavingsViewModel(private val sessionManager: SessionManager) : ViewModel()
     }
 
     private fun com.example.tisunga.data.remote.dto.DisbursementResponse.toDomain() = Disbursement(
-        id              = id.toInt(),
-        groupId         = groupId.toInt(),
+        id              = id,
+        groupId         = groupId,
         amount          = amount,
         status          = status,
-        requestedBy     = requestedBy.toInt(),
+        requestedBy     = requestedBy,
         requestedByName = requestedByName,
         requestedAt     = requestedAt,
-        approvedBy      = approvedBy?.toInt(),
+        approvedBy      = approvedBy,
         approvedByName  = approvedByName,
         approvedAt      = approvedAt,
         rejectionReason = rejectionReason,
         memberShares    = memberShares.map {
-            MemberSharePayout(it.userId.toInt(), it.userName, it.userPhone, it.memberSavings, it.shareAmount, it.status)
+            MemberSharePayout(it.userId, it.userName, it.userPhone, it.memberSavings, it.shareAmount, it.status)
         }
     )
 }

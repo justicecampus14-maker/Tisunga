@@ -7,6 +7,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -27,7 +28,9 @@ class MainActivity : ComponentActivity() {
         val sessionManager = SessionManager(this)
 
         setContent {
-            TisungaTheme {
+            var isDarkMode by remember { mutableStateOf(sessionManager.isDarkMode()) }
+
+            TisungaTheme(darkTheme = isDarkMode) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color    = MaterialTheme.colorScheme.background
@@ -44,8 +47,8 @@ class MainActivity : ComponentActivity() {
                     val notificationViewModel: NotificationViewModel = viewModel(factory = factory)
                     val transactionViewModel: TransactionViewModel = viewModel(factory = factory)
                     val meetingViewModel: MeetingViewModel = viewModel(factory = factory)
+                    val userProfileViewModel: UserProfileViewModel = viewModel(factory = factory)
 
-                    // FIX 13: AppNavGraph in the zip only accepts these 6 ViewModels — no extras
                     AppNavGraph(
                         navController         = navController,
                         sessionManager        = sessionManager,
@@ -57,7 +60,9 @@ class MainActivity : ComponentActivity() {
                         homeViewModel         = homeViewModel,
                         notificationViewModel = notificationViewModel,
                         transactionViewModel  = transactionViewModel,
-                        meetingViewModel      = meetingViewModel
+                        meetingViewModel      = meetingViewModel,
+                        userProfileViewModel  = userProfileViewModel,
+                        onThemeChange         = { isDarkMode = it }
                     )
                 }
             }
@@ -78,6 +83,7 @@ class ViewModelFactory(private val sessionManager: SessionManager) : ViewModelPr
             modelClass.isAssignableFrom(TransactionViewModel::class.java) -> TransactionViewModel() as T
             modelClass.isAssignableFrom(MeetingViewModel::class.java) -> MeetingViewModel(sessionManager) as T
             modelClass.isAssignableFrom(ContributionViewModel::class.java) -> ContributionViewModel(sessionManager) as T
+            modelClass.isAssignableFrom(UserProfileViewModel::class.java) -> UserProfileViewModel(sessionManager) as T
             else -> throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
         }
     }

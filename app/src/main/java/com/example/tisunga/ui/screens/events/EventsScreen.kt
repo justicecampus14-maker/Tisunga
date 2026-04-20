@@ -32,7 +32,8 @@ fun EventsScreen(navController: NavController, groupId: String, viewModel: Event
     val sessionManager = remember { com.example.tisunga.utils.SessionManager(context) }
     
     val groupRole = sessionManager.getGroupRole(groupId)
-    val canCreate = groupRole == "CHAIR" || groupRole == "SECRETARY"
+    val groupRoleStatic = sessionManager.getUserRole()
+    val canCreate = groupRole == "CHAIR" || groupRole == "SECRETARY" || groupRoleStatic == "CHAIRPERSON"
 
     LaunchedEffect(Unit) {
         viewModel.getGroupEvents(groupId)
@@ -48,9 +49,9 @@ fun EventsScreen(navController: NavController, groupId: String, viewModel: Event
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = NavyBlue,
-                    titleContentColor = White,
-                    navigationIconContentColor = White
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
                 )
             )
         },
@@ -58,23 +59,23 @@ fun EventsScreen(navController: NavController, groupId: String, viewModel: Event
             if (canCreate) {
                 FloatingActionButton(
                     onClick = { showCreateDialog = true },
-                    containerColor = NavyBlue,
-                    contentColor = White
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
                 ) {
                     Icon(Icons.Default.Add, contentDescription = "Create Event")
                 }
             }
         },
-        containerColor = BackgroundGray
+        containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
             if (uiState.isLoading && uiState.events.isEmpty()) {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center), color = NavyBlue)
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center), color = MaterialTheme.colorScheme.primary)
             } else if (uiState.events.isEmpty() && !uiState.isLoading) {
                 Text(
                     "No events found for this group.",
                     modifier = Modifier.align(Alignment.Center),
-                    color = TextSecondary
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             } else {
                 LazyColumn(
@@ -94,7 +95,7 @@ fun EventsScreen(navController: NavController, groupId: String, viewModel: Event
                     modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp),
                     action = {
                         TextButton(onClick = { viewModel.resetState() }) {
-                            Text("OK", color = White)
+                            Text("OK", color = MaterialTheme.colorScheme.inversePrimary)
                         }
                     }
                 ) {
@@ -120,7 +121,7 @@ fun EventListItem(event: Event, onClick: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth().clickable { onClick() },
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(2.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -129,7 +130,7 @@ fun EventListItem(event: Event, onClick: () -> Unit) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(event.title, fontWeight = Bold, fontSize = 18.sp, color = NavyBlue)
+                Text(event.title, fontWeight = Bold, fontSize = 18.sp, color = MaterialTheme.colorScheme.primary)
                 StatusBadge(event.status)
             }
             Spacer(modifier = Modifier.height(4.dp))
@@ -137,7 +138,7 @@ fun EventListItem(event: Event, onClick: () -> Unit) {
                 event.description,
                 maxLines = 2,
                 fontSize = 14.sp,
-                color = TextSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
 
@@ -145,17 +146,17 @@ fun EventListItem(event: Event, onClick: () -> Unit) {
                 val progress = (event.currentAmount / event.targetAmount).toFloat().coerceIn(0f, 1f)
                 LinearProgressIndicator(
                     progress = { progress },
-                    modifier = Modifier.fillMaxWidth().height(8.dp).background(BackgroundGray, RoundedCornerShape(4.dp)),
-                    color = NavyBlue,
+                    modifier = Modifier.fillMaxWidth().height(8.dp).background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(4.dp)),
+                    color = MaterialTheme.colorScheme.primary,
                     strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text(FormatUtils.formatMoney(event.currentAmount), fontSize = 12.sp, fontWeight = Bold)
-                    Text("Target: ${FormatUtils.formatMoney(event.targetAmount)}", fontSize = 12.sp, color = TextSecondary)
+                    Text(FormatUtils.formatMoney(event.currentAmount), fontSize = 12.sp, fontWeight = Bold, color = MaterialTheme.colorScheme.onSurface)
+                    Text("Target: ${FormatUtils.formatMoney(event.targetAmount)}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             } else {
-                Text("Collected: ${FormatUtils.formatMoney(event.currentAmount)}", fontSize = 14.sp, fontWeight = Bold)
+                Text("Collected: ${FormatUtils.formatMoney(event.currentAmount)}", fontSize = 14.sp, fontWeight = Bold, color = MaterialTheme.colorScheme.onSurface)
             }
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -163,12 +164,12 @@ fun EventListItem(event: Event, onClick: () -> Unit) {
                 Text(
                     "${event.contributionsCount} contributions",
                     fontSize = 12.sp,
-                    color = BlueLink,
+                    color = MaterialTheme.colorScheme.secondary,
                     fontWeight = Bold
                 )
                 if (event.endDate != null) {
                     Spacer(modifier = Modifier.width(16.dp))
-                    Text("Ends: ${FormatUtils.formatDate(event.endDate)}", fontSize = 12.sp, color = TextSecondary)
+                    Text("Ends: ${FormatUtils.formatDate(event.endDate)}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
@@ -197,9 +198,9 @@ fun CreateEventDialog(onDismiss: () -> Unit, onCreate: (String, String, Double?,
             Button(
                 onClick = { onCreate(title, description, targetAmount.toDoubleOrNull(), endDate.ifBlank { null }) },
                 enabled = title.isNotBlank() && description.isNotBlank(),
-                colors = ButtonDefaults.buttonColors(containerColor = NavyBlue)
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
             ) {
-                Text("Create", color = White)
+                Text("Create", color = MaterialTheme.colorScheme.onPrimary)
             }
         },
         dismissButton = {
