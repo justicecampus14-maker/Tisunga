@@ -20,6 +20,8 @@ import com.example.tisunga.ui.screens.notifications.NotificationsScreen
 import com.example.tisunga.ui.screens.onboarding.WelcomeScreen
 import com.example.tisunga.ui.screens.savings.*
 import com.example.tisunga.ui.screens.transactions.TransactionsScreen
+import com.example.tisunga.ui.screens.profile.UserProfileScreen
+import com.example.tisunga.ui.screens.profile.ThemeScreen
 import com.example.tisunga.utils.SessionManager
 import com.example.tisunga.viewmodel.*
 import androidx.compose.runtime.LaunchedEffect
@@ -54,92 +56,84 @@ object Routes {
     const val APPLY_LOAN            = "apply_loan/{groupId}"
     const val REPAY_LOAN            = "repay_loan/{loanId}"
     const val EVENTS                = "events/{groupId}"
+    const val EVENT_DETAIL          = "event_detail/{eventId}"
     const val TRANSACTIONS          = "transactions/{groupId}"
     const val NOTIFICATIONS         = "notifications"
-
-    // ── Coming soon (screens not yet created) ──────────────────────────────
-    const val MEETINGS              = "meetings/{groupId}"
-    const val MEETING_DETAIL        = "meeting_detail/{groupId}/{meetingId}"
-    const val ATTENDANCE            = "attendance/{groupId}/{meetingId}"
-    const val EVENT_DETAIL          = "event_detail/{eventId}"
     const val PROFILE               = "profile"
+    const val THEME                 = "theme"
+    const val MEETINGS              = "meetings"
     const val SETTINGS              = "settings"
     const val CHANGE_PASSWORD       = "change_password"
 }
-
-// ── Navigation graph ──────────────────────────────────────────────────────────
 
 @Composable
 fun AppNavGraph(
     navController: NavHostController,
     sessionManager: SessionManager,
     authViewModel: AuthViewModel,
-    groupViewModel: GroupViewModel,
-    loanViewModel: LoanViewModel,
-    savingsViewModel: SavingsViewModel,
-    eventViewModel: EventViewModel,
     homeViewModel: HomeViewModel,
-    notificationViewModel: NotificationViewModel,
+    groupViewModel: GroupViewModel,
+    savingsViewModel: SavingsViewModel,
+    loanViewModel: LoanViewModel,
+    eventViewModel: EventViewModel,
     transactionViewModel: TransactionViewModel,
-    meetingViewModel: MeetingViewModel
+    notificationViewModel: NotificationViewModel,
+    meetingViewModel: MeetingViewModel,
+    userProfileViewModel: UserProfileViewModel,
+    onThemeChange: (Boolean) -> Unit
 ) {
-    NavHost(navController = navController, startDestination = Routes.WELCOME) {
+    val startDestination = if (sessionManager.isLoggedIn()) Routes.HOME else Routes.WELCOME
 
-        // ── Auth / Onboarding ─────────────────────────────────────────────
-        // WelcomeScreen only takes navController — no homeViewModel param
+    NavHost(
+        navController = navController,
+        startDestination = startDestination
+    ) {
+        // ── Onboarding ────────────────────────────────────────────────────
         composable(Routes.WELCOME) {
             WelcomeScreen(navController)
         }
 
+        // ── Auth ──────────────────────────────────────────────────────────
         composable(Routes.SIGN_IN) {
             SignInScreen(navController, authViewModel)
         }
-
         composable(Routes.CREATE_ACCOUNT) {
             CreateAccountScreen(navController, authViewModel)
         }
-
         composable(
             Routes.VERIFICATION,
             arguments = listOf(navArgument("purpose") { type = NavType.StringType })
         ) { back ->
-            val purpose = back.arguments?.getString("purpose") ?: "REGISTRATION"
+            val purpose = back.arguments?.getString("purpose") ?: "register"
             VerificationScreen(navController, authViewModel, purpose)
         }
-
         composable(Routes.CREATE_PASSWORD) {
             CreatePasswordScreen(navController, authViewModel)
         }
-
+        composable(Routes.FORGOT_PASSWORD) {
+            ForgotPasswordScreen(navController, authViewModel)
+        }
         composable(Routes.RESET_PASSWORD) {
             ResetPasswordScreen(navController, authViewModel)
         }
 
-        composable(Routes.FORGOT_PASSWORD) {
-            ForgotPasswordScreen(navController, authViewModel)
-        }
-
         // ── Home ──────────────────────────────────────────────────────────
-        // HomeScreen takes navController, homeViewModel, notificationViewModel and groupViewModel
         composable(Routes.HOME) {
-            HomeScreen(navController, homeViewModel, notificationViewModel, groupViewModel)
+            HomeScreen(
+                navController,
+                homeViewModel,
+                notificationViewModel,
+                groupViewModel
+            )
         }
 
-        // ── Group — all groupId params are IntType ─────────────────────────
+        // ── Group ─────────────────────────────────────────────────────────
         composable(
             Routes.GROUP_DETAIL,
             arguments = listOf(navArgument("groupId") { type = NavType.StringType })
         ) { back ->
             val groupId = back.arguments?.getString("groupId") ?: ""
-            val drawerState = androidx.compose.material3.rememberDrawerState(androidx.compose.material3.DrawerValue.Closed)
-            GroupDetailScreen(
-                navController = navController,
-                groupId = groupId,
-                viewModel = groupViewModel,
-                homeViewModel = homeViewModel,
-                drawerState = drawerState,
-                notificationViewModel = notificationViewModel
-            )
+            GroupDetailScreen(navController, groupId, groupViewModel, homeViewModel, notificationViewModel)
         }
 
         composable(
@@ -187,19 +181,19 @@ fun AppNavGraph(
             GroupSavingsScreen(navController, savingsViewModel, homeViewModel, notificationViewModel)
         }
 
-        // MakeContributionScreen takes (navController, groupId: String, viewModel: ContributionViewModel)
         composable(
             Routes.MAKE_CONTRIBUTION,
             arguments = listOf(navArgument("groupId") { type = NavType.StringType })
         ) { back ->
             val groupId = back.arguments?.getString("groupId") ?: ""
-            val contributionViewModel: ContributionViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+            val contributionViewModel: ContributionViewModel = androidx.lifecycle.viewmodel.compose.viewModel(
+                factory = com.example.tisunga.ViewModelFactory(sessionManager)
+            )
             MakeContributionScreen(
                 navController, groupId, contributionViewModel
             )
         }
 
-        // ContributionHistoryScreen takes (navController, groupId: String, viewModel: SavingsViewModel)
         composable(
             Routes.CONTRIBUTION_HISTORY,
             arguments = listOf(navArgument("groupId") { type = NavType.StringType })
@@ -208,7 +202,6 @@ fun AppNavGraph(
             ContributionHistoryScreen(navController, groupId, savingsViewModel)
         }
 
-        // DisbursementScreen takes (navController, groupId: String, viewModel: SavingsViewModel, sessionManager: SessionManager)
         composable(
             Routes.DISBURSEMENT,
             arguments = listOf(navArgument("groupId") { type = NavType.StringType })
@@ -224,7 +217,6 @@ fun AppNavGraph(
             AllLoansScreen(navController, loanViewModel, homeViewModel, notificationViewModel)
         }
 
-        // MyLoansScreen takes (navController, groupId: String, viewModel: LoanViewModel, homeViewModel: HomeViewModel)
         composable(
             Routes.MY_LOANS,
             arguments = listOf(navArgument("groupId") { type = NavType.StringType })
@@ -264,7 +256,6 @@ fun AppNavGraph(
             ApplyLoanScreen(navController, groupId, loanViewModel, groupViewModel, homeViewModel)
         }
 
-        // RepayLoanScreen — wired to real screen
         composable(
             Routes.REPAY_LOAN,
             arguments = listOf(navArgument("loanId") { type = NavType.StringType })
@@ -281,7 +272,6 @@ fun AppNavGraph(
                     viewModel     = loanViewModel
                 )
             } else {
-                // Loan not in cache — go back
                 LaunchedEffect(Unit) { navController.popBackStack() }
             }
         }
@@ -295,16 +285,7 @@ fun AppNavGraph(
             EventsScreen(navController, groupId, eventViewModel)
         }
 
-        // EventDetailScreen does not exist yet — stub
-        composable(
-            Routes.EVENT_DETAIL,
-            arguments = listOf(navArgument("eventId") { type = NavType.StringType })
-        ) { back ->
-            ComingSoonScreen("Event Detail")
-        }
-
         // ── Transactions ──────────────────────────────────────────────────
-        // TransactionsScreen takes (navController, groupId: String, viewModel: TransactionViewModel)
         composable(
             Routes.TRANSACTIONS,
             arguments = listOf(navArgument("groupId") { type = NavType.StringType })
@@ -313,49 +294,25 @@ fun AppNavGraph(
             TransactionsScreen(navController, groupId, transactionViewModel)
         }
 
-        // ── Meetings (screens not yet created — stub) ──────────────────────
-        composable(
-            Routes.MEETINGS,
-            arguments = listOf(navArgument("groupId") { type = NavType.StringType })
-        ) { back ->
-            val groupId = back.arguments?.getString("groupId") ?: ""
-            ComingSoonScreen("Meetings")
-        }
-
-        composable(
-            Routes.MEETING_DETAIL,
-            arguments = listOf(
-                navArgument("groupId")   { type = NavType.StringType },
-                navArgument("meetingId") { type = NavType.StringType }
-            )
-        ) { back ->
-            ComingSoonScreen("Meeting Detail")
-        }
-
-        composable(
-            Routes.ATTENDANCE,
-            arguments = listOf(
-                navArgument("groupId")   { type = NavType.StringType },
-                navArgument("meetingId") { type = NavType.StringType }
-            )
-        ) { back ->
-            ComingSoonScreen("Attendance")
-        }
-
         // ── Misc ──────────────────────────────────────────────────────────
-        // NotificationsScreen takes navController and notificationViewModel
         composable(Routes.NOTIFICATIONS) {
             NotificationsScreen(navController, notificationViewModel)
         }
 
-        // Profile / Settings / ChangePassword — screens not yet created
-        composable(Routes.PROFILE)         { ComingSoonScreen("Profile") }
-        composable(Routes.SETTINGS)        { ComingSoonScreen("Settings") }
+        composable(Routes.PROFILE) {
+            UserProfileScreen(navController, userProfileViewModel)
+        }
+
+        composable(Routes.THEME) {
+            ThemeScreen(navController, sessionManager, onThemeChange)
+        }
+
+        // ── Coming soon (screens not yet created) ──────────────────────────────
+        composable(Routes.MEETINGS) { ComingSoonScreen("Meetings") }
+        composable(Routes.SETTINGS) { ComingSoonScreen("Settings") }
         composable(Routes.CHANGE_PASSWORD) { ComingSoonScreen("Change Password") }
     }
 }
-
-// ── Placeholder for screens not yet implemented ───────────────────────────────
 
 @Composable
 private fun ComingSoonScreen(name: String) {

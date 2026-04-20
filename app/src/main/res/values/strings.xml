@@ -278,4 +278,8 @@
 
     <!-- Notifications Screen -->
     <string name="notifications_title">Notification</string>
+
+    <!-- Profile Screen -->
+    <string name="my_profile_title">My Profile</string>
+    <string name="save_changes_button">Save Changes</string>
 </resources>

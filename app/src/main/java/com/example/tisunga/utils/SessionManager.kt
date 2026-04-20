@@ -18,6 +18,7 @@ class SessionManager(context: Context) {
         const val USER_PHONE         = "user_phone"
         const val USER_ROLE          = "user_role"
         const val GROUP_ROLES        = "group_roles"
+        const val IS_DARK_MODE       = "is_dark_mode"
     }
 
     fun saveAuthToken(token: String) =
@@ -64,6 +65,9 @@ class SessionManager(context: Context) {
         roles[groupId] = role
         prefs.edit().putString(GROUP_ROLES, gson.toJson(roles)).apply()
     }
+
+    fun isDarkMode(): Boolean = prefs.getBoolean(IS_DARK_MODE, false)
+    fun setDarkMode(isDark: Boolean) = prefs.edit().putBoolean(IS_DARK_MODE, isDark).apply()
 
     fun isLoggedIn(): Boolean = !fetchAuthToken().isNullOrBlank()
 
