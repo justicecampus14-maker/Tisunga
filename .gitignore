@@ -13,3 +13,5 @@
 .externalNativeBuild
 .cxx
 local.properties
+/app/res/xml
+/app/java/com.example.tisunga/utils/Constants

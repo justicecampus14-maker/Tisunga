@@ -2,7 +2,7 @@ package com.example.tisunga.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val NavyBlue = Color(0xFF1B3A5C)
+val NavyBlue = Color(0xFF1A2C5E)
 val BackgroundGray = Color(0xFFEEEFF3)
 val BackgroundLightGray = Color(0xFFE8E8E8)
 val White = Color(0xFFFFFFFF)
