@@ -46,10 +46,11 @@ fun UserProfileScreen(navController: NavController, viewModel: UserProfileViewMo
         uri?.let { viewModel.uploadAvatar(it, context) }
     }
 
+    // Effect to sync text fields when data finally arrives from backend
     LaunchedEffect(uiState.user) {
         uiState.user?.let {
-            it.firstName?.let { val1 -> firstName = val1 }
-            it.lastName?.let { val2 -> lastName = val2 }
+            firstName = it.firstName ?: ""
+            lastName = it.lastName ?: ""
             middleName = it.middleName ?: ""
         }
     }
@@ -101,8 +102,7 @@ fun UserProfileScreen(navController: NavController, viewModel: UserProfileViewMo
                             .border(2.dp, MaterialTheme.colorScheme.surface, CircleShape)
                     ) {
                         val avatarUrl = uiState.user?.avatarUrl
-                        if (avatarUrl != null) {
-                            // Construct full URL if it's relative
+                        if (!avatarUrl.isNullOrBlank()) {
                             val fullUrl = if (avatarUrl.startsWith("http")) {
                                 avatarUrl
                             } else {
