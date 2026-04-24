@@ -52,6 +52,15 @@ interface ApiService {
     @PATCH("users/me/avatar")
     suspend fun uploadAvatar(@Part avatar: MultipartBody.Part): UserResponse
 
+    @PATCH("users/me/fcm-token")
+    suspend fun updateFcmToken(@Body body: Map<String, String>): MessageResponse
+
+    @GET("users/me/contributions")
+    suspend fun getMyContributions(@Query("page") page: Int? = null): List<Contribution>
+
+    @GET("users/me/loans")
+    suspend fun getMyLoans(): List<Loan>
+
     // ── GROUPS ────────────────────────────────────────────────────────────
 
     @GET("groups/my")
@@ -162,9 +171,6 @@ interface ApiService {
 
     // ── CONTRIBUTIONS ─────────────────────────────────────────────────────
 
-    @GET("contributions/mine")
-    suspend fun getMyContributions(@Query("page") page: Int? = null): List<Contribution>
-
     @POST("contributions")
     suspend fun makeContribution(@Body body: Map<String, @JvmSuppressWildcards Any>): ContributionInitResponse
 
@@ -172,9 +178,6 @@ interface ApiService {
     suspend fun makeContributionModel(@Body contribution: Contribution): ContributionInitResponse
 
     // ── LOANS ─────────────────────────────────────────────────────────────
-
-    @GET("loans/my")
-    suspend fun getMyLoans(): List<Loan>
 
     @POST("loans/apply")
     suspend fun applyForLoan(@Body body: Map<String, @JvmSuppressWildcards Any>): Loan
@@ -268,9 +271,13 @@ interface ApiService {
     // ── NOTIFICATIONS ────────────────────────────────────────────────────
 
     @GET("notifications")
-    suspend fun getNotifications(@Query("unreadOnly") unreadOnly: Boolean): NotificationsResponse
+    suspend fun getNotifications(
+        @Query("page") page: Int? = null,
+        @Query("limit") limit: Int? = null,
+        @Query("unreadOnly") unreadOnly: String? = null
+    ): NotificationsResponse
 
-    @POST("notifications/mark-all-read")
+    @PATCH("notifications/read-all")
     suspend fun markAllNotificationsRead(): MessageResponse
 
     @PATCH("notifications/{id}/read")
