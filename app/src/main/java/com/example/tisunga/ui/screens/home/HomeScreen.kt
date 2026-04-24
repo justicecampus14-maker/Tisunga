@@ -56,7 +56,6 @@ fun AppDrawerContent(
     ) {
         Spacer(modifier = Modifier.height(48.dp))
 
-        // Drawer Header with Hamburger (to match SideBar.png)
         Row(
             modifier = Modifier.padding(horizontal = 24.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -79,29 +78,6 @@ fun AppDrawerContent(
                 scope.launch {
                     drawerState.close()
                     navController.navigate(Routes.PROFILE)
-                }
-            },
-            modifier = Modifier.padding(horizontal = 12.dp),
-            colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
-        )
-
-        NavigationDrawerItem(
-            icon = { Icon(Icons.Default.Groups, contentDescription = null, modifier = Modifier.size(24.dp)) },
-            label = { Text("Group Members", fontSize = 16.sp) },
-            selected = false,
-            onClick = {
-                scope.launch {
-                    drawerState.close()
-                    val currentGroup = myGroups.firstOrNull()
-                    if (currentGroup != null) {
-                        val role = myRole?.uppercase() ?: "MEMBER"
-                        val isPrivileged = role == "CHAIR" || role == "SECRETARY"
-                        if (isPrivileged) {
-                            navController.navigate(Routes.GROUP_MEMBERS_CHAIR.replace("{groupId}", currentGroup.id))
-                        } else {
-                            navController.navigate(Routes.GROUP_MEMBERS.replace("{groupId}", currentGroup.id))
-                        }
-                    }
                 }
             },
             modifier = Modifier.padding(horizontal = 12.dp),
@@ -225,7 +201,7 @@ fun HomeScreen(
                         BannerSection()
                     }
 
-                    QuickActionsSection(navController, myGroup)
+                    QuickActionsSection(navController, myGroup, uiState.myRole)
 
                     RecentTransactionsSection(
                         transactions = if (myGroup != null) uiState.recentTransactions else emptyList(),
@@ -294,17 +270,22 @@ fun GroupInfoCard(group: com.example.tisunga.data.model.Group) {
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp)
             .height(200.dp),
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary),
-        elevation = CardDefaults.cardElevation(8.dp)
+        elevation = CardDefaults.cardElevation(12.dp)
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
-            // Decorative Circle
             Box(
                 modifier = Modifier
-                    .size(180.dp)
-                    .offset(x = 180.dp, y = (-40).dp)
-                    .background(Color.White.copy(alpha = 0.1f), CircleShape)
+                    .size(220.dp)
+                    .offset(x = 160.dp, y = (-60).dp)
+                    .background(Color.White.copy(alpha = 0.08f), CircleShape)
+            )
+            Box(
+                modifier = Modifier
+                    .size(140.dp)
+                    .offset(x = (-40).dp, y = 130.dp)
+                    .background(Color.White.copy(alpha = 0.05f), CircleShape)
             )
 
             Column(
@@ -313,42 +294,72 @@ fun GroupInfoCard(group: com.example.tisunga.data.model.Group) {
                     .padding(24.dp),
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
-                Text(
-                    text = group.name,
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    fontSize = 32.sp,
-                    fontWeight = FontWeight.Bold
-                )
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.Bottom
-                ) {
-                    Column {
+                Column {
+                    Text(
+                        text = group.name,
+                        color = Color.White,
+                        fontSize = 28.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        letterSpacing = 0.5.sp
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Surface(
+                        color = Color.White.copy(alpha = 0.15f),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
                         Text(
-                            text = "Group Savings",
-                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f),
-                            fontSize = 14.sp
-                        )
-                        Text(
-                            text = String.format(Locale.US, "MK %,.2f", group.totalSavings),
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            fontSize = 22.sp,
+                            text = "ACTIVE GROUP",
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                            color = Color.White,
+                            fontSize = 10.sp,
                             fontWeight = FontWeight.Bold
                         )
                     }
-                    Column(horizontalAlignment = Alignment.End) {
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Column(modifier = Modifier.weight(1.1f)) {
+                        Text(
+                            text = "Group Savings",
+                            color = Color.White.copy(alpha = 0.7f),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = String.format(Locale.US, "MK %,.0f", group.totalSavings),
+                            color = Color.White,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1
+                        )
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .width(1.dp)
+                            .height(40.dp)
+                            .align(Alignment.CenterVertically)
+                            .background(Color.White.copy(alpha = 0.2f))
+                    )
+
+                    Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.End) {
                         Text(
                             text = "My Savings",
-                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f),
-                            fontSize = 14.sp
+                            color = Color.White.copy(alpha = 0.7f),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium
                         )
+                        Spacer(modifier = Modifier.height(2.dp))
                         Text(
-                            text = String.format(Locale.US, "MK %,.2f", group.mySavings),
-                            color = Color(0xFFFFEB3B), // Yellow for emphasis
-                            fontSize = 22.sp,
-                            fontWeight = FontWeight.Bold
+                            text = String.format(Locale.US, "MK %,.0f", group.mySavings),
+                            color = Color(0xFFFFEB3B),
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1
                         )
                     }
                 }
@@ -530,13 +541,14 @@ fun BannerCard(page: Int) {
 }
 
 @Composable
-private fun QuickActionsSection(navController: NavController, group: Group?) {
+private fun QuickActionsSection(navController: NavController, group: Group?, myRole: String?) {
     val hasGroups = group != null
     Column(modifier=Modifier.padding(horizontal=16.dp)) {
         Surface(
             shape=RoundedCornerShape(8.dp),
             color=MaterialTheme.colorScheme.surface
         ) {
+            @Suppress("DEPRECATION")
             Text(stringResource(R.string.quick_action_title),
                 modifier=Modifier.padding(horizontal=12.dp, vertical=6.dp),
                 fontSize=14.sp, fontWeight=FontWeight.SemiBold)
@@ -591,13 +603,19 @@ private fun QuickActionsSection(navController: NavController, group: Group?) {
             )
 
             QuickActionCard(
-                icon = Icons.Filled.SwapHoriz,
-                label = stringResource(R.string.view_loans_label),
+                icon = Icons.Filled.People,
+                label = "Members",
                 modifier = Modifier.weight(1f),
                 enabled = hasGroups,
                 onClick = {
                     if (hasGroups) {
-                        navController.navigate(Routes.ALL_LOANS)
+                        val role = myRole?.uppercase() ?: "MEMBER"
+                        val isPrivileged = role == "CHAIR" || role == "SECRETARY" || role == "TREASURER" || role == "CHAIRPERSON"
+                        if (isPrivileged) {
+                            navController.navigate(Routes.GROUP_MEMBERS_CHAIR.replace("{groupId}", group.id))
+                        } else {
+                            navController.navigate(Routes.GROUP_MEMBERS.replace("{groupId}", group.id))
+                        }
                     }
                 }
             )
@@ -620,14 +638,15 @@ private fun QuickActionCard(
     ) {
         Card(
             modifier = Modifier
-                .size(85.dp)
+                .size(80.dp)
+                .clip(RoundedCornerShape(16.dp))
                 .clickable(enabled = enabled) { onClick() },
-            shape = RoundedCornerShape(14.dp),
+            shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surface,
                 disabledContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.6f)
             ),
-            elevation = CardDefaults.cardElevation(if (enabled) 2.dp else 0.dp)
+            elevation = CardDefaults.cardElevation(if (enabled) 4.dp else 0.dp)
         ) {
             Box(Modifier.fillMaxSize(),
                 contentAlignment=Alignment.Center) {
@@ -638,6 +657,7 @@ private fun QuickActionCard(
         }
         Spacer(modifier = Modifier.height(6.dp))
         Text(label, fontSize=11.sp,
+            fontWeight = FontWeight.Medium,
             textAlign=TextAlign.Center,
             color=if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f))
     }

@@ -4,25 +4,24 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.compose.ui.res.stringResource
 import com.example.tisunga.R
-import com.example.tisunga.data.model.Group
 import com.example.tisunga.ui.navigation.Routes
 import com.example.tisunga.ui.theme.*
 import com.example.tisunga.viewmodel.GroupViewModel
@@ -39,42 +38,79 @@ fun CreateGroupStep1Screen(navController: NavController, viewModel: GroupViewMod
     var minContribution by remember { mutableStateOf("2000") }
     var maxMembers by remember { mutableStateOf("10") }
 
-    var startDate by remember { mutableStateOf("") }
-    var endDate by remember { mutableStateOf("") }
-    var meetingDay by remember { mutableStateOf("Monday") }
-    var meetingTime by remember { mutableStateOf("10:00") }
-
-    var showStartDatePicker by remember { mutableStateOf(false) }
-    var showEndDatePicker by remember { mutableStateOf(false) }
-
     val dateFormatter = remember {
         SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).apply {
-            timeZone = TimeZone.getTimeZone("UTC")
+            timeZone = TimeZone.getDefault()
         }
     }
 
-    val startDatePickerState = rememberDatePickerState()
+    val todayMillis = remember {
+        Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }.timeInMillis
+    }
+
+    var startDate by remember { mutableStateOf(dateFormatter.format(Date(todayMillis))) }
+    var endDate by remember { mutableStateOf("") }
+    var meetingDay by remember { mutableStateOf("Monday") }
+    
+    val timeFormatter = remember { SimpleDateFormat("HH:mm", Locale.getDefault()) }
+    var meetingTime by remember { mutableStateOf(timeFormatter.format(Date())) }
+
+    var showStartDatePicker by remember { mutableStateOf(false) }
+    var showEndDatePicker by remember { mutableStateOf(false) }
+    var showTimePicker by remember { mutableStateOf(false) }
+
+    val startDatePickerState = rememberDatePickerState(initialSelectedDateMillis = todayMillis)
     val endDatePickerState = rememberDatePickerState()
+    
+    val currentTime = Calendar.getInstance()
+    val timePickerState = rememberTimePickerState(
+        initialHour = currentTime.get(Calendar.HOUR_OF_DAY),
+        initialMinute = currentTime.get(Calendar.MINUTE),
+        is24Hour = true
+    )
 
     var periodExpanded by remember { mutableStateOf(false) }
     var dayExpanded by remember { mutableStateOf(false) }
 
+    // Automatic End Date Calculation
+    LaunchedEffect(startDate, savingPeriod) {
+        try {
+            val start = dateFormatter.parse(startDate)
+            if (start != null) {
+                val cal = Calendar.getInstance()
+                cal.time = start
+                cal.add(Calendar.MONTH, savingPeriod.toIntOrNull() ?: 6)
+                endDate = dateFormatter.format(cal.time)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
     val isFormValid = groupName.isNotBlank() && startDate.isNotBlank() && endDate.isNotBlank()
+    val fadedColor = Color.Gray.copy(alpha = 0.4f)
 
     Scaffold(
         containerColor = BackgroundGray,
+        topBar = {
+            TopAppBar(
+                title = { Text("Create Group", fontWeight = FontWeight.Bold, fontSize = 20.sp) },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = White)
+            )
+        },
         bottomBar = {
-            Surface(
-                tonalElevation = 4.dp,
-                shadowElevation = 8.dp,
-                color = White
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .navigationBarsPadding()
-                        .padding(16.dp)
-                ) {
+            Surface(tonalElevation = 8.dp, color = White) {
+                Box(modifier = Modifier.fillMaxWidth().navigationBarsPadding().padding(16.dp)) {
                     Button(
                         onClick = {
                             if (isFormValid) {
@@ -96,21 +132,11 @@ fun CreateGroupStep1Screen(navController: NavController, viewModel: GroupViewMod
                             }
                         },
                         enabled = isFormValid,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(52.dp),
-                        shape = RoundedCornerShape(10.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = NavyBlue,
-                            disabledContainerColor = NavyBlue.copy(alpha = 0.5f)
-                        )
+                        modifier = Modifier.fillMaxWidth().height(56.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = NavyBlue)
                     ) {
-                        Text(
-                            stringResource(R.string.continue_button),
-                            color = White,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.SemiBold
-                        )
+                        Text("Continue", color = White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -120,264 +146,128 @@ fun CreateGroupStep1Screen(navController: NavController, viewModel: GroupViewMod
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(16.dp)
                 .verticalScroll(rememberScrollState())
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = { navController.popBackStack() }) {
-                    Icon(
-                        Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = stringResource(R.string.back_desc)
-                    )
-                }
-                Text(
-                    stringResource(R.string.create_group_title),
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = TextPrimary
-                )
-            }
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            // Basic Info Section
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = White),
-                elevation = CardDefaults.cardElevation(2.dp)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text("BASIC INFO", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = TextSecondary)
-                    Spacer(modifier = Modifier.height(12.dp))
-                    
-                    Text(stringResource(R.string.group_name_label), fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                    OutlinedTextField(
+            // Section 1: Identity
+            SectionCard(title = "IDENTITY", icon = Icons.Default.Badge) {
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    CustomInputField(
+                        label = "Group Name",
                         value = groupName,
                         onValueChange = { groupName = it },
-                        modifier = Modifier.fillMaxWidth(),
-                        placeholder = { Text(stringResource(R.string.group_name_hint)) },
-                        shape = RoundedCornerShape(10.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            unfocusedBorderColor = DividerColor,
-                            focusedBorderColor = NavyBlue,
-                            unfocusedContainerColor = BackgroundGray,
-                            focusedContainerColor = BackgroundGray,
-                            unfocusedPlaceholderColor = Color.Gray.copy(alpha = 0.5f),
-                            focusedPlaceholderColor = Color.Gray.copy(alpha = 0.5f)
-                        )
+                        placeholder = "e.g. Lilongwe Savings Club",
+                        fadedColor = fadedColor
                     )
 
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    Text(stringResource(R.string.description_label), fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                    OutlinedTextField(
-                        value = description,
-                        onValueChange = { description = it },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(80.dp),
-                        placeholder = { Text(stringResource(R.string.description_hint)) },
-                        shape = RoundedCornerShape(10.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            unfocusedBorderColor = DividerColor,
-                            focusedBorderColor = NavyBlue,
-                            unfocusedContainerColor = BackgroundGray,
-                            focusedContainerColor = BackgroundGray,
-                            unfocusedPlaceholderColor = Color.Gray.copy(alpha = 0.5f),
-                            focusedPlaceholderColor = Color.Gray.copy(alpha = 0.5f)
+                    // Blended Description Field
+                    Column {
+                        Text("Description (Optional)", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = TextSecondary)
+                        Spacer(modifier = Modifier.height(6.dp))
+                        TextField(
+                            value = description,
+                            onValueChange = { description = it },
+                            modifier = Modifier.fillMaxWidth().height(90.dp),
+                            placeholder = { Text("What is this group about?", color = fadedColor, fontSize = 14.sp) },
+                            shape = RoundedCornerShape(12.dp),
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = BackgroundGray.copy(alpha = 0.5f),
+                                unfocusedContainerColor = BackgroundGray.copy(alpha = 0.5f),
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent,
+                                cursorColor = NavyBlue
+                            ),
+                            textStyle = LocalTextStyle.current.copy(fontSize = 14.sp)
                         )
-                    )
+                    }
 
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    Text("LOCATION", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                    OutlinedTextField(
+                    CustomInputField(
+                        label = "Location",
                         value = location,
                         onValueChange = { location = it },
-                        modifier = Modifier.fillMaxWidth(),
-                        placeholder = { Text("e.g. Area 18, Lilongwe") },
-                        shape = RoundedCornerShape(10.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            unfocusedBorderColor = DividerColor,
-                            focusedBorderColor = NavyBlue,
-                            unfocusedContainerColor = BackgroundGray,
-                            focusedContainerColor = BackgroundGray,
-                            unfocusedPlaceholderColor = Color.Gray.copy(alpha = 0.5f),
-                            focusedPlaceholderColor = Color.Gray.copy(alpha = 0.5f)
-                        )
+                        placeholder = "e.g. Area 47, Lilongwe",
+                        fadedColor = fadedColor
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Financials Section
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = White),
-                elevation = CardDefaults.cardElevation(2.dp)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text("FINANCIALS", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = TextSecondary)
-                    Spacer(modifier = Modifier.height(12.dp))
-
+            // Section 2: Financial Rules
+            SectionCard(title = "FINANCIAL RULES", icon = Icons.Default.AccountBalanceWallet) {
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text("MIN CONTRIBUTION", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                            OutlinedTextField(
+                        Box(modifier = Modifier.weight(1f)) {
+                            CustomInputField(
+                                label = "Min Contribution",
                                 value = minContribution,
                                 onValueChange = { minContribution = it },
-                                modifier = Modifier.fillMaxWidth(),
-                                placeholder = { Text("e.g. 2000") },
-                                shape = RoundedCornerShape(10.dp),
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    unfocusedBorderColor = DividerColor,
-                                    focusedBorderColor = NavyBlue,
-                                    unfocusedContainerColor = BackgroundGray,
-                                    focusedContainerColor = BackgroundGray,
-                                    unfocusedPlaceholderColor = Color.Gray.copy(alpha = 0.5f),
-                                    focusedPlaceholderColor = Color.Gray.copy(alpha = 0.5f)
-                                )
+                                placeholder = "2000",
+                                fadedColor = fadedColor
                             )
                         }
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text("MAX MEMBERS", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                            OutlinedTextField(
+                        Box(modifier = Modifier.weight(1f)) {
+                            CustomInputField(
+                                label = "Max Members",
                                 value = maxMembers,
                                 onValueChange = { maxMembers = it },
-                                modifier = Modifier.fillMaxWidth(),
-                                placeholder = { Text("e.g. 10") },
-                                shape = RoundedCornerShape(10.dp),
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    unfocusedBorderColor = DividerColor,
-                                    focusedBorderColor = NavyBlue,
-                                    unfocusedContainerColor = BackgroundGray,
-                                    focusedContainerColor = BackgroundGray,
-                                    unfocusedPlaceholderColor = Color.Gray.copy(alpha = 0.5f),
-                                    focusedPlaceholderColor = Color.Gray.copy(alpha = 0.5f)
-                                )
+                                placeholder = "10",
+                                fadedColor = fadedColor
                             )
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    Text(stringResource(R.string.saving_period_label), fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                    Box {
-                        OutlinedTextField(
-                            value = "$savingPeriod Months",
-                            onValueChange = {},
-                            modifier = Modifier.fillMaxWidth(),
-                            readOnly = true,
-                            enabled = false,
-                            shape = RoundedCornerShape(10.dp),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                disabledBorderColor = DividerColor,
-                                disabledTextColor = TextPrimary,
-                                disabledContainerColor = BackgroundGray,
-                                disabledPlaceholderColor = Color.Gray.copy(alpha = 0.5f)
-                            ),
-                            trailingIcon = { Icon(Icons.Default.ArrowDropDown, null, tint = TextSecondary) }
-                        )
-                        Box(modifier = Modifier.matchParentSize().clickable { periodExpanded = true })
-                        DropdownMenu(
-                            expanded = periodExpanded,
-                            onDismissRequest = { periodExpanded = false },
-                            modifier = Modifier.background(White)
-                        ) {
-                            listOf("3", "6", "9", "12", "18", "24").forEach {
-                                DropdownMenuItem(
-                                    text = { Text("$it Months", color = TextPrimary) },
-                                    onClick = { savingPeriod = it; periodExpanded = false })
+                    Column {
+                        Text("Saving Period", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = TextSecondary)
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Box {
+                            ReadOnlyField(
+                                value = "$savingPeriod Months",
+                                icon = Icons.Default.History,
+                                fadedColor = fadedColor,
+                                trailingIcon = Icons.Default.ArrowDropDown
+                            )
+                            Box(modifier = Modifier.matchParentSize().clickable { periodExpanded = true })
+                            DropdownMenu(
+                                expanded = periodExpanded,
+                                onDismissRequest = { periodExpanded = false },
+                                modifier = Modifier.background(White)
+                            ) {
+                                listOf("3", "6", "9", "12", "18", "24").forEach {
+                                    DropdownMenuItem(
+                                        text = { Text("$it Months", color = TextPrimary) },
+                                        onClick = { savingPeriod = it; periodExpanded = false })
+                                }
                             }
                         }
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Schedule Section
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = White),
-                elevation = CardDefaults.cardElevation(2.dp)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text("SCHEDULE", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = TextSecondary)
-                    Spacer(modifier = Modifier.height(12.dp))
-
+            // Section 3: Schedule
+            SectionCard(title = "SCHEDULE", icon = Icons.Default.Event) {
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("START DATE", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                            Text("Start Date", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = TextSecondary)
+                            Spacer(modifier = Modifier.height(6.dp))
                             Box {
-                                OutlinedTextField(
-                                    value = startDate,
-                                    onValueChange = {},
-                                    modifier = Modifier.fillMaxWidth(),
-                                    readOnly = true,
-                                    enabled = false,
-                                    placeholder = { Text("YYYY-MM-DD") },
-                                    trailingIcon = { Icon(Icons.Default.CalendarMonth, null, tint = TextSecondary) },
-                                    shape = RoundedCornerShape(10.dp),
-                                    colors = OutlinedTextFieldDefaults.colors(
-                                        disabledBorderColor = DividerColor,
-                                        disabledTextColor = TextPrimary,
-                                        disabledContainerColor = BackgroundGray,
-                                        disabledPlaceholderColor = Color.Gray.copy(alpha = 0.5f)
-                                    )
-                                )
+                                ReadOnlyField(value = startDate, icon = Icons.Default.CalendarMonth, fadedColor = fadedColor)
                                 Box(modifier = Modifier.matchParentSize().clickable { showStartDatePicker = true })
                             }
                         }
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("END DATE", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                            Box {
-                                OutlinedTextField(
-                                    value = endDate,
-                                    onValueChange = {},
-                                    modifier = Modifier.fillMaxWidth(),
-                                    readOnly = true,
-                                    enabled = false,
-                                    placeholder = { Text("YYYY-MM-DD") },
-                                    trailingIcon = { Icon(Icons.Default.CalendarMonth, null, tint = TextSecondary) },
-                                    shape = RoundedCornerShape(10.dp),
-                                    colors = OutlinedTextFieldDefaults.colors(
-                                        disabledBorderColor = DividerColor,
-                                        disabledTextColor = TextPrimary,
-                                        disabledContainerColor = BackgroundGray,
-                                        disabledPlaceholderColor = Color.Gray.copy(alpha = 0.5f)
-                                    )
-                                )
-                                Box(modifier = Modifier.matchParentSize().clickable { showEndDatePicker = true })
-                            }
+                            Text("End Date", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = TextSecondary)
+                            Spacer(modifier = Modifier.height(6.dp))
+                            ReadOnlyField(value = endDate, icon = Icons.Default.CalendarMonth, fadedColor = fadedColor, isHighlight = true)
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(12.dp))
-
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("MEETING DAY", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                            Text("Meeting Day", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = TextSecondary)
+                            Spacer(modifier = Modifier.height(6.dp))
                             Box {
-                                OutlinedTextField(
-                                    value = meetingDay,
-                                    onValueChange = {},
-                                    modifier = Modifier.fillMaxWidth(),
-                                    readOnly = true,
-                                    enabled = false,
-                                    shape = RoundedCornerShape(10.dp),
-                                    colors = OutlinedTextFieldDefaults.colors(
-                                        disabledBorderColor = DividerColor,
-                                        disabledTextColor = TextPrimary,
-                                        disabledContainerColor = BackgroundGray,
-                                        disabledPlaceholderColor = Color.Gray.copy(alpha = 0.5f)
-                                    ),
-                                    trailingIcon = { Icon(Icons.Default.ArrowDropDown, null, tint = TextSecondary) }
-                                )
+                                ReadOnlyField(value = meetingDay, icon = Icons.Default.CalendarToday, fadedColor = fadedColor, trailingIcon = Icons.Default.ArrowDropDown)
                                 Box(modifier = Modifier.matchParentSize().clickable { dayExpanded = true })
                                 DropdownMenu(
                                     expanded = dayExpanded,
@@ -393,90 +283,113 @@ fun CreateGroupStep1Screen(navController: NavController, viewModel: GroupViewMod
                             }
                         }
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("MEETING TIME", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                            OutlinedTextField(
-                                value = meetingTime,
-                                onValueChange = { meetingTime = it },
-                                modifier = Modifier.fillMaxWidth(),
-                                placeholder = { Text("e.g. 10:00 AM") },
-                                shape = RoundedCornerShape(10.dp),
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    unfocusedBorderColor = DividerColor,
-                                    focusedBorderColor = NavyBlue,
-                                    unfocusedContainerColor = BackgroundGray,
-                                    focusedContainerColor = White,
-                                    unfocusedPlaceholderColor = Color.Gray.copy(alpha = 0.5f),
-                                    focusedPlaceholderColor = Color.Gray.copy(alpha = 0.5f)
-                                )
-                            )
+                            Text("Meeting Time", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = TextSecondary)
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Box {
+                                ReadOnlyField(value = meetingTime, icon = Icons.Default.Schedule, fadedColor = fadedColor)
+                                Box(modifier = Modifier.matchParentSize().clickable { showTimePicker = true })
+                            }
                         }
                     }
                 }
             }
+            Spacer(modifier = Modifier.height(20.dp))
         }
     }
 
-    // Material 3 Date Pickers with Forced White Theme
-    val datePickerColors = DatePickerDefaults.colors(
-        containerColor = White,
-        titleContentColor = NavyBlue,
-        headlineContentColor = TextPrimary,
-        weekdayContentColor = TextSecondary,
-        subheadContentColor = TextSecondary,
-        yearContentColor = TextPrimary,
-        currentYearContentColor = NavyBlue,
-        selectedYearContentColor = White,
-        selectedYearContainerColor = NavyBlue,
-        dayContentColor = TextPrimary,
-        selectedDayContentColor = White,
-        selectedDayContainerColor = NavyBlue,
-        todayContentColor = NavyBlue,
-        todayDateBorderColor = NavyBlue
-    )
-
+    // Pickers
     if (showStartDatePicker) {
         DatePickerDialog(
             onDismissRequest = { showStartDatePicker = false },
             confirmButton = {
                 TextButton(onClick = {
-                    startDatePickerState.selectedDateMillis?.let {
-                        startDate = dateFormatter.format(Date(it))
-                    }
+                    startDatePickerState.selectedDateMillis?.let { startDate = dateFormatter.format(Date(it)) }
                     showStartDatePicker = false
                 }) { Text("OK", color = NavyBlue, fontWeight = FontWeight.Bold) }
             },
-            dismissButton = {
-                TextButton(onClick = { showStartDatePicker = false }) { Text("Cancel", color = TextSecondary) }
-            },
-            colors = DatePickerDefaults.colors(containerColor = White)
-        ) {
-            DatePicker(
-                state = startDatePickerState,
-                colors = datePickerColors
-            )
-        }
+            dismissButton = { TextButton(onClick = { showStartDatePicker = false }) { Text("Cancel", color = TextSecondary) } }
+        ) { DatePicker(state = startDatePickerState) }
     }
 
-    if (showEndDatePicker) {
-        DatePickerDialog(
-            onDismissRequest = { showEndDatePicker = false },
+    if (showTimePicker) {
+        AlertDialog(
+            onDismissRequest = { showTimePicker = false },
             confirmButton = {
                 TextButton(onClick = {
-                    endDatePickerState.selectedDateMillis?.let {
-                        endDate = dateFormatter.format(Date(it))
-                    }
-                    showEndDatePicker = false
+                    val h = if (timePickerState.hour < 10) "0${timePickerState.hour}" else "${timePickerState.hour}"
+                    val m = if (timePickerState.minute < 10) "0${timePickerState.minute}" else "${timePickerState.minute}"
+                    meetingTime = "$h:$m"
+                    showTimePicker = false
                 }) { Text("OK", color = NavyBlue, fontWeight = FontWeight.Bold) }
             },
-            dismissButton = {
-                TextButton(onClick = { showEndDatePicker = false }) { Text("Cancel", color = TextSecondary) }
-            },
-            colors = DatePickerDefaults.colors(containerColor = White)
+            dismissButton = { TextButton(onClick = { showTimePicker = false }) { Text("Cancel", color = TextSecondary) } },
+            text = { TimePicker(state = timePickerState) },
+            modifier = Modifier.background(White, RoundedCornerShape(16.dp))
+        )
+    }
+}
+
+@Composable
+fun SectionCard(title: String, icon: ImageVector, content: @Composable () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = White),
+        elevation = CardDefaults.cardElevation(2.dp)
+    ) {
+        Column(modifier = Modifier.padding(20.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(icon, null, modifier = Modifier.size(18.dp), tint = NavyBlue)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(title, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = TextPrimary, letterSpacing = 1.sp)
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+            content()
+        }
+    }
+}
+
+@Composable
+fun CustomInputField(label: String, value: String, onValueChange: (String) -> Unit, placeholder: String, fadedColor: Color) {
+    Column {
+        Text(label, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = TextSecondary)
+        Spacer(modifier = Modifier.height(6.dp))
+        OutlinedTextField(
+            value = value,
+            onValueChange = onValueChange,
+            modifier = Modifier.fillMaxWidth(),
+            placeholder = { Text(placeholder, color = fadedColor, fontSize = 14.sp) },
+            shape = RoundedCornerShape(12.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                unfocusedBorderColor = DividerColor.copy(alpha = 0.5f),
+                focusedBorderColor = NavyBlue,
+                unfocusedContainerColor = BackgroundGray.copy(alpha = 0.3f),
+                focusedContainerColor = BackgroundGray.copy(alpha = 0.3f)
+            ),
+            singleLine = true,
+            textStyle = LocalTextStyle.current.copy(fontSize = 14.sp)
+        )
+    }
+}
+
+@Composable
+fun ReadOnlyField(value: String, icon: ImageVector, fadedColor: Color, isHighlight: Boolean = false, trailingIcon: ImageVector? = null) {
+    Surface(
+        modifier = Modifier.fillMaxWidth().height(52.dp),
+        shape = RoundedCornerShape(12.dp),
+        color = if (isHighlight) NavyBlue.copy(alpha = 0.05f) else BackgroundGray.copy(alpha = 0.3f),
+        border = androidx.compose.foundation.BorderStroke(1.dp, if (isHighlight) NavyBlue.copy(alpha = 0.2f) else DividerColor.copy(alpha = 0.5f))
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            DatePicker(
-                state = endDatePickerState,
-                colors = datePickerColors
-            )
+            Icon(icon, null, modifier = Modifier.size(18.dp), tint = if (isHighlight) NavyBlue else fadedColor)
+            Spacer(modifier = Modifier.width(10.dp))
+            Text(value, fontSize = 14.sp, fontWeight = if (isHighlight) FontWeight.Bold else FontWeight.Medium, color = if (isHighlight) NavyBlue else TextPrimary, modifier = Modifier.weight(1f))
+            if (trailingIcon != null) {
+                Icon(trailingIcon, null, modifier = Modifier.size(20.dp), tint = fadedColor)
+            }
         }
     }
 }
