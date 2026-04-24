@@ -67,19 +67,24 @@ fun BottomNavBar(
                 },
                 selected = isSelected,
                 onClick = {
-                    if (currentRoute != item.route) {
-                        navController.navigate(item.route) {
-                            popUpTo(Routes.HOME) {
-                                saveState = true
+                    if (item.route == Routes.HOME) {
+                        // For HOME, we want to clear everything and go back to start
+                        navController.navigate(Routes.HOME) {
+                            popUpTo(navController.graph.startDestinationId) {
+                                inclusive = true
                             }
                             launchSingleTop = true
-                            restoreState = true
                         }
-                    } else if (item.route == Routes.HOME) {
-                        // If already on Home but perhaps on a sub-route, or just to be safe
-                        navController.navigate(Routes.HOME) {
-                            popUpTo(0) { inclusive = true }
-                            launchSingleTop = true
+                    } else {
+                        // For other tabs, use standard tab switching logic
+                        if (currentRoute != item.route) {
+                            navController.navigate(item.route) {
+                                popUpTo(navController.graph.startDestinationId) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
                         }
                     }
                 },
