@@ -222,7 +222,7 @@ fun FullGroupLoanCard(
 ) {
     val statusColor = when (loan.status) {
         "ACTIVE"    -> GreenAccent
-        "PENDING"   -> Color(0xFFF59E0B)
+        "PENDING"   -> NavyBlue
         "COMPLETED" -> NavyBlue
         "REJECTED"  -> RedAccent
         else        -> Color.Gray

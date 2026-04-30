@@ -129,29 +129,29 @@ fun GroupSummaryCard(groupName: String) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(bottomStart = 20.dp, bottomEnd = 20.dp),
-        colors = CardDefaults.cardColors(containerColor = White),
-        elevation = CardDefaults.cardElevation(0.dp)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary),
+        elevation = CardDefaults.cardElevation(4.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(groupName, fontSize = 26.sp, color = TextSecondary, fontWeight = FontWeight.Light)
+            Text(groupName, fontSize = 26.sp, color = Color.White, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(16.dp))
             
-            Text(stringResource(R.string.group_saving_label), fontSize = 14.sp)
+            Text(stringResource(R.string.group_saving_label), fontSize = 14.sp, color = Color.White.copy(alpha = 0.8f))
             Box(
                 modifier = Modifier
                     .height(8.dp)
                     .width(180.dp)
-                    .background(Color(0xFFDDDDDD), RoundedCornerShape(4.dp))
+                    .background(Color.White.copy(alpha = 0.2f), RoundedCornerShape(4.dp))
             )
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            Text(stringResource(R.string.my_savings_label), fontSize = 14.sp)
+            Text(stringResource(R.string.my_savings_label), fontSize = 14.sp, color = Color.White.copy(alpha = 0.8f))
             Box(
                 modifier = Modifier
                     .height(8.dp)
                     .width(140.dp)
-                    .background(Color(0xFFDDDDDD), RoundedCornerShape(4.dp))
+                    .background(Color.White.copy(alpha = 0.2f), RoundedCornerShape(4.dp))
             )
         }
     }

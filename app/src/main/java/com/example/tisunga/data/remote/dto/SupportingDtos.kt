@@ -88,12 +88,12 @@ data class MemberSharePayoutDto(
 )
 
 data class CreateEventRequest(
-    @SerializedName("type")        val type: String,
-    @SerializedName("title")       val title: String,
-    @SerializedName("date")        val date: String,
-    @SerializedName("amountType")  val amountType: String,
-    @SerializedName("amount")      val amount: Double,
-    @SerializedName("description") val description: String? = null
+    @SerializedName("type")             val type: String,
+    @SerializedName("title")            val title: String,
+    @SerializedName("eventDate")        val eventDate: String,
+    @SerializedName("contributionType") val contributionType: String? = "FLEXIBLE",
+    @SerializedName("fixedAmount")      val fixedAmount: Double? = null,
+    @SerializedName("description")      val description: String? = null
 )
 
 data class ContributeRequest(

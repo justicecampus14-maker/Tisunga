@@ -7,6 +7,8 @@ import com.example.tisunga.data.model.Event
 import com.example.tisunga.data.model.Meeting
 import com.example.tisunga.data.remote.ApiClient
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.*
 
 class ActivitiesViewModel : ViewModel() {
 
@@ -19,17 +21,47 @@ class ActivitiesViewModel : ViewModel() {
     var loading by mutableStateOf(false)
         private set
 
+    var error by mutableStateOf<String?>(null)
+        private set
+
+    fun clearError() { error = null }
+
     fun load(groupId: String) {
         viewModelScope.launch {
             loading = true
-            try {
-                val api = ApiClient.getClient()
-                meetings = api.getGroupMeetings(groupId)
-                events = api.getGroupEvents(groupId)
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
+            error = null
+            fetchActivities(groupId)
             loading = false
+        }
+    }
+
+    private suspend fun fetchActivities(groupId: String) {
+        try {
+            val api = ApiClient.getClient()
+            val fetchedMeetings = api.getGroupMeetings(groupId)
+            meetings = fetchedMeetings.distinctBy { "${it.title}-${it.scheduledAt}-${it.location}" }
+            
+            val fetchedEvents = api.getGroupEvents(groupId)
+            events = fetchedEvents.distinctBy { "${it.title}-${it.endDate}" }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            error = "Failed to load activities: ${e.message}"
+        }
+    }
+
+    private fun formatToIso(dateStr: String, isDateTime: Boolean): String {
+        return try {
+            val inputFormat = if (isDateTime) {
+                SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US)
+            } else {
+                SimpleDateFormat("yyyy-MM-dd", Locale.US)
+            }
+            val date = inputFormat.parse(dateStr)
+            val outputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
+            outputFormat.timeZone = TimeZone.getTimeZone("UTC")
+            outputFormat.format(date!!)
+        } catch (e: Exception) {
+            dateStr // Fallback to original if parsing fails
         }
     }
 
@@ -42,19 +74,25 @@ class ActivitiesViewModel : ViewModel() {
         onSuccess: () -> Unit
     ) {
         viewModelScope.launch {
+            loading = true
+            error = null
             try {
+                val isoDate = formatToIso(scheduledAt, true)
                 val api = ApiClient.getClient()
                 val body = mapOf(
                     "title" to title,
-                    "scheduledAt" to scheduledAt,
+                    "scheduledAt" to isoDate,
                     "location" to (location ?: ""),
-                    "description" to (description ?: "")
+                    "agenda" to (description ?: "")
                 )
-                api.createMeeting(groupId, body)
-                load(groupId)
+                val newMeeting = api.createMeeting(groupId, body)
+                meetings = (listOf(newMeeting) + meetings).distinctBy { "${it.title}-${it.scheduledAt}-${it.location}" }
                 onSuccess()
             } catch (e: Exception) {
                 e.printStackTrace()
+                error = "Failed to create meeting: ${e.message}"
+            } finally {
+                loading = false
             }
         }
     }
@@ -70,21 +108,30 @@ class ActivitiesViewModel : ViewModel() {
         onSuccess: () -> Unit
     ) {
         viewModelScope.launch {
+            loading = true
+            error = null
             try {
+                val isoDate = formatToIso(date, false)
                 val api = ApiClient.getClient()
-                val body = mapOf(
-                    "type" to type,
+                
+                val body = mutableMapOf<String, Any>(
                     "title" to title,
-                    "date" to date,
-                    "amountType" to amountType,
-                    "amount" to amount,
-                    "description" to (description ?: "")
+                    "description" to (description ?: ""),
+                    "endDate" to isoDate,
+                    "type" to type.uppercase()
                 )
-                api.createEvent(groupId, body)
-                load(groupId)
+                if (amount > 0) {
+                    body["targetAmount"] = amount
+                }
+
+                val newEvent = api.createEvent(groupId, body)
+                events = (listOf(newEvent) + events).distinctBy { it.id }
                 onSuccess()
             } catch (e: Exception) {
                 e.printStackTrace()
+                error = "Failed to create event: ${e.message}"
+            } finally {
+                loading = false
             }
         }
     }

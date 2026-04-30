@@ -297,6 +297,21 @@ fun AppNavGraph(
             ActivitiesScreen(navController, groupId, activitiesViewModel)
         }
 
+        composable(
+            "meeting_detail/{groupId}/{meetingId}",
+            arguments = listOf(
+                navArgument("groupId") { type = NavType.StringType },
+                navArgument("meetingId") { type = NavType.StringType }
+            )
+        ) { back ->
+            val groupId = back.arguments?.getString("groupId") ?: ""
+            val meetingId = back.arguments?.getString("meetingId") ?: ""
+            val meetingViewModel: MeetingViewModel = androidx.lifecycle.viewmodel.compose.viewModel(
+                factory = com.example.tisunga.ViewModelFactory(sessionManager)
+            )
+            com.example.tisunga.ui.screens.meetings.MeetingDetailScreen(navController, groupId, meetingId, meetingViewModel)
+        }
+
         // ── Transactions ──────────────────────────────────────────────────
         composable(
             Routes.TRANSACTIONS,

@@ -43,8 +43,8 @@ fun LoanCard(
                 Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text(groupName, fontWeight = Bold, fontSize = 18.sp)
-                Text(status, color = Color(0xFFE57373), fontSize = 13.sp)
+                Text(groupName, fontWeight = Bold, fontSize = 18.sp, color = NavyBlue)
+                Text(status, color = NavyBlue, fontSize = 13.sp)
             }
             Text(approvedBy, color = TextSecondary, fontSize = 12.sp)
             Spacer(Modifier.height(8.dp))
@@ -82,7 +82,7 @@ fun LoanCard(
                     .fillMaxWidth()
                     .height(8.dp)
                     .clip(RoundedCornerShape(4.dp)),
-                color = PurpleProgress,
+                color = NavyBlue,
                 trackColor = Color(0xFFE0E0E0)
             )
             Spacer(Modifier.height(6.dp))
@@ -112,12 +112,14 @@ fun LoanCard(
                         "Approve",
                         fontWeight = Bold,
                         fontSize = 16.sp,
+                        color = NavyBlue,
                         modifier = Modifier.clickable { onApproveClick() }
                     )
                     Text(
                         "Reject",
                         fontWeight = Bold,
                         fontSize = 16.sp,
+                        color = NavyBlue,
                         modifier = Modifier.clickable { onRejectClick() }
                     )
                 }
@@ -131,6 +133,7 @@ fun LoanCard(
                         "Repay Now →",
                         fontWeight = Bold,
                         fontSize = 14.sp,
+                        color = NavyBlue,
                         modifier = Modifier.clickable { onRepayClick() }
                     )
                 }

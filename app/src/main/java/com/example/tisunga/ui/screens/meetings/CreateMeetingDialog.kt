@@ -2,6 +2,7 @@ package com.example.tisunga.ui.screens.meetings
 
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -48,47 +49,42 @@ fun CreateMeetingDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
                 
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(
-                        onClick = {
-                            DatePickerDialog(context, { _, y, m, d ->
-                                year = y; month = m + 1; day = d
-                                selectedDateText = "$d/${m + 1}/$y"
-                            }, year, month - 1, day).show()
-                        },
-                        modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(containerColor = BackgroundLightGray, contentColor = TextPrimary),
-                        shape = RoundedCornerShape(8.dp)
-                    ) {
-                        Text(selectedDateText, fontSize = 12.sp)
-                    }
-                    
-                    Button(
-                        onClick = {
-                            TimePickerDialog(context, { _, h, min ->
-                                hour = h; minute = min
-                                selectedTimeText = String.format("%02d:%02d", h, min)
-                            }, hour, minute, true).show()
-                        },
-                        modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(containerColor = BackgroundLightGray, contentColor = TextPrimary),
-                        shape = RoundedCornerShape(8.dp)
-                    ) {
-                        Text(selectedTimeText, fontSize = 12.sp)
-                    }
+                // Unified Schedule Selection
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    OutlinedTextField(
+                        value = if (selectedDateText == "Select Date") "" else "$selectedDateText $selectedTimeText",
+                        onValueChange = { },
+                        label = { Text("Schedule Date & Time") },
+                        readOnly = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .clickable {
+                                DatePickerDialog(context, { _, y, m, d ->
+                                    year = y; month = m + 1; day = d
+                                    selectedDateText = "$d/${m + 1}/$y"
+                                    TimePickerDialog(context, { _, h, min ->
+                                        hour = h; minute = min
+                                        selectedTimeText = String.format("%02d:%02d", h, min)
+                                    }, hour, minute, true).show()
+                                }, year, month - 1, day).show()
+                            }
+                    )
                 }
                 
                 OutlinedTextField(
                     value = location,
                     onValueChange = { location = it },
-                    label = { Text("Location (Optional)") },
+                    label = { Text("Location") },
                     modifier = Modifier.fillMaxWidth()
                 )
                 
                 OutlinedTextField(
                     value = agenda,
                     onValueChange = { agenda = it },
-                    label = { Text("Agenda (Optional)") },
+                    label = { Text("Agenda") },
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 3
                 )
@@ -97,11 +93,12 @@ fun CreateMeetingDialog(
         confirmButton = {
             Button(
                 onClick = {
-                    if (title.isNotBlank()) {
+                    if (title.isNotBlank() && selectedDateText != "Select Date" && location.isNotBlank() && agenda.isNotBlank()) {
                         val isoDate = buildIsoDateTime(year, month, day, hour, minute)
-                        onCreate(title, isoDate, location.ifBlank { null }, agenda.ifBlank { null })
+                        onCreate(title, isoDate, location, agenda)
                     }
                 },
+                enabled = title.isNotBlank() && selectedDateText != "Select Date" && location.isNotBlank() && agenda.isNotBlank(),
                 colors = ButtonDefaults.buttonColors(containerColor = GreenAccent)
             ) {
                 Text("Schedule")
