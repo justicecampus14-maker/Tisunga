@@ -19,8 +19,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.compose.ui.platform.LocalContext
+import android.widget.Toast
 import com.example.tisunga.data.model.MeetingAttendance
 import com.example.tisunga.ui.components.StatusBadge
+import com.example.tisunga.ui.components.TisungaConfirmDialog
 import com.example.tisunga.ui.theme.*
 import com.example.tisunga.utils.FormatUtils.formatDate
 import com.example.tisunga.viewmodel.MeetingViewModel
@@ -35,14 +38,29 @@ fun MeetingDetailScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val meeting = uiState.selectedMeeting
-    val context = androidx.compose.ui.platform.LocalContext.current
+    val context = LocalContext.current
     val sessionManager = remember { com.example.tisunga.utils.SessionManager(context) }
     
+    var showCompleteDialog by remember { mutableStateOf(false) }
+    var showCancelDialog by remember { mutableStateOf(false) }
+
     val groupRole = sessionManager.getGroupRole(groupId)
     val isChair = groupRole == "CHAIR" || groupRole == "SECRETARY"
 
     LaunchedEffect(groupId, meetingId) {
         viewModel.getMeeting(groupId, meetingId)
+    }
+
+    LaunchedEffect(uiState.isSuccess, uiState.errorMessage) {
+        if (uiState.isSuccess && uiState.successMessage.isNotEmpty()) {
+            Toast.makeText(context, uiState.successMessage, Toast.LENGTH_SHORT).show()
+            viewModel.resetState()
+            viewModel.getMeeting(groupId, meetingId) // Refresh
+        }
+        if (uiState.errorMessage.isNotEmpty()) {
+            Toast.makeText(context, uiState.errorMessage, Toast.LENGTH_LONG).show()
+            viewModel.resetState()
+        }
     }
 
     Scaffold(
@@ -69,6 +87,31 @@ fun MeetingDetailScreen(
             }
         }
     ) { padding ->
+        if (showCompleteDialog) {
+            TisungaConfirmDialog(
+                title = "Complete Meeting",
+                message = "Are you sure you want to mark this meeting as completed? Members will be notified.",
+                onConfirm = {
+                    showCompleteDialog = false
+                    viewModel.updateStatus(groupId, meetingId, "COMPLETED")
+                },
+                onDismiss = { showCompleteDialog = false }
+            )
+        }
+        if (showCancelDialog) {
+            TisungaConfirmDialog(
+                title = "Cancel Meeting",
+                message = "Are you sure you want to cancel this meeting? This action is irreversible.",
+                confirmText = "Cancel Meeting",
+                isDestructive = true,
+                onConfirm = {
+                    showCancelDialog = false
+                    viewModel.updateStatus(groupId, meetingId, "CANCELLED")
+                },
+                onDismiss = { showCancelDialog = false }
+            )
+        }
+
         if (uiState.isLoading) {
             Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator(color = GreenAccent)
@@ -89,6 +132,21 @@ fun MeetingDetailScreen(
                 if (!meeting.agenda.isNullOrBlank()) {
                     item {
                         MeetingAgendaCard(meeting.agenda)
+                    }
+                }
+
+                if (!meeting.notes.isNullOrBlank()) {
+                    item {
+                        MeetingNotesCard(meeting.notes)
+                    }
+                }
+
+                if (isChair && meeting.status == "SCHEDULED") {
+                    item {
+                        MeetingActionsCard(
+                            onComplete = { showCompleteDialog = true },
+                            onCancel = { showCancelDialog = true }
+                        )
                     }
                 }
 
@@ -165,6 +223,60 @@ fun MeetingAgendaCard(agenda: String) {
             }
             Spacer(modifier = Modifier.height(8.dp))
             Text(agenda, color = TextPrimary)
+        }
+    }
+}
+
+@Composable
+fun MeetingNotesCard(notes: String) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.Description, contentDescription = null, modifier = Modifier.size(20.dp), tint = OrangeTag)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Meeting Notes", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(notes, color = TextPrimary)
+        }
+    }
+}
+
+@Composable
+fun MeetingActionsCard(onComplete: () -> Unit, onCancel: () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text("Admin Actions", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            Spacer(modifier = Modifier.height(12.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Button(
+                    onClick = onComplete,
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(containerColor = GreenAccent),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text("Complete", color = Color.White)
+                }
+                OutlinedButton(
+                    onClick = onCancel,
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(8.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = RedAccent)
+                ) {
+                    Text("Cancel Meeting")
+                }
+            }
         }
     }
 }

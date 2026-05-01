@@ -1,5 +1,12 @@
 package com.example.tisunga.ui.screens.events
 
+import android.widget.Toast
+import com.example.tisunga.utils.FormatUtils
+import android.app.DatePickerDialog
+import android.app.TimePickerDialog
+import java.util.Calendar
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
@@ -30,7 +37,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.tisunga.data.model.Event
 import com.example.tisunga.data.model.Meeting
-import com.example.tisunga.ui.theme.NavyBlue
+import com.example.tisunga.ui.theme.*
 import com.example.tisunga.viewmodel.*
 
 @Composable
@@ -39,8 +46,16 @@ fun ActivitiesScreen(
     groupId: String,
     viewModel: ActivitiesViewModel
 ) {
+    val context = LocalContext.current
     LaunchedEffect(groupId) {
         viewModel.load(groupId)
+    }
+
+    LaunchedEffect(viewModel.error) {
+        viewModel.error?.let {
+            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
+            viewModel.clearError()
+        }
     }
 
     var tab by remember { mutableIntStateOf(0) }
@@ -73,7 +88,7 @@ fun ActivitiesScreen(
             }
         },
         floatingActionButtonPosition = FabPosition.End,
-        containerColor = Color(0xFFF0F1F5)
+        containerColor = BackgroundGray
     ) { padding ->
         if (showCreateEventDialog) {
             CreateEventDialog(
@@ -81,6 +96,7 @@ fun ActivitiesScreen(
                 onConfirm = { type, title, date, amountType, amount, desc ->
                     viewModel.createEvent(groupId, type, title, date, amountType, amount, desc) {
                         showCreateEventDialog = false
+                        Toast.makeText(context, "Event created successfully!", Toast.LENGTH_SHORT).show()
                     }
                 }
             )
@@ -91,6 +107,7 @@ fun ActivitiesScreen(
                 onConfirm = { title, date, location, desc ->
                     viewModel.createMeeting(groupId, title, date, location, desc) {
                         showCreateMeetingDialog = false
+                        Toast.makeText(context, "Meeting scheduled successfully!", Toast.LENGTH_SHORT).show()
                     }
                 }
             )
@@ -102,24 +119,24 @@ fun ActivitiesScreen(
         ) {
             TabRow(
                 selectedTabIndex = tab,
-                containerColor = Color.White,
-                contentColor = NavyBlue,
+                containerColor = MaterialTheme.colorScheme.surface,
+                contentColor = MaterialTheme.colorScheme.primary,
                 indicator = { tabPositions ->
                     TabRowDefaults.SecondaryIndicator(
                         Modifier.tabIndicatorOffset(tabPositions[tab]),
-                        color = NavyBlue
+                        color = MaterialTheme.colorScheme.primary
                     )
                 }
             ) {
                 Tab(
                     selected = tab == 0,
                     onClick = { tab = 0 },
-                    text = { Text("Meetings", color = if (tab == 0) NavyBlue else Color.Gray) }
+                    text = { Text("Meetings", color = if (tab == 0) MaterialTheme.colorScheme.primary else TextSecondary) }
                 )
                 Tab(
                     selected = tab == 1,
                     onClick = { tab = 1 },
-                    text = { Text("Other Events", color = if (tab == 1) NavyBlue else Color.Gray) }
+                    text = { Text("Other Events", color = if (tab == 1) MaterialTheme.colorScheme.primary else TextSecondary) }
                 )
             }
 
@@ -129,8 +146,8 @@ fun ActivitiesScreen(
                 }
             } else {
                 if (tab == 0) {
-                    MeetingsContent(viewModel.meetings, meetingFilter) {
-                        meetingFilter = it
+                    MeetingsContent(viewModel.meetings, meetingFilter, { meetingFilter = it }) { m ->
+                        navController.navigate("meeting_detail/$groupId/${m.id}")
                     }
                 } else {
                     EventsContent(viewModel.events, eventFilter) {
@@ -149,16 +166,16 @@ fun TopBar(navController: NavController) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color.White)
+            .background(MaterialTheme.colorScheme.surface)
             .statusBarsPadding()
             .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         IconButton(onClick = { navController.popBackStack() }) {
-            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = NavyBlue)
+            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.primary)
         }
         Column {
-            Text("Events", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = NavyBlue)
+            Text("Events", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
         }
     }
 }
@@ -169,7 +186,8 @@ fun TopBar(navController: NavController) {
 fun MeetingsContent(
     meetings: List<Meeting>,
     filter: String,
-    onFilterChange: (String) -> Unit
+    onFilterChange: (String) -> Unit,
+    onMeetingClick: (Meeting) -> Unit
 ) {
     Column {
         Row(
@@ -202,8 +220,8 @@ fun MeetingsContent(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 val filteredMeetings = if (filter == "ALL") meetings else meetings.filter { it.status == filter }
-                items(filteredMeetings) { m ->
-                    MeetingCard(m)
+                items(filteredMeetings, key = { it.id }) { m ->
+                    MeetingCard(m, onClick = { onMeetingClick(m) })
                 }
             }
         }
@@ -211,9 +229,9 @@ fun MeetingsContent(
 }
 
 @Composable
-fun MeetingCard(m: Meeting) {
+fun MeetingCard(m: Meeting, onClick: () -> Unit) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().clickable { onClick() },
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(2.dp)
@@ -228,17 +246,21 @@ fun MeetingCard(m: Meeting) {
                     Text(m.title, fontWeight = FontWeight.Bold, color = NavyBlue)
                     Text("by ${m.creatorName ?: "Admin"}", fontSize = 12.sp, color = Color.Gray)
                 }
-                StatusBadge(m.status)
+                com.example.tisunga.ui.components.StatusBadge(m.status)
             }
 
             Spacer(Modifier.height(8.dp))
 
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(m.scheduledAt, fontSize = 12.sp, color = Color.DarkGray)
+                Text(FormatUtils.formatDate(m.scheduledAt), fontSize = 12.sp, color = Color.DarkGray)
                 if (!m.location.isNullOrEmpty()) {
                     Text(" • ", fontSize = 12.sp, color = Color.Gray)
                     Text(m.location, fontSize = 12.sp, color = Color.DarkGray)
                 }
+            }
+            if (!m.agenda.isNullOrBlank()) {
+                Spacer(Modifier.height(4.dp))
+                Text(m.agenda, fontSize = 12.sp, color = Color.Gray)
             }
         }
     }
@@ -306,7 +328,7 @@ fun EventCard(e: Event) {
                 verticalAlignment = Alignment.Top
             ) {
                 Text(e.title, fontWeight = FontWeight.Bold, color = NavyBlue, modifier = Modifier.weight(1f))
-                StatusBadge(e.status)
+                com.example.tisunga.ui.components.StatusBadge(e.status)
             }
 
             Spacer(Modifier.height(8.dp))
@@ -316,7 +338,7 @@ fun EventCard(e: Event) {
                 LinearProgressIndicator(
                     progress = { progress },
                     modifier = Modifier.fillMaxWidth().height(8.dp),
-                    color = NavyBlue,
+                    color = com.example.tisunga.ui.theme.GreenAccent,
                     trackColor = Color(0xFFEEEEEE),
                     strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
                 )
@@ -325,15 +347,17 @@ fun EventCard(e: Event) {
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text("MK ${e.currentAmount}", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Text("MK ${e.currentAmount}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = com.example.tisunga.ui.theme.GreenAccent)
                     Text("Target: MK ${e.targetAmount}", fontSize = 12.sp, color = Color.Gray)
                 }
             } else {
-                Text("Collected: MK ${e.currentAmount}", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                Text("Collected: MK ${e.currentAmount}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = com.example.tisunga.ui.theme.GreenAccent)
             }
 
             Spacer(Modifier.height(8.dp))
-            Text("${e.endDate ?: "No end date"}", fontSize = 11.sp, color = Color.Gray)
+            if (!e.endDate.isNullOrBlank()) {
+                Text(FormatUtils.formatDate(e.endDate), fontSize = 11.sp, color = Color.Gray)
+            }
         }
     }
 }
@@ -343,11 +367,11 @@ fun EventCard(e: Event) {
 @Composable
 fun StatusBadge(status: String) {
     val color = when (status.uppercase()) {
-        "ONGOING", "OPEN" -> Color(0xFF2E7D32)
-        "SCHEDULED", "UPCOMING" -> Color(0xFF1565C0)
-        "COMPLETED", "CLOSED" -> Color.Gray
-        "CANCELLED" -> Color.Red
-        else -> NavyBlue
+        "ONGOING", "OPEN" -> GreenAccent
+        "SCHEDULED", "UPCOMING" -> BlueLink
+        "COMPLETED", "CLOSED" -> TextSecondary
+        "CANCELLED" -> RedAccent
+        else -> MaterialTheme.colorScheme.primary
     }
 
     Text(
@@ -373,6 +397,7 @@ fun CreateMeetingDialog(
     var location by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     val focusManager = LocalFocusManager.current
+    val context = LocalContext.current
 
     val isDateValid = remember(date) {
         if (date.isBlank()) true 
@@ -399,21 +424,37 @@ fun CreateMeetingDialog(
                     keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
                     modifier = Modifier.fillMaxWidth()
                 )
-                OutlinedTextField(
-                    value = date,
-                    onValueChange = { if (it.length <= 16) date = it },
-                    label = { Text("Scheduled At (YYYY-MM-DD HH:MM)") },
-                    isError = !isDateValid,
-                    supportingText = { if (!isDateValid) Text("Invalid format. Use YYYY-MM-DD HH:MM", color = Color.Red) },
-                    trailingIcon = { if (!isDateValid) Icon(Icons.Default.Warning, "error", tint = Color.Red) },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
-                    keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
-                    modifier = Modifier.fillMaxWidth()
-                )
+                
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    OutlinedTextField(
+                        value = date,
+                        onValueChange = { },
+                        label = { Text("Scheduled At") },
+                        readOnly = true,
+                        isError = !isDateValid,
+                        supportingText = { if (!isDateValid) Text("Invalid format. Use YYYY-MM-DD HH:MM", color = Color.Red) },
+                        trailingIcon = { Icon(Icons.Default.CalendarMonth, "select date") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .clickable {
+                                val c = Calendar.getInstance()
+                                DatePickerDialog(context, { _, y, m, d ->
+                                    val datePart = String.format("%04d-%02d-%02d", y, m + 1, d)
+                                    TimePickerDialog(context, { _, h, min ->
+                                        date = String.format("%s %02d:%02d", datePart, h, min)
+                                    }, c.get(Calendar.HOUR_OF_DAY), c.get(Calendar.MINUTE), true).show()
+                                }, c.get(Calendar.YEAR), c.get(Calendar.MONTH), c.get(Calendar.DAY_OF_MONTH)).show()
+                            }
+                    )
+                }
+
                 OutlinedTextField(
                     value = location,
                     onValueChange = { location = it },
-                    label = { Text("Location (Optional)") },
+                    label = { Text("Location") },
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                     keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
                     modifier = Modifier.fillMaxWidth()
@@ -421,7 +462,7 @@ fun CreateMeetingDialog(
                 OutlinedTextField(
                     value = description,
                     onValueChange = { description = it },
-                    label = { Text("Description (Optional)") },
+                    label = { Text("Description") },
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                     keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
                     modifier = Modifier.fillMaxWidth()
@@ -430,9 +471,9 @@ fun CreateMeetingDialog(
         },
         confirmButton = {
             Button(
-                enabled = isDateValid && title.isNotBlank() && date.isNotBlank(),
+                enabled = isDateValid && title.isNotBlank() && date.isNotBlank() && location.isNotBlank() && description.isNotBlank(),
                 onClick = {
-                    onConfirm(title, date, location.takeIf { it.isNotBlank() }, description.takeIf { it.isNotBlank() })
+                    onConfirm(title, date, location, description)
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = NavyBlue)
             ) {
@@ -463,6 +504,7 @@ fun CreateEventDialog(
     var amount by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     val focusManager = LocalFocusManager.current
+    val context = LocalContext.current
 
     val isDateValid = remember(date) {
         if (date.isBlank()) true
@@ -516,17 +558,28 @@ fun CreateEventDialog(
                     },
                     modifier = Modifier.fillMaxWidth()
                 )
-                OutlinedTextField(
-                    value = date,
-                    onValueChange = { if (it.length <= 10) date = it },
-                    label = { Text("Date (YYYY-MM-DD)") },
-                    isError = !isDateValid,
-                    supportingText = { if (!isDateValid) Text("Invalid format. Use YYYY-MM-DD", color = Color.Red) },
-                    trailingIcon = { if (!isDateValid) Icon(Icons.Default.Warning, "error", tint = Color.Red) },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
-                    keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
-                    modifier = Modifier.fillMaxWidth()
-                )
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    OutlinedTextField(
+                        value = date,
+                        onValueChange = { },
+                        label = { Text("Date") },
+                        readOnly = true,
+                        isError = !isDateValid,
+                        supportingText = { if (!isDateValid) Text("Invalid format. Use YYYY-MM-DD", color = Color.Red) },
+                        trailingIcon = { Icon(Icons.Default.CalendarMonth, "select date") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .clickable {
+                                val c = Calendar.getInstance()
+                                DatePickerDialog(context, { _, y, m, d ->
+                                    date = String.format("%04d-%02d-%02d", y, m + 1, d)
+                                }, c.get(Calendar.YEAR), c.get(Calendar.MONTH), c.get(Calendar.DAY_OF_MONTH)).show()
+                            }
+                    )
+                }
                 
 
 
@@ -552,7 +605,7 @@ fun CreateEventDialog(
                 OutlinedTextField(
                     value = description,
                     onValueChange = { description = it },
-                    label = { Text("Description (Optional)") },
+                    label = { Text("Description") },
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                     keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
                     modifier = Modifier.fillMaxWidth()

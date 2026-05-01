@@ -40,6 +40,7 @@ class MeetingViewModel(private val sessionManager: SessionManager) : ViewModel()
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = "")
             try {
                 val meetings = api.getGroupMeetings(groupId, status)
+                    .distinctBy { "${it.title}-${it.scheduledAt}-${it.location}" }
                 _uiState.value = _uiState.value.copy(isLoading = false, meetings = meetings)
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(

@@ -2,7 +2,7 @@ package com.example.tisunga.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val NavyBlue = Color(0xFF1A2C5E)
+val NavyBlue = Color(0xFF122B62)
 val BackgroundGray = Color(0xFFEEEFF3)
 val BackgroundLightGray = Color(0xFFE8E8E8)
 val White = Color(0xFFFFFFFF)
@@ -11,11 +11,11 @@ val TextSecondary = Color(0xFF6B7280)
 val GreenAccent = Color(0xFF2E7D32)
 val GreenLight = Color(0xFFD4EDDA)
 val RedAccent = Color(0xFFD32F2F)
-val PurpleProgress = Color(0xFF7B2FBE)
+val PurpleProgress = NavyBlue
 val BlueLink = Color(0xFF1565C0)
 val OrangeTag = Color(0xFFE65100)
 val DividerColor = Color(0xFFE0E0E0)
-val PurpleSubtitle = Color(0xFF4A3F8C)
+val PurpleSubtitle = NavyBlue
 
 val Purple80 = Color(0xFFD0BCFF)
 val PurpleGrey80 = Color(0xFFCCC2DC)

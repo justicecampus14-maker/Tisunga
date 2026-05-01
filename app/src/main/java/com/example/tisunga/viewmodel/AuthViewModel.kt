@@ -39,9 +39,10 @@ class AuthViewModel(private val sessionManager: SessionManager) : ViewModel() {
     private val repo = AuthRepository(ApiClient.getClient())
 
     private fun handleError(e: Exception): String {
+        android.util.Log.e("AuthViewModel", "Connection Error: ${e.javaClass.simpleName} - ${e.message}")
         return when (e) {
             is ConnectException, is UnknownHostException -> 
-                "Unable to connect to the server. Please check your internet connection and ensure the backend is running."
+                "Connect Error: ${e.message}. URL: ${com.example.tisunga.utils.Constants.BASE_URL}. Ensure server is running and port 3000 is open."
             is SocketTimeoutException -> 
                 "Connection timed out. Please try again later."
             is HttpException -> {

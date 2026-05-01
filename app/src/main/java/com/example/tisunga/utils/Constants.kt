@@ -1,10 +1,12 @@
 package com.example.tisunga.utils
 
 object Constants {
-    // For emulator: 10.0.2.2 points to localhost on your PC
-    // For real device: use your PC's actual IP on same network
-    // e.g. "http://192.168.1.100:3000/api/"
-    const val BASE_URL = "http://192.168.137.31:3000/api/v1/"
+    /** 
+     * Wireless Network Connection:
+     * Replace with your PC's IP from 'ipconfig' (Wireless LAN adapter Wi-Fi)
+     * e.g., "http://192.168.1.5:3000/api/v1/"
+     */
+    const val BASE_URL = "http://192.168.137.1:3000/api/v1/"
 
     // Development flag
     const val IS_DEVELOPMENT_MODE = true

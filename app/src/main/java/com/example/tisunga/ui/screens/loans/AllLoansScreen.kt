@@ -457,7 +457,7 @@ private fun ActiveLoanCard(loan: Loan, onRepayClick: () -> Unit) {
             LinearProgressIndicator(
                 progress   = { pct },
                 modifier   = Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)),
-                color      = Color(0xFFFFEB3B),
+                color      = Color.White,
                 trackColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.2f)
             )
 
@@ -466,7 +466,7 @@ private fun ActiveLoanCard(loan: Loan, onRepayClick: () -> Unit) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text("${(pct * 100).toInt()}% repaid", color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f), fontSize = 11.sp)
                 if (!loan.dueDate.isNullOrBlank())
-                    Text("Due ${loan.dueDate.take(10)}", color = Color(0xFFFFEB3B), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    Text("Due ${loan.dueDate.take(10)}", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
             }
 
             Spacer(Modifier.height(16.dp))
@@ -583,7 +583,7 @@ fun GroupLoanCard(loan: Loan) {
 
     val statusColor = when (loan.status) {
         "ACTIVE"    -> MaterialTheme.colorScheme.secondary
-        "PENDING"   -> Color(0xFFF59E0B)
+                "PENDING"   -> NavyBlue
         "COMPLETED" -> MaterialTheme.colorScheme.primary
         "REJECTED"  -> MaterialTheme.colorScheme.error
         else        -> Color.Gray

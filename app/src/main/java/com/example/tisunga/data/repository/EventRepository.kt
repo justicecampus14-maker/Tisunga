@@ -8,15 +8,13 @@ import com.example.tisunga.data.remote.dto.CreateEventRequest
 class EventRepository(private val apiService: ApiService) {
     suspend fun getGroupEvents(groupId: String) = apiService.getGroupEvents(groupId)
     
-    suspend fun createEvent(groupId: String, event: Event) = apiService.createEventTyped(
+    suspend fun createEvent(groupId: String, event: Event) = apiService.createEvent(
         groupId = groupId,
-        body = CreateEventRequest(
-            type = "GENERAL",
-            title = event.title,
-            date = event.endDate ?: "",
-            amountType = if (event.targetAmount != null) "TARGET" else "VOLUNTARY",
-            amount = event.targetAmount ?: 0.0,
-            description = event.description
+        body = mapOf(
+            "title" to event.title,
+            "description" to event.description,
+            "endDate" to (event.endDate ?: ""),
+            "targetAmount" to (event.targetAmount ?: 0.0)
         )
     )
 

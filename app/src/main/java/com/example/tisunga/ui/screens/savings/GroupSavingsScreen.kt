@@ -195,7 +195,7 @@ fun SavingsSummaryCard(groupTotal: Double, mySavings: Double) {
                         FormatUtils.formatMoney(mySavings),
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFFFFEB3B)  // yellow highlight remains for emphasis
+                        color = Color.White
                     )
                 }
             }
