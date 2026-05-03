@@ -282,4 +282,42 @@
     <!-- Profile Screen -->
     <string name="my_profile_title">My Profile</string>
     <string name="save_changes_button">Save Changes</string>
+
+    <!-- Meetings Screen -->
+    <string name="meetings_title">Group Meetings</string>
+    <string name="no_meetings_msg">No meetings scheduled yet</string>
+    <string name="schedule_meeting_desc">Schedule Meeting</string>
+    <string name="attendance_percent_label">%1$d%% Attendance</string>
+
+    <!-- Create Meeting Dialog -->
+    <string name="schedule_meeting_title">Schedule Meeting</string>
+    <string name="meeting_title_label">Meeting Title</string>
+    <string name="select_date_label">Select Date</string>
+    <string name="select_time_label">Select Time</string>
+    <string name="schedule_datetime_label">Schedule Date &amp; Time</string>
+    <string name="schedule_button">Schedule</string>
+
+    <!-- Meeting Detail Screen -->
+    <string name="meeting_details_title">Meeting Details</string>
+    <string name="mark_attendance_button">Mark Attendance</string>
+    <string name="complete_meeting_title">Complete Meeting</string>
+    <string name="complete_meeting_msg">Are you sure you want to mark this meeting as completed? Members will be notified.</string>
+    <string name="cancel_meeting_title">Cancel Meeting</string>
+    <string name="cancel_meeting_msg">Are you sure you want to cancel this meeting? This action is irreversible.</string>
+    <string name="agenda_label">Agenda</string>
+    <string name="meeting_notes_label">Meeting Notes</string>
+    <string name="admin_actions_title">Admin Actions</string>
+    <string name="complete_button">Complete</string>
+    <string name="attendance_overview_title">Attendance Overview</string>
+    <string name="present_count_label">%1$d / %2$d Present</string>
+    <string name="attendance_rate_label">Attendance Rate</string>
+    <string name="attendance_list_title">Attendance List</string>
+
+    <!-- Attendance Screen -->
+    <string name="attendance_title">Mark Attendance</string>
+    <string name="submit_attendance_button">Submit Attendance Sheet</string>
+    <string name="attendance_live_tally">Live Tally: %1$d / %2$d marked present</string>
+    <string name="status_present">PRESENT</string>
+    <string name="status_absent">ABSENT</string>
+    <string name="status_excused">EXCUSED</string>
 </resources>

@@ -6,7 +6,7 @@ object Constants {
      * Replace with your PC's IP from 'ipconfig' (Wireless LAN adapter Wi-Fi)
      * e.g., "http://192.168.1.5:3000/api/v1/"
      */
-    const val BASE_URL = "http://192.168.137.1:3000/api/v1/"
+    const val BASE_URL = "http://192.168.137.193:3000/api/v1/"
 
     // Development flag
     const val IS_DEVELOPMENT_MODE = true

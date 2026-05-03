@@ -20,6 +20,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.compose.ui.res.stringResource
+import com.example.tisunga.R
 import com.example.tisunga.data.model.Meeting
 import com.example.tisunga.ui.components.StatusBadge
 import com.example.tisunga.ui.theme.*
@@ -50,10 +52,10 @@ fun MeetingsScreen(navController: NavController, groupId: String, viewModel: Mee
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Group Meetings", fontWeight = FontWeight.Bold) },
+                title = { Text(stringResource(R.string.meetings_title), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back_desc))
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
@@ -68,7 +70,7 @@ fun MeetingsScreen(navController: NavController, groupId: String, viewModel: Mee
                     containerColor = GreenAccent,
                     contentColor = Color.White
                 ) {
-                    Icon(Icons.Default.Add, contentDescription = "Schedule Meeting")
+                    Icon(Icons.Default.Add, contentDescription = stringResource(R.string.schedule_meeting_desc))
                 }
             }
         }
@@ -85,7 +87,7 @@ fun MeetingsScreen(navController: NavController, groupId: String, viewModel: Mee
                 }
             } else if (uiState.meetings.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("No meetings scheduled yet", color = TextSecondary)
+                    Text(stringResource(R.string.no_meetings_msg), color = TextSecondary)
                 }
             } else {
                 LazyColumn(
@@ -153,7 +155,7 @@ fun MeetingItem(meeting: Meeting, onClick: () -> Unit) {
                     trackColor = BackgroundGray,
                 )
                 Text(
-                    text = "${meeting.attendancePercent}% Attendance",
+                    text = stringResource(R.string.attendance_percent_label, meeting.attendancePercent),
                     fontSize = 12.sp,
                     color = GreenAccent,
                     modifier = Modifier.align(Alignment.End)
