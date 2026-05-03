@@ -12,6 +12,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import com.example.tisunga.R
 import com.example.tisunga.ui.theme.*
 import com.example.tisunga.viewmodel.buildIsoDateTime
 import java.util.*
@@ -28,8 +30,9 @@ fun CreateMeetingDialog(
     val context = LocalContext.current
     val calendar = remember { Calendar.getInstance() }
     
-    var selectedDateText by remember { mutableStateOf("Select Date") }
-    var selectedTimeText by remember { mutableStateOf("Select Time") }
+    val selectDateLabel = stringResource(R.string.select_date_label)
+    var selectedDateText by remember { mutableStateOf(selectDateLabel) }
+    var selectedTimeText by remember { mutableStateOf(context.getString(R.string.select_time_label)) }
     
     var year by remember { mutableIntStateOf(calendar.get(Calendar.YEAR)) }
     var month by remember { mutableIntStateOf(calendar.get(Calendar.MONTH) + 1) }
@@ -39,22 +42,22 @@ fun CreateMeetingDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Schedule Meeting", fontWeight = FontWeight.Bold) },
+        title = { Text(stringResource(R.string.schedule_meeting_title), fontWeight = FontWeight.Bold) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
                     value = title,
                     onValueChange = { title = it },
-                    label = { Text("Meeting Title") },
+                    label = { Text(stringResource(R.string.meeting_title_label)) },
                     modifier = Modifier.fillMaxWidth()
                 )
                 
                 // Unified Schedule Selection
                 Box(modifier = Modifier.fillMaxWidth()) {
                     OutlinedTextField(
-                        value = if (selectedDateText == "Select Date") "" else "$selectedDateText $selectedTimeText",
+                        value = if (selectedDateText == selectDateLabel) "" else "$selectedDateText $selectedTimeText",
                         onValueChange = { },
-                        label = { Text("Schedule Date & Time") },
+                        label = { Text(stringResource(R.string.schedule_datetime_label)) },
                         readOnly = true,
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -77,14 +80,14 @@ fun CreateMeetingDialog(
                 OutlinedTextField(
                     value = location,
                     onValueChange = { location = it },
-                    label = { Text("Location") },
+                    label = { Text(stringResource(R.string.location_label)) },
                     modifier = Modifier.fillMaxWidth()
                 )
                 
                 OutlinedTextField(
                     value = agenda,
                     onValueChange = { agenda = it },
-                    label = { Text("Agenda") },
+                    label = { Text(stringResource(R.string.agenda_label)) },
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 3
                 )
@@ -93,20 +96,21 @@ fun CreateMeetingDialog(
         confirmButton = {
             Button(
                 onClick = {
-                    if (title.isNotBlank() && selectedDateText != "Select Date" && location.isNotBlank() && agenda.isNotBlank()) {
+                    if (title.isNotBlank() && selectedDateText != selectDateLabel && location.isNotBlank() && agenda.isNotBlank()) {
                         val isoDate = buildIsoDateTime(year, month, day, hour, minute)
                         onCreate(title, isoDate, location, agenda)
                     }
                 },
-                enabled = title.isNotBlank() && selectedDateText != "Select Date" && location.isNotBlank() && agenda.isNotBlank(),
+                enabled = title.isNotBlank() && selectedDateText != selectDateLabel && location.isNotBlank() && agenda.isNotBlank(),
                 colors = ButtonDefaults.buttonColors(containerColor = GreenAccent)
             ) {
-                Text("Schedule")
+                Text(stringResource(R.string.schedule_button))
             }
         },
+
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel", color = TextSecondary)
+                Text(stringResource(R.string.cancel_button), color = TextSecondary)
             }
         }
     )

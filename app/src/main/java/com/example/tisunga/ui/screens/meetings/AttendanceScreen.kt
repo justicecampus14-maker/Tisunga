@@ -16,6 +16,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.compose.ui.res.stringResource
+import com.example.tisunga.R
 import com.example.tisunga.data.model.MeetingAttendance
 import com.example.tisunga.data.remote.dto.AttendanceEntry
 import com.example.tisunga.ui.theme.*
@@ -38,17 +40,32 @@ fun AttendanceScreen(
 
     LaunchedEffect(uiState.attendance) {
         uiState.attendance.forEach {
-            attendanceEntries[it.userId] = it.status
+            if (!attendanceEntries.containsKey(it.userId)) {
+                attendanceEntries[it.userId] = it.status.uppercase()
+            }
+        }
+    }
+
+    // Refresh Local Map if it's empty and we have data
+    if (attendanceEntries.isEmpty() && uiState.attendance.isNotEmpty()) {
+        uiState.attendance.forEach {
+            attendanceEntries[it.userId] = it.status.uppercase()
+        }
+    }
+
+    LaunchedEffect(uiState.isSuccess) {
+        if (uiState.isSuccess) {
+            navController.popBackStack()
         }
     }
 
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Mark Attendance", fontWeight = FontWeight.Bold) },
+                title = { Text(stringResource(R.string.attendance_title), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back_desc))
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.White)
@@ -68,7 +85,7 @@ fun AttendanceScreen(
                 colors = ButtonDefaults.buttonColors(containerColor = GreenAccent),
                 shape = RoundedCornerShape(8.dp)
             ) {
-                Text("Submit Attendance Sheet", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.submit_attendance_button), fontSize = 16.sp, fontWeight = FontWeight.Bold)
             }
         }
     ) { padding ->
@@ -78,8 +95,8 @@ fun AttendanceScreen(
                 .padding(padding)
                 .background(BackgroundGray)
         ) {
-            val presentCount = attendanceEntries.values.count { it == "PRESENT" }
-            val totalCount = attendanceEntries.size
+            val presentCount = attendanceEntries.values.count { it.uppercase() == "PRESENT" }
+            val totalCount = uiState.attendance.size
             
             AttendanceSummaryBanner(presentCount, totalCount)
 
@@ -91,9 +108,9 @@ fun AttendanceScreen(
                 items(uiState.attendance) { attendance ->
                     AttendanceMarkRow(
                         attendance = attendance,
-                        currentStatus = attendanceEntries[attendance.userId] ?: "ABSENT",
+                        currentStatus = attendanceEntries[attendance.userId] ?: attendance.status,
                         onStatusChange = { newStatus ->
-                            attendanceEntries[attendance.userId] = newStatus
+                            attendanceEntries[attendance.userId] = newStatus.uppercase()
                         }
                     )
                 }
@@ -111,7 +128,7 @@ fun AttendanceSummaryBanner(present: Int, total: Int) {
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                "Live Tally: $present / $total marked present",
+                stringResource(R.string.attendance_live_tally, present, total),
                 fontWeight = FontWeight.Bold,
                 fontSize = 16.sp,
                 color = GreenAccent
@@ -157,7 +174,7 @@ fun AttendanceMarkRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 listOf("PRESENT", "ABSENT", "EXCUSED").forEach { status ->
-                    val isSelected = currentStatus == status
+                    val isSelected = currentStatus.uppercase() == status
                     val color = when (status) {
                         "PRESENT" -> GreenAccent
                         "ABSENT" -> RedAccent
@@ -165,26 +182,38 @@ fun AttendanceMarkRow(
                         else -> TextSecondary
                     }
                     
-                    OutlinedButton(
+                    val label = when (status) {
+                        "PRESENT" -> stringResource(R.string.status_present)
+                        "ABSENT" -> stringResource(R.string.status_absent)
+                        "EXCUSED" -> stringResource(R.string.status_excused)
+                        else -> status
+                    }
+
+                    Button(
                         onClick = { onStatusChange(status) },
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(20.dp),
                         colors = if (isSelected) {
-                            ButtonDefaults.outlinedButtonColors(containerColor = color.copy(alpha = 0.1f))
+                            ButtonDefaults.buttonColors(containerColor = color)
                         } else {
-                            ButtonDefaults.outlinedButtonColors()
+                            ButtonDefaults.buttonColors(
+                                containerColor = Color.Transparent,
+                                contentColor = TextSecondary
+                            )
                         },
                         border = if (isSelected) {
-                            androidx.compose.foundation.BorderStroke(2.dp, color)
+                            null
                         } else {
                             androidx.compose.foundation.BorderStroke(1.dp, Color.LightGray)
-                        }
+                        },
+                        contentPadding = PaddingValues(horizontal = 4.dp)
                     ) {
                         Text(
-                            status.take(1) + status.substring(1).lowercase(),
-                            color = if (isSelected) color else TextSecondary,
+                            label,
+                            color = if (isSelected) Color.White else TextSecondary,
                             fontSize = 10.sp,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                            maxLines = 1
                         )
                     }
                 }

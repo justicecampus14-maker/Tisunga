@@ -159,7 +159,7 @@ fun ActivitiesScreen(
     }
 }
 
-/* -------- TOP BAR -------- */
+/*  TOP BAR */
 
 @Composable
 fun TopBar(navController: NavController) {
@@ -266,7 +266,7 @@ fun MeetingCard(m: Meeting, onClick: () -> Unit) {
     }
 }
 
-/* -------- EVENTS -------- */
+// EVENTS
 
 @Composable
 fun EventsContent(
@@ -362,7 +362,7 @@ fun EventCard(e: Event) {
     }
 }
 
-/* -------- STATUS BADGE -------- */
+// STATUS BADGE
 
 @Composable
 fun StatusBadge(status: String) {
@@ -385,7 +385,7 @@ fun StatusBadge(status: String) {
     )
 }
 
-/* -------- CREATE MEETING DIALOG -------- */
+// CREATE MEETING DIALOG
 
 @Composable
 fun CreateMeetingDialog(
@@ -488,7 +488,7 @@ fun CreateMeetingDialog(
     )
 }
 
-/* -------- CREATE EVENT DIALOG -------- */
+// CREATE EVENT DIALOG
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

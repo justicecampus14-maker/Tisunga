@@ -112,15 +112,30 @@ class MeetingViewModel(private val sessionManager: SessionManager) : ViewModel()
                     put("status", status)
                     if (!notes.isNullOrBlank()) put("notes", notes)
                 }
-                val updated = api.updateMeetingStatus(groupId, meetingId, body)
+                api.updateMeetingStatus(groupId, meetingId, body)
+                
+                // Refresh full meeting detail to get updated counts and attendance list
+                val updatedMeeting = api.getMeeting(groupId, meetingId)
+                
+                // Update meetings list for the summary view
                 val meetings = _uiState.value.meetings.map {
-                    if (it.id == meetingId) it.copy(status = updated.status) else it
+                    if (it.id == meetingId) {
+                        it.copy(
+                            status = updatedMeeting.status,
+                            presentCount = updatedMeeting.presentCount,
+                            totalCount = updatedMeeting.totalCount,
+                            attendancePercent = updatedMeeting.attendancePercent
+                        )
+                    } else it
                 }
+                
                 _uiState.value = _uiState.value.copy(
-                    isLoading      = false,
-                    isSuccess      = true,
-                    meetings       = meetings,
-                    successMessage = "Meeting marked as $status"
+                    isLoading       = false,
+                    isSuccess       = true,
+                    meetings        = meetings,
+                    selectedMeeting = updatedMeeting,
+                    attendance      = updatedMeeting.attendance,
+                    successMessage  = "Meeting marked as $status"
                 )
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
@@ -166,10 +181,27 @@ class MeetingViewModel(private val sessionManager: SessionManager) : ViewModel()
                 val result = api.submitBulkAttendance(
                     groupId, meetingId, BulkAttendanceRequest(entries)
                 )
+                // Refresh meeting details so that MeetingDetailScreen and others have fresh data
+                val updatedMeeting = api.getMeeting(groupId, meetingId)
+                
+                // Update meetings list for the summary view
+                val meetings = _uiState.value.meetings.map {
+                    if (it.id == meetingId) {
+                        it.copy(
+                            presentCount = updatedMeeting.presentCount,
+                            totalCount = updatedMeeting.totalCount,
+                            attendancePercent = updatedMeeting.attendancePercent
+                        )
+                    } else it
+                }
+                
                 _uiState.value = _uiState.value.copy(
-                    isLoading      = false,
-                    isSuccess      = true,
-                    successMessage = "Attendance saved. ${result.presentCount} present."
+                    isLoading       = false,
+                    isSuccess       = true,
+                    meetings        = meetings,
+                    selectedMeeting = updatedMeeting,
+                    attendance      = updatedMeeting.attendance,
+                    successMessage  = "Attendance saved. ${result.presentCount} present."
                 )
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(

@@ -21,6 +21,8 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.compose.ui.platform.LocalContext
 import android.widget.Toast
+import androidx.compose.ui.res.stringResource
+import com.example.tisunga.R
 import com.example.tisunga.data.model.MeetingAttendance
 import com.example.tisunga.ui.components.StatusBadge
 import com.example.tisunga.ui.components.TisungaConfirmDialog
@@ -44,8 +46,8 @@ fun MeetingDetailScreen(
     var showCompleteDialog by remember { mutableStateOf(false) }
     var showCancelDialog by remember { mutableStateOf(false) }
 
-    val groupRole = sessionManager.getGroupRole(groupId)
-    val isChair = groupRole == "CHAIR" || groupRole == "SECRETARY"
+    val groupRole = sessionManager.getGroupRole(groupId)?.uppercase() ?: "MEMBER"
+    val isChair = groupRole == "CHAIR" || groupRole == "CHAIRPERSON" || groupRole == "SECRETARY" || groupRole == "ADMIN"
 
     LaunchedEffect(groupId, meetingId) {
         viewModel.getMeeting(groupId, meetingId)
@@ -54,8 +56,9 @@ fun MeetingDetailScreen(
     LaunchedEffect(uiState.isSuccess, uiState.errorMessage) {
         if (uiState.isSuccess && uiState.successMessage.isNotEmpty()) {
             Toast.makeText(context, uiState.successMessage, Toast.LENGTH_SHORT).show()
+            // The ViewModel already updated selectedMeeting in the state,
+            // so we just need to reset the success flag to avoid repeated toasts.
             viewModel.resetState()
-            viewModel.getMeeting(groupId, meetingId) // Refresh
         }
         if (uiState.errorMessage.isNotEmpty()) {
             Toast.makeText(context, uiState.errorMessage, Toast.LENGTH_LONG).show()
@@ -66,7 +69,7 @@ fun MeetingDetailScreen(
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Meeting Details", fontWeight = FontWeight.Bold) },
+                title = { Text(stringResource(R.string.meeting_details_title), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -76,21 +79,22 @@ fun MeetingDetailScreen(
             )
         },
         floatingActionButton = {
-            if (isChair && meeting?.status != "COMPLETED" && meeting?.status != "CANCELLED") {
+            val status = meeting?.status?.uppercase() ?: ""
+            if (isChair && status != "COMPLETED" && status != "CANCELLED") {
                 ExtendedFloatingActionButton(
                     onClick = { navController.navigate("attendance/$groupId/${meeting?.id}") },
                     containerColor = GreenAccent,
                     contentColor = Color.White,
                     icon = { Icon(Icons.Default.CalendarToday, contentDescription = null) },
-                    text = { Text("Mark Attendance") }
+                    text = { Text(stringResource(R.string.mark_attendance_button)) }
                 )
             }
         }
     ) { padding ->
         if (showCompleteDialog) {
             TisungaConfirmDialog(
-                title = "Complete Meeting",
-                message = "Are you sure you want to mark this meeting as completed? Members will be notified.",
+                title = stringResource(R.string.complete_meeting_title),
+                message = stringResource(R.string.complete_meeting_msg),
                 onConfirm = {
                     showCompleteDialog = false
                     viewModel.updateStatus(groupId, meetingId, "COMPLETED")
@@ -100,9 +104,9 @@ fun MeetingDetailScreen(
         }
         if (showCancelDialog) {
             TisungaConfirmDialog(
-                title = "Cancel Meeting",
-                message = "Are you sure you want to cancel this meeting? This action is irreversible.",
-                confirmText = "Cancel Meeting",
+                title = stringResource(R.string.cancel_meeting_title),
+                message = stringResource(R.string.cancel_meeting_msg),
+                confirmText = stringResource(R.string.cancel_meeting_title),
                 isDestructive = true,
                 onConfirm = {
                     showCancelDialog = false
@@ -141,7 +145,8 @@ fun MeetingDetailScreen(
                     }
                 }
 
-                if (isChair && meeting.status == "SCHEDULED") {
+                val statusUpper = meeting.status.uppercase()
+                if (isChair && (statusUpper == "SCHEDULED" || statusUpper == "ONGOING")) {
                     item {
                         MeetingActionsCard(
                             onComplete = { showCompleteDialog = true },
@@ -156,14 +161,14 @@ fun MeetingDetailScreen(
 
                 item {
                     Text(
-                        "Attendance List",
+                        stringResource(R.string.attendance_list_title),
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(vertical = 8.dp)
                     )
                 }
 
-                items(meeting.attendance) { attendance ->
+                items(meeting.attendance, key = { it.userId }) { attendance ->
                     AttendanceMemberItem(attendance)
                 }
                 
@@ -219,7 +224,7 @@ fun MeetingAgendaCard(agenda: String) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Default.Description, contentDescription = null, modifier = Modifier.size(20.dp), tint = GreenAccent)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Agenda", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                Text(stringResource(R.string.agenda_label), fontWeight = FontWeight.Bold, fontSize = 16.sp)
             }
             Spacer(modifier = Modifier.height(8.dp))
             Text(agenda, color = TextPrimary)
@@ -238,7 +243,7 @@ fun MeetingNotesCard(notes: String) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Default.Description, contentDescription = null, modifier = Modifier.size(20.dp), tint = OrangeTag)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Meeting Notes", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                Text(stringResource(R.string.meeting_notes_label), fontWeight = FontWeight.Bold, fontSize = 16.sp)
             }
             Spacer(modifier = Modifier.height(8.dp))
             Text(notes, color = TextPrimary)
@@ -254,7 +259,7 @@ fun MeetingActionsCard(onComplete: () -> Unit, onCancel: () -> Unit) {
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text("Admin Actions", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            Text(stringResource(R.string.admin_actions_title), fontWeight = FontWeight.Bold, fontSize = 16.sp)
             Spacer(modifier = Modifier.height(12.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -266,15 +271,15 @@ fun MeetingActionsCard(onComplete: () -> Unit, onCancel: () -> Unit) {
                     colors = ButtonDefaults.buttonColors(containerColor = GreenAccent),
                     shape = RoundedCornerShape(8.dp)
                 ) {
-                    Text("Complete", color = Color.White)
+                    Text(stringResource(R.string.complete_button), color = Color.White)
                 }
-                OutlinedButton(
+                Button(
                     onClick = onCancel,
                     modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(8.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = RedAccent)
+                    colors = ButtonDefaults.buttonColors(containerColor = RedAccent),
+                    shape = RoundedCornerShape(8.dp)
                 ) {
-                    Text("Cancel Meeting")
+                    Text(stringResource(R.string.cancel_button), color = Color.White)
                 }
             }
         }
@@ -289,7 +294,7 @@ fun MeetingAttendanceSummaryCard(present: Int, total: Int, percent: Int) {
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text("Attendance Overview", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            Text(stringResource(R.string.attendance_overview_title), fontWeight = FontWeight.Bold, fontSize = 16.sp)
             Spacer(modifier = Modifier.height(12.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -297,8 +302,8 @@ fun MeetingAttendanceSummaryCard(present: Int, total: Int, percent: Int) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column {
-                    Text("$present / $total Present", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = GreenAccent)
-                    Text("Attendance Rate", fontSize = 12.sp, color = TextSecondary)
+                    Text(stringResource(R.string.present_count_label, present, total), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = GreenAccent)
+                    Text(stringResource(R.string.attendance_rate_label), fontSize = 12.sp, color = TextSecondary)
                 }
                 Box(contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(
@@ -318,6 +323,8 @@ fun MeetingAttendanceSummaryCard(present: Int, total: Int, percent: Int) {
 @Composable
 fun AttendanceMemberItem(attendance: MeetingAttendance) {
     val user = attendance.user ?: return
+    val status = attendance.status.uppercase()
+    
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(8.dp),
@@ -329,24 +336,30 @@ fun AttendanceMemberItem(attendance: MeetingAttendance) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Column {
+            Column(modifier = Modifier.weight(1f)) {
                 Text("${user.firstName} ${user.lastName}", fontWeight = FontWeight.Bold)
                 Text(user.phone, fontSize = 12.sp, color = TextSecondary)
             }
             
-            val statusColor = when (attendance.status) {
-                "PRESENT" -> GreenAccent
-                "ABSENT" -> RedAccent
-                "EXCUSED" -> OrangeTag
-                else -> TextSecondary
+            val (statusColor, statusLabel) = when (status) {
+                "PRESENT" -> GreenAccent to stringResource(R.string.status_present)
+                "ABSENT" -> RedAccent to stringResource(R.string.status_absent)
+                "EXCUSED" -> OrangeTag to stringResource(R.string.status_excused)
+                else -> TextSecondary to status
             }
             
-            Text(
-                attendance.status,
-                color = statusColor,
-                fontWeight = FontWeight.Bold,
-                fontSize = 12.sp
-            )
+            Surface(
+                color = statusColor.copy(alpha = 0.1f),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Text(
+                    statusLabel,
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                    color = statusColor,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 11.sp
+                )
+            }
         }
     }
 }

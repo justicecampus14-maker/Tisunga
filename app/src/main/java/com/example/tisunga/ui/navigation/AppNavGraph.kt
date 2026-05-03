@@ -63,6 +63,8 @@ object Routes {
     const val PROFILE               = "profile"
     const val THEME                 = "theme"
     const val MEETINGS              = "meetings"
+    const val MEETING_DETAIL        = "meeting_detail/{groupId}/{meetingId}"
+    const val ATTENDANCE            = "attendance/{groupId}/{meetingId}"
     const val SETTINGS              = "settings"
     const val CHANGE_PASSWORD       = "change_password"
 }
@@ -298,7 +300,7 @@ fun AppNavGraph(
         }
 
         composable(
-            "meeting_detail/{groupId}/{meetingId}",
+            Routes.MEETING_DETAIL,
             arguments = listOf(
                 navArgument("groupId") { type = NavType.StringType },
                 navArgument("meetingId") { type = NavType.StringType }
@@ -306,10 +308,19 @@ fun AppNavGraph(
         ) { back ->
             val groupId = back.arguments?.getString("groupId") ?: ""
             val meetingId = back.arguments?.getString("meetingId") ?: ""
-            val meetingViewModel: MeetingViewModel = androidx.lifecycle.viewmodel.compose.viewModel(
-                factory = com.example.tisunga.ViewModelFactory(sessionManager)
-            )
             com.example.tisunga.ui.screens.meetings.MeetingDetailScreen(navController, groupId, meetingId, meetingViewModel)
+        }
+
+        composable(
+            Routes.ATTENDANCE,
+            arguments = listOf(
+                navArgument("groupId") { type = NavType.StringType },
+                navArgument("meetingId") { type = NavType.StringType }
+            )
+        ) { back ->
+            val groupId = back.arguments?.getString("groupId") ?: ""
+            val meetingId = back.arguments?.getString("meetingId") ?: ""
+            com.example.tisunga.ui.screens.meetings.AttendanceScreen(navController, groupId, meetingId, meetingViewModel)
         }
 
         // ── Transactions ──────────────────────────────────────────────────

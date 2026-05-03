@@ -13,8 +13,9 @@ class EventRepository(private val apiService: ApiService) {
         body = mapOf(
             "title" to event.title,
             "description" to event.description,
-            "endDate" to (event.endDate ?: ""),
-            "targetAmount" to (event.targetAmount ?: 0.0)
+            "eventDate" to (event.endDate ?: ""),
+            "fixedAmount" to (event.targetAmount ?: 0.0),
+            "type" to "OTHER" // Default to OTHER if not specified
         )
     )
 

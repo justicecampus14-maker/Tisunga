@@ -39,10 +39,10 @@ class ActivitiesViewModel : ViewModel() {
         try {
             val api = ApiClient.getClient()
             val fetchedMeetings = api.getGroupMeetings(groupId)
-            meetings = fetchedMeetings.distinctBy { "${it.title}-${it.scheduledAt}-${it.location}" }
+            meetings = fetchedMeetings.distinctBy { it.id }
             
             val fetchedEvents = api.getGroupEvents(groupId)
-            events = fetchedEvents.distinctBy { "${it.title}-${it.endDate}" }
+            events = fetchedEvents.distinctBy { it.id }
         } catch (e: Exception) {
             e.printStackTrace()
             error = "Failed to load activities: ${e.message}"
@@ -54,14 +54,16 @@ class ActivitiesViewModel : ViewModel() {
             val inputFormat = if (isDateTime) {
                 SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US)
             } else {
-                SimpleDateFormat("yyyy-MM-dd", Locale.US)
+                SimpleDateFormat("yyyy-MM-dd", Locale.US).apply {
+                    timeZone = TimeZone.getTimeZone("UTC")
+                }
             }
             val date = inputFormat.parse(dateStr)
-            val outputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
+            val outputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US)
             outputFormat.timeZone = TimeZone.getTimeZone("UTC")
             outputFormat.format(date!!)
         } catch (e: Exception) {
-            dateStr // Fallback to original if parsing fails
+            dateStr
         }
     }
 
@@ -86,7 +88,7 @@ class ActivitiesViewModel : ViewModel() {
                     "agenda" to (description ?: "")
                 )
                 val newMeeting = api.createMeeting(groupId, body)
-                meetings = (listOf(newMeeting) + meetings).distinctBy { "${it.title}-${it.scheduledAt}-${it.location}" }
+                meetings = (listOf(newMeeting) + meetings).distinctBy { it.id }
                 onSuccess()
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -114,14 +116,25 @@ class ActivitiesViewModel : ViewModel() {
                 val isoDate = formatToIso(date, false)
                 val api = ApiClient.getClient()
                 
+                // Mappings to match server-side Enums
+                val normalizedType = if (type.equals("OTHERS", ignoreCase = true)) "OTHER" else type.uppercase()
+                // Server expects 'SAVINGS', 'EVENT', or 'FLEXIBLE'. 
+                // We map 'FIXED' from UI to 'EVENT'
+                val normalizedContrib = if (amountType.equals("FIXED", ignoreCase = true)) "EVENT" else "FLEXIBLE"
+
                 val body = mutableMapOf<String, Any>(
                     "title" to title,
-                    "description" to (description ?: ""),
-                    "endDate" to isoDate,
-                    "type" to type.uppercase()
+                    "type" to normalizedType,
+                    "eventDate" to isoDate,
+                    "contributionType" to normalizedContrib
                 )
+                
                 if (amount > 0) {
-                    body["targetAmount"] = amount
+                    body["fixedAmount"] = amount
+                }
+                
+                if (!description.isNullOrBlank()) {
+                    body["description"] = description
                 }
 
                 val newEvent = api.createEvent(groupId, body)

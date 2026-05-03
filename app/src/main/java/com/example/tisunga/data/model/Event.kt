@@ -1,12 +1,14 @@
 package com.example.tisunga.data.model
 
+import com.google.gson.annotations.SerializedName
+
 data class Event(
     val id: String,
     val title: String,
     val description: String,
-    val targetAmount: Double? = null,
+    @SerializedName("fixedAmount") val targetAmount: Double? = null,
     val currentAmount: Double = 0.0,
-    val endDate: String? = null,
+    @SerializedName("eventDate") val endDate: String? = null,
     val status: String, // OPEN | CLOSED
     val createdAt: String? = null,
     val contributionsCount: Int = 0

@@ -105,7 +105,7 @@ fun GroupSavingsScreen(
                     )
                 }
 
-                // ── Top summary card: Group Savings + My Savings ──────────
+                // Top summary card: Group Savings + My Savings
                 item {
                     SavingsSummaryCard(
                         groupTotal = uiState.totalGroupSavings,
@@ -113,7 +113,7 @@ fun GroupSavingsScreen(
                     )
                 }
 
-                // ── Per-member savings list ────────────────────────────────
+                // Per-member savings list
                 val summary = uiState.groupSavings.firstOrNull()
                 if (summary != null && summary.memberSavings.isNotEmpty()) {
                     item {
@@ -151,7 +151,7 @@ fun GroupSavingsScreen(
     }
 }
 
-// ── Summary card — Group Savings + My Savings ─────────────────────────────────
+// Summary card: Group Savings + My Savings
 
 @Composable
 fun SavingsSummaryCard(groupTotal: Double, mySavings: Double) {
@@ -161,49 +161,47 @@ fun SavingsSummaryCard(groupTotal: Double, mySavings: Double) {
         colors    = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary),
         elevation = CardDefaults.cardElevation(4.dp)
     ) {
-        Column(modifier = Modifier.padding(20.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                // Group Savings column
-                Column {
-                    Text(
-                        "Group Savings",
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f),
-                        fontWeight = FontWeight.Medium
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        FormatUtils.formatMoney(groupTotal),
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimary
-                    )
-                }
-                // My Savings column
-                Column(horizontalAlignment = Alignment.End) {
-                    Text(
-                        "My Savings",
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f),
-                        fontWeight = FontWeight.Medium
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        FormatUtils.formatMoney(mySavings),
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
-                }
+        Column(
+            modifier = Modifier.padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // Group Savings column
+            Column {
+                Text(
+                    "Group Savings",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f),
+                    fontWeight = FontWeight.Medium
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    FormatUtils.formatMoney(groupTotal),
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onPrimary
+                )
+            }
+            // My Savings column
+            Column {
+                Text(
+                    "My Savings",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f),
+                    fontWeight = FontWeight.Medium
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    FormatUtils.formatMoney(mySavings),
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onPrimary
+                )
             }
         }
     }
 }
 
-// ── Per-member savings row ────────────────────────────────────────────────────
+// Per-member savings row
 
 @Composable
 fun MemberSavingsCard(row: MemberSavingsRow) {
@@ -271,7 +269,7 @@ fun MemberSavingsCard(row: MemberSavingsRow) {
     }
 }
 
-// ── Fallback group card when no disbursement ──────────────────────────────────
+//Fallback group card when no disbursement
 
 @Composable
 fun GroupSavingsCard(summary: GroupSavingsSummary, onSaveClick: () -> Unit) {
