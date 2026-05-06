@@ -9,6 +9,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -32,10 +33,8 @@ fun MakeContributionScreen(
     var phone by remember { mutableStateOf(viewModel.getUserPhone()) }
     
     val contributionTypes = listOf(
-        "SAVINGS" to "Regular Savings",
-        "SHARE_PURCHASE" to "Buy Shares",
-        "SOCIAL_FUND" to "Social Fund",
-        "LOAN_REPAYMENT" to "Loan Repayment"
+        "SAVINGS" to "Regular Contribution",
+        "SOCIAL_FUND" to "Social Welfare"
     )
     var expanded by remember { mutableStateOf(false) }
     var selectedType by remember { mutableStateOf(contributionTypes[0]) }
