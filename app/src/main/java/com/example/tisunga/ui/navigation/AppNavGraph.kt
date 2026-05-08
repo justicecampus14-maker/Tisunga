@@ -50,7 +50,7 @@ object Routes {
     const val CONTRIBUTION_HISTORY  = "contribution_history/{groupId}"
     const val DISBURSEMENT          = "disbursement/{groupId}"
     const val ALL_LOANS             = "all_loans"
-    const val MY_LOANS              = "my_loans/{groupId}"
+    const val MY_LOANS              = "my_loans/{groupId}?userName={userName}"
     const val GROUP_LOANS           = "group_loans/{groupId}"
     const val GROUP_LOANS_DETAIL    = "group_loans_detail/{groupId}"
     const val APPLY_LOAN            = "apply_loan/{groupId}"
@@ -190,7 +190,7 @@ fun AppNavGraph(
         ) { back ->
             val groupId = back.arguments?.getString("groupId") ?: ""
             val contributionViewModel: ContributionViewModel = androidx.lifecycle.viewmodel.compose.viewModel(
-                factory = com.example.tisunga.ViewModelFactory(sessionManager)
+                factory = com.example.tisunga.ViewModelFactory(sessionManager, back)
             )
             MakeContributionScreen(
                 navController, groupId, contributionViewModel
@@ -222,11 +222,19 @@ fun AppNavGraph(
 
         composable(
             Routes.MY_LOANS,
-            arguments = listOf(navArgument("groupId") { type = NavType.StringType })
+            arguments = listOf(
+                navArgument("groupId") { type = NavType.StringType },
+                navArgument("userName") { 
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                }
+            )
         ) { back ->
             val groupId = back.arguments?.getString("groupId") ?: ""
+            val userName = back.arguments?.getString("userName")
             MyLoansScreen(
-                navController, groupId, loanViewModel, homeViewModel
+                navController, groupId, loanViewModel, homeViewModel, userName
             )
         }
 

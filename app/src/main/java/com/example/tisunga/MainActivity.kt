@@ -19,6 +19,10 @@ import com.example.tisunga.ui.theme.TisungaTheme
 import com.example.tisunga.utils.SessionManager
 import com.example.tisunga.viewmodel.*
 
+import androidx.lifecycle.AbstractSavedStateViewModelFactory
+import androidx.lifecycle.SavedStateHandle
+import androidx.savedstate.SavedStateRegistryOwner
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,7 +40,8 @@ class MainActivity : ComponentActivity() {
                     color    = MaterialTheme.colorScheme.background
                 ) {
                     val navController = rememberNavController()
-                    val factory       = ViewModelFactory(sessionManager)
+                    // Pass 'this' as the owner for the SavedState
+                    val factory = ViewModelFactory(sessionManager, this)
 
                     val authViewModel: AuthViewModel         = viewModel(factory = factory)
                     val groupViewModel: GroupViewModel       = viewModel(factory = factory)
@@ -70,20 +75,30 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-class ViewModelFactory(private val sessionManager: SessionManager) : ViewModelProvider.Factory {
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+class ViewModelFactory(
+    private val sessionManager: SessionManager,
+    owner: SavedStateRegistryOwner
+) : AbstractSavedStateViewModelFactory(owner, null) {
+    
+    @Suppress("UNCHECKED_CAST")
+    override fun <T : ViewModel> create(
+        key: String,
+        modelClass: Class<T>,
+        handle: SavedStateHandle
+    ): T {
         return when {
             modelClass.isAssignableFrom(AuthViewModel::class.java)    -> AuthViewModel(sessionManager) as T
-            modelClass.isAssignableFrom(GroupViewModel::class.java)   -> GroupViewModel(sessionManager) as T
-            modelClass.isAssignableFrom(LoanViewModel::class.java)    -> LoanViewModel(sessionManager) as T
-            modelClass.isAssignableFrom(SavingsViewModel::class.java) -> SavingsViewModel(sessionManager) as T
-            modelClass.isAssignableFrom(EventViewModel::class.java)   -> EventViewModel(sessionManager) as T
-            modelClass.isAssignableFrom(HomeViewModel::class.java)    -> HomeViewModel(sessionManager) as T
-            modelClass.isAssignableFrom(NotificationViewModel::class.java) -> NotificationViewModel() as T
-            modelClass.isAssignableFrom(TransactionViewModel::class.java) -> TransactionViewModel() as T
-            modelClass.isAssignableFrom(MeetingViewModel::class.java) -> MeetingViewModel(sessionManager) as T
-            modelClass.isAssignableFrom(ContributionViewModel::class.java) -> ContributionViewModel(sessionManager) as T
-            modelClass.isAssignableFrom(UserProfileViewModel::class.java) -> UserProfileViewModel(sessionManager) as T
+            modelClass.isAssignableFrom(GroupViewModel::class.java)   -> GroupViewModel(sessionManager, handle) as T
+            modelClass.isAssignableFrom(LoanViewModel::class.java)    -> LoanViewModel(sessionManager, handle) as T
+            modelClass.isAssignableFrom(SavingsViewModel::class.java) -> SavingsViewModel(sessionManager, handle) as T
+            modelClass.isAssignableFrom(EventViewModel::class.java)   -> EventViewModel(sessionManager, handle) as T
+            modelClass.isAssignableFrom(HomeViewModel::class.java)    -> HomeViewModel(sessionManager, handle) as T
+            modelClass.isAssignableFrom(NotificationViewModel::class.java) -> NotificationViewModel(handle) as T
+            modelClass.isAssignableFrom(TransactionViewModel::class.java) -> TransactionViewModel(handle) as T
+            modelClass.isAssignableFrom(MeetingViewModel::class.java) -> MeetingViewModel(sessionManager, handle) as T
+            modelClass.isAssignableFrom(ContributionViewModel::class.java) -> ContributionViewModel(sessionManager, handle) as T
+            modelClass.isAssignableFrom(UserProfileViewModel::class.java) -> UserProfileViewModel(sessionManager, handle) as T
+            modelClass.isAssignableFrom(ActivitiesViewModel::class.java) -> ActivitiesViewModel(handle) as T
             else -> throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
         }
     }

@@ -1,5 +1,6 @@
 package com.example.tisunga.viewmodel
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tisunga.data.model.Transaction
@@ -17,7 +18,9 @@ data class TransactionUiState(
     val currentPage: Int = 1
 )
 
-class TransactionViewModel : ViewModel() {
+class TransactionViewModel(
+    private val savedStateHandle: SavedStateHandle
+) : ViewModel() {
     private val _uiState = MutableStateFlow(TransactionUiState())
     val uiState: StateFlow<TransactionUiState> = _uiState.asStateFlow()
 

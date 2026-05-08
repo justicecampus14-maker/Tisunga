@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -15,7 +16,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import com.example.tisunga.R
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -36,6 +42,8 @@ fun RepayLoanScreen(
     val uiState by viewModel.uiState.collectAsState()
     var amount by remember { mutableStateOf("") }
     var phone by remember { mutableStateOf(userPhone) }
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
 
     val snackbarHostState = remember { SnackbarHostState() }
     LaunchedEffect(uiState.successMessage) {
@@ -56,10 +64,10 @@ fun RepayLoanScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text("Repay Loan", fontSize = 20.sp, fontWeight = FontWeight.Bold) },
+                title = { Text(stringResource(R.string.repay_loan_title), fontSize = 20.sp, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back_desc))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = White)
@@ -87,13 +95,13 @@ fun RepayLoanScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("Remaining Balance", fontSize = 14.sp, color = TextSecondary)
+                        Text(stringResource(R.string.remaining_balance_label), fontSize = 14.sp, color = TextSecondary)
                         Surface(
                             shape = RoundedCornerShape(8.dp),
                             color = GreenAccent.copy(alpha = 0.1f)
                         ) {
                             Text(
-                                "ACTIVE",
+                                stringResource(R.string.status_active_caps),
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold,
@@ -103,7 +111,7 @@ fun RepayLoanScreen(
                     }
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        "MK ${String.format("%,.2f", loan.remainingBalance)}",
+                        stringResource(R.string.amount_mk, String.format("%,.2f", loan.remainingBalance)),
                         fontSize = 28.sp,
                         fontWeight = FontWeight.ExtraBold,
                         color = TextPrimary
@@ -121,8 +129,8 @@ fun RepayLoanScreen(
 
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("${(progress * 100).toInt()}% repaid", fontSize = 12.sp, color = TextSecondary)
-                        Text("Total: MK ${String.format("%,.0f", loan.totalRepayable)}", fontSize = 12.sp, color = TextSecondary)
+                        Text(stringResource(R.string.loan_repaid_percent, (progress * 100).toInt()), fontSize = 12.sp, color = TextSecondary)
+                        Text(stringResource(R.string.total_amount_label, String.format("%,.0f", loan.totalRepayable)), fontSize = 12.sp, color = TextSecondary)
                     }
                 }
             }
@@ -136,14 +144,23 @@ fun RepayLoanScreen(
                 elevation = CardDefaults.cardElevation(2.dp)
             ) {
                 Column(modifier = Modifier.padding(20.dp)) {
-                    Text("Amount to Repay", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    Text(stringResource(R.string.amount_to_repay_label), fontWeight = FontWeight.Bold, fontSize = 14.sp)
                     Spacer(modifier = Modifier.height(8.dp))
                     OutlinedTextField(
                         value = amount,
                         onValueChange = { amount = it },
                         modifier = Modifier.fillMaxWidth(),
-                        placeholder = { Text("Enter amount") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        placeholder = { Text(stringResource(R.string.enter_amount_hint)) },
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Number,
+                            imeAction = ImeAction.Next
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onNext = {
+                                focusManager.clearFocus()
+                                keyboardController?.hide()
+                            }
+                        ),
                         shape = RoundedCornerShape(12.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             unfocusedContainerColor = BackgroundGray,
@@ -154,21 +171,30 @@ fun RepayLoanScreen(
 
                     Spacer(modifier = Modifier.height(12.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        QuickAmountButton("Full Payment", onClick = { amount = loan.remainingBalance.toString() }, modifier = Modifier.weight(1f))
-                        QuickAmountButton("Half Payment", onClick = { amount = (loan.remainingBalance / 2).toString() }, modifier = Modifier.weight(1f))
+                        QuickAmountButton(stringResource(R.string.full_payment_button), onClick = { amount = loan.remainingBalance.toString() }, modifier = Modifier.weight(1f))
+                        QuickAmountButton(stringResource(R.string.half_payment_button), onClick = { amount = (loan.remainingBalance / 2).toString() }, modifier = Modifier.weight(1f))
                     }
 
                     Spacer(modifier = Modifier.height(20.dp))
 
-                    Text("Airtel/TNM Phone Number", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    Text(stringResource(R.string.phone_number_input_label), fontWeight = FontWeight.Bold, fontSize = 14.sp)
                     Spacer(modifier = Modifier.height(8.dp))
                     OutlinedTextField(
                         value = phone,
                         onValueChange = { phone = it },
                         modifier = Modifier.fillMaxWidth(),
-                        placeholder = { Text("099...") },
+                        placeholder = { Text(stringResource(R.string.phone_number_hint)) },
                         leadingIcon = { Icon(Icons.Default.PhoneAndroid, null, tint = NavyBlue) },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Phone,
+                            imeAction = ImeAction.Done
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onDone = {
+                                keyboardController?.hide()
+                                focusManager.clearFocus()
+                            }
+                        ),
                         shape = RoundedCornerShape(12.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             unfocusedContainerColor = BackgroundGray,
@@ -194,7 +220,7 @@ fun RepayLoanScreen(
                         if (uiState.isRepaying) {
                             CircularProgressIndicator(color = White, modifier = Modifier.size(24.dp))
                         } else {
-                            Text("Initiate Payment", color = White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                            Text(stringResource(R.string.initiate_payment_button), color = White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                         }
                     }
 
@@ -219,7 +245,7 @@ fun RepayLoanScreen(
                 Icon(Icons.Default.Info, null, tint = Color.Gray, modifier = Modifier.size(16.dp))
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    "You will receive an STK Push prompt on your phone to enter your PIN.",
+                    stringResource(R.string.stk_push_notice),
                     fontSize = 11.sp,
                     color = Color.Gray
                 )

@@ -2,6 +2,7 @@ package com.example.tisunga.viewmodel
 
 import android.content.Context
 import android.net.Uri
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tisunga.data.remote.ApiClient
@@ -26,7 +27,10 @@ data class UserProfileUiState(
     val successMessage: String? = null
 )
 
-class UserProfileViewModel(private val sessionManager: SessionManager) : ViewModel() {
+class UserProfileViewModel(
+    private val sessionManager: SessionManager,
+    private val savedStateHandle: SavedStateHandle
+) : ViewModel() {
     private val _uiState = MutableStateFlow(UserProfileUiState())
     val uiState: StateFlow<UserProfileUiState> = _uiState.asStateFlow()
 

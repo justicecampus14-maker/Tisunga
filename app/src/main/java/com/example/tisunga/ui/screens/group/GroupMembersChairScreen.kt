@@ -13,20 +13,18 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.tisunga.R
 import com.example.tisunga.data.model.User
 import com.example.tisunga.ui.navigation.Routes
 import com.example.tisunga.ui.components.TisungaConfirmDialog
@@ -38,7 +36,6 @@ import com.example.tisunga.viewmodel.GroupViewModel
 fun GroupMembersChairScreen(navController: NavController, groupId: String, viewModel: GroupViewModel) {
     val uiState by viewModel.uiState.collectAsState()
     var expandedMemberId by remember { mutableStateOf<String?>(null) }
-    val clipboardManager = LocalClipboardManager.current
     
     val currentUserRole = uiState.currentUserRole.uppercase()
 
@@ -53,7 +50,7 @@ fun GroupMembersChairScreen(navController: NavController, groupId: String, viewM
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        uiState.selectedGroup?.name ?: "Group Members",
+                        uiState.selectedGroup?.name ?: stringResource(R.string.group_members_default_title),
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
                         color = TextPrimary
@@ -61,7 +58,7 @@ fun GroupMembersChairScreen(navController: NavController, groupId: String, viewM
                 },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = TextPrimary)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back_desc), tint = TextPrimary)
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = White),
@@ -76,7 +73,7 @@ fun GroupMembersChairScreen(navController: NavController, groupId: String, viewM
                 shape = CircleShape,
                 elevation = FloatingActionButtonDefaults.elevation(8.dp)
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Add Member", modifier = Modifier.size(28.dp))
+                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_member_desc), modifier = Modifier.size(28.dp))
             }
         }
     ) { padding ->
@@ -85,44 +82,45 @@ fun GroupMembersChairScreen(navController: NavController, groupId: String, viewM
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            // Stats Row
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(16.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                InfoCard(
-                    label = "TOTAL MEMBERS",
-                    value = "${uiState.members.size}",
-                    modifier = Modifier.weight(1f)
-                )
-                InfoCard(
-                    label = "GROUP CODE",
-                    value = uiState.selectedGroup?.groupCode ?: "---",
-                    isCode = true,
-                    modifier = Modifier.weight(1f),
-                    onCopy = {
-                        uiState.selectedGroup?.groupCode?.let {
-                            clipboardManager.setText(AnnotatedString(it))
+            // Sort members: Current User first, then by hierarchy: CHAIRPERSON -> TREASURER -> SECRETARY -> MEMBER
+            val sortedMembers = remember(uiState.members, uiState.currentUserId) {
+                val hierarchy = listOf("chairperson", "treasurer", "secretary", "member")
+                uiState.members.sortedWith(
+                    compareBy<User> { it.id != uiState.currentUserId }
+                        .thenBy { member ->
+                            val index = hierarchy.indexOf(member.role.lowercase())
+                            if (index == -1) 99 else index
                         }
-                    }
                 )
             }
 
-            Text(
-                text = "MANAGE MEMBERS",
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Bold,
-                color = TextSecondary,
-                letterSpacing = 1.sp
-            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = stringResource(R.string.group_members_header_label),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = TextSecondary
+                )
+                Text(
+                    text = stringResource(R.string.members_count_label, uiState.members.size),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = NavyBlue
+                )
+            }
 
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                items(uiState.members) { member ->
+                items(sortedMembers) { member ->
                     ChairMemberCard(
                         member = member,
                         isExpanded = expandedMemberId == member.id,
@@ -130,6 +128,7 @@ fun GroupMembersChairScreen(navController: NavController, groupId: String, viewM
                             expandedMemberId = if (expandedMemberId == member.id) null else member.id
                         },
                         currentUserRole = currentUserRole,
+                        currentUserId = uiState.currentUserId,
                         navController = navController,
                         groupId = groupId,
                         onRemove = { viewModel.removeMember(groupId, member.id) },
@@ -143,43 +142,12 @@ fun GroupMembersChairScreen(navController: NavController, groupId: String, viewM
 }
 
 @Composable
-private fun InfoCard(label: String, value: String, isCode: Boolean = false, modifier: Modifier, onCopy: (() -> Unit)? = null) {
-    Card(
-        modifier = modifier,
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = White),
-        elevation = CardDefaults.cardElevation(2.dp)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(label, fontSize = 10.sp, color = TextSecondary, fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.height(6.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    value,
-                    fontSize = if (isCode) 18.sp else 26.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = if (isCode) NavyBlue else TextPrimary,
-                    modifier = Modifier.weight(1f)
-                )
-                if (isCode && onCopy != null) {
-                    Icon(
-                        Icons.Default.Share,
-                        null,
-                        modifier = Modifier.size(18.dp).clickable { onCopy() },
-                        tint = NavyBlue
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
 private fun ChairMemberCard(
     member: User, 
     isExpanded: Boolean, 
     onExpandClick: () -> Unit, 
     currentUserRole: String,
+    currentUserId: String,
     navController: NavController, 
     groupId: String,
     onRemove: () -> Unit,
@@ -188,6 +156,7 @@ private fun ChairMemberCard(
     val roleLower = member.role.lowercase()
     val isMemberChair = roleLower == "chair" || roleLower == "chairperson"
     val canUserManage = currentUserRole == "CHAIR" || currentUserRole == "CHAIRPERSON" || currentUserRole == "SECRETARY"
+    val isMe = member.id == currentUserId
     
     var showRoleMenu by remember { mutableStateOf(false) }
     var showManageMenu by remember { mutableStateOf(false) }
@@ -211,8 +180,9 @@ private fun ChairMemberCard(
                         .background(NavyBlue.copy(alpha = 0.1f), CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
+                    val initial = if (isMe) "Y" else if (member.firstName.isNotEmpty()) member.firstName.take(1).uppercase() else "?"
                     Text(
-                        member.firstName.take(1).uppercase(),
+                        text = initial,
                         color = NavyBlue,
                         fontWeight = FontWeight.Bold,
                         fontSize = 18.sp
@@ -222,17 +192,12 @@ private fun ChairMemberCard(
                 Spacer(modifier = Modifier.width(12.dp))
 
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("${member.firstName} ${member.lastName}", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = TextPrimary)
+                    Text(if (isMe) stringResource(R.string.you_label).uppercase() else "${member.firstName} ${member.lastName}", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = TextPrimary)
                     Text(
                         member.role.uppercase(),
-                        fontSize = 10.sp,
+                        fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
-                        color = when (roleLower) {
-                            "chair", "chairperson" -> NavyBlue
-                            "treasurer" -> GreenAccent
-                            "secretary" -> Color(0xFFE65100)
-                            else -> TextSecondary
-                        }
+                        color = NavyBlue
                     )
                 }
 
@@ -256,28 +221,34 @@ private fun ChairMemberCard(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        MemberActionChip("Loans", Modifier.weight(1f)) { 
-                            navController.navigate(Routes.MY_LOANS.replace("{groupId}", groupId)) 
+                        MemberActionChip(stringResource(R.string.loans_label), Modifier.weight(1f)) { 
+                            navController.navigate(Routes.MY_LOANS.replace("{groupId}", groupId))
                         }
-                        MemberActionChip("Savings", Modifier.weight(1f)) { 
+                        MemberActionChip(stringResource(R.string.savings_label), Modifier.weight(1f)) { 
                             navController.navigate(Routes.CONTRIBUTION_HISTORY.replace("{groupId}", groupId)) 
                         }
                         
                         // Role and Manage actions for CHAIR and SECRETARY (cannot manage the Chair)
                         if (canUserManage && !isMemberChair) {
                             Box(modifier = Modifier.weight(1f)) {
-                                MemberActionChip("Role", Modifier.fillMaxWidth()) { showRoleMenu = true }
+                                MemberActionChip(stringResource(R.string.action_role), Modifier.fillMaxWidth()) { showRoleMenu = true }
                                 DropdownMenu(
                                     expanded = showRoleMenu,
                                     onDismissRequest = { showRoleMenu = false },
                                     modifier = Modifier.background(White)
                                 ) {
-                                    Text("CHANGE ROLE", Modifier.padding(12.dp), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = TextSecondary)
+                                    Text(stringResource(R.string.change_role_header), Modifier.padding(12.dp), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = TextSecondary)
                                     listOf("TREASURER", "SECRETARY", "MEMBER")
                                         .filter { it.lowercase() != roleLower }
                                         .forEach { role ->
+                                            val roleLabel = when (role) {
+                                                "TREASURER" -> stringResource(R.string.role_treasurer)
+                                                "SECRETARY" -> stringResource(R.string.role_secretary)
+                                                "MEMBER" -> stringResource(R.string.role_member)
+                                                else -> role
+                                            }.uppercase()
                                             DropdownMenuItem(
-                                                text = { Text(role, fontSize = 14.sp) },
+                                                text = { Text(roleLabel, fontSize = 14.sp) },
                                                 onClick = { onUpdateRole(role); showRoleMenu = false }
                                             )
                                         }
@@ -285,26 +256,26 @@ private fun ChairMemberCard(
                             }
 
                             Box(modifier = Modifier.weight(1f)) {
-                                MemberActionChip("Manage", Modifier.fillMaxWidth()) { showManageMenu = true }
+                                MemberActionChip(stringResource(R.string.action_manage_label), Modifier.fillMaxWidth()) { showManageMenu = true }
                                 DropdownMenu(
                                     expanded = showManageMenu,
                                     onDismissRequest = { showManageMenu = false },
                                     modifier = Modifier.background(White)
                                 ) {
-                                    Text("ADMIN OPTIONS", Modifier.padding(12.dp), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = TextSecondary)
+                                    Text(stringResource(R.string.admin_options_header), Modifier.padding(12.dp), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = TextSecondary)
                                     DropdownMenuItem(
-                                        text = { Text("Deactivate User", fontSize = 14.sp) },
+                                        text = { Text(stringResource(R.string.deactivate_user_option), fontSize = 14.sp) },
                                         onClick = { showManageMenu = false }
                                     )
                                     DropdownMenuItem(
-                                        text = { Text("Reset User Stats", fontSize = 14.sp) },
+                                        text = { Text(stringResource(R.string.reset_user_stats_option), fontSize = 14.sp) },
                                         onClick = { showManageMenu = false }
                                     )
                                     
                                     if (currentUserRole == "CHAIR" || currentUserRole == "CHAIRPERSON") {
                                         HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
                                         DropdownMenuItem(
-                                            text = { Text("Remove from Group", color = RedAccent, fontSize = 14.sp) },
+                                            text = { Text(stringResource(R.string.remove_from_group_option), color = RedAccent, fontSize = 14.sp) },
                                             onClick = { showManageMenu = false; showDeleteConfirm = true }
                                         )
                                     }
@@ -319,9 +290,9 @@ private fun ChairMemberCard(
 
     if (showDeleteConfirm) {
         TisungaConfirmDialog(
-            title = "Remove Member",
-            message = "Are you sure you want to remove ${member.firstName} from the group?",
-            confirmText = "Remove",
+            title = stringResource(R.string.remove_member_title),
+            message = stringResource(R.string.remove_member_name_confirm_msg, member.firstName),
+            confirmText = stringResource(R.string.remove_button),
             isDestructive = true,
             onConfirm = { onRemove(); showDeleteConfirm = false },
             onDismiss = { showDeleteConfirm = false }

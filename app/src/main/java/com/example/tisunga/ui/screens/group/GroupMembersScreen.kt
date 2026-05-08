@@ -7,27 +7,31 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.tisunga.R
 import com.example.tisunga.data.model.User
+import com.example.tisunga.ui.navigation.Routes
 import com.example.tisunga.ui.components.TisungaConfirmDialog
 import com.example.tisunga.ui.theme.*
 import com.example.tisunga.viewmodel.GroupViewModel
@@ -43,15 +47,17 @@ fun GroupMembersScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val sheetState = rememberModalBottomSheetState()
     var showAddBottomSheet by remember { mutableStateOf(false) }
-    val clipboardManager = LocalClipboardManager.current
     
-    // Sort members by hierarchy: CHAIRPERSON -> TREASURER -> SECRETARY -> MEMBER
-    val sortedMembers = remember(uiState.members) {
+    // Sort members: Current User first, then by hierarchy: CHAIRPERSON -> TREASURER -> SECRETARY -> MEMBER
+    val sortedMembers = remember(uiState.members, uiState.currentUserId) {
         val hierarchy = listOf("chairperson", "treasurer", "secretary", "member")
-        uiState.members.sortedBy { member ->
-            val index = hierarchy.indexOf(member.role.lowercase())
-            if (index == -1) 99 else index
-        }
+        uiState.members.sortedWith(
+            compareBy<User> { it.id != uiState.currentUserId }
+                .thenBy { member ->
+                    val index = hierarchy.indexOf(member.role.lowercase())
+                    if (index == -1) 99 else index
+                }
+        )
     }
 
     LaunchedEffect(groupId) {
@@ -83,14 +89,14 @@ fun GroupMembersScreen(
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        uiState.selectedGroup?.name ?: stringResource(R.string.group_members_title_placeholder, "Group"),
+                        uiState.selectedGroup?.name ?: stringResource(R.string.group_members_default_title),
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold
                     )
                 },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back_desc))
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
@@ -107,7 +113,7 @@ fun GroupMembersScreen(
                     contentColor = White,
                     shape = CircleShape
                 ) {
-                    Icon(Icons.Default.Add, contentDescription = "Add Member")
+                    Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_member_desc))
                 }
             }
         }
@@ -119,84 +125,43 @@ fun GroupMembersScreen(
                 }
             } else {
                 LazyColumn(modifier = Modifier.fillMaxSize()) {
-                    // Header Section for CHAIRPERSON (Group Code & Join Requests)
-                    if (uiState.currentUserRole.lowercase() == "chairperson") {
-                        item {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                // Group Code Card
-                                Card(
-                                    modifier = Modifier.weight(1f),
-                                    shape = RoundedCornerShape(12.dp),
-                                    colors = CardDefaults.cardColors(containerColor = White)
-                                ) {
-                                    Column(modifier = Modifier.padding(12.dp)) {
-                                        Text("Group Code", fontSize = 11.sp, color = TextSecondary)
-                                        Row(
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.SpaceBetween,
-                                            modifier = Modifier.fillMaxWidth()
-                                        ) {
-                                            Text(
-                                                uiState.selectedGroup?.groupCode ?: "---",
-                                                fontWeight = FontWeight.Bold,
-                                                fontSize = 18.sp,
-                                                color = NavyBlue
-                                            )
-                                            IconButton(
-                                                onClick = {
-                                                    uiState.selectedGroup?.groupCode?.let {
-                                                        clipboardManager.setText(AnnotatedString(it))
-                                                    }
-                                                },
-                                                modifier = Modifier.size(24.dp)
-                                            ) {
-                                                Icon(Icons.Default.Share, contentDescription = "Copy", modifier = Modifier.size(16.dp), tint = NavyBlue)
-                                            }
-                                        }
-                                    }
-                                }
-
-                                // Join Requests Card
-                                Card(
-                                    modifier = Modifier.weight(1f),
-                                    shape = RoundedCornerShape(12.dp),
-                                    colors = CardDefaults.cardColors(containerColor = White)
-                                ) {
-                                    Column(modifier = Modifier.padding(12.dp)) {
-                                        Text("Join Requests", fontSize = 11.sp, color = TextSecondary)
-                                        Text(
-                                            "${uiState.joinRequests.size}",
-                                            fontWeight = FontWeight.Bold,
-                                            fontSize = 24.sp,
-                                            color = if (uiState.joinRequests.isNotEmpty()) GreenAccent else TextPrimary
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-
                     item {
-                        Text(
-                            text = "${uiState.members.size} MEMBERS",
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = TextSecondary
-                        )
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = stringResource(R.string.group_members_header_label),
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = TextSecondary
+                            )
+                            Text(
+                                text = stringResource(R.string.members_count_label, uiState.members.size),
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = NavyBlue
+                            )
+                        }
                     }
 
                     items(sortedMembers) { member ->
                         MemberRowItem(
                             member = member,
                             isChair = uiState.currentUserRole.lowercase() == "chairperson",
+                            currentUserId = uiState.currentUserId,
                             onRemove = { viewModel.removeMember(groupId, member.id) },
-                            onUpdateRole = { newRole -> viewModel.updateMemberRole(groupId, member.id, newRole) }
+                            onUpdateRole = { newRole -> viewModel.updateMemberRole(groupId, member.id, newRole) },
+                            onLoansClick = {
+                                val isMe = member.id == uiState.currentUserId
+                                val route = Routes.MY_LOANS
+                                    .replace("{groupId}", groupId)
+                                    .let { if (isMe) it else "$it?userName=${member.firstName} ${member.lastName}" }
+                                navController.navigate(route)
+                            }
                         )
                         HorizontalDivider(
                             modifier = Modifier.padding(horizontal = 16.dp),
@@ -234,6 +199,7 @@ fun AddMemberBottomSheetContent(
     val uiState by viewModel.uiState.collectAsState()
     var phoneSearch by remember { mutableStateOf("") }
     var selectedRole by remember { mutableStateOf("MEMBER") }
+    val focusManager = LocalFocusManager.current
 
     Column(
         modifier = Modifier
@@ -242,13 +208,13 @@ fun AddMemberBottomSheetContent(
             .padding(bottom = 32.dp)
     ) {
         Text(
-            "Add New Member",
+            stringResource(R.string.add_new_member_title),
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
             color = TextPrimary
         )
         Text(
-            "Search for a user by their phone number to add them to your group.",
+            stringResource(R.string.add_member_instructions),
             fontSize = 14.sp,
             color = TextSecondary,
             modifier = Modifier.padding(vertical = 8.dp)
@@ -260,20 +226,35 @@ fun AddMemberBottomSheetContent(
             value = phoneSearch,
             onValueChange = { if (it.length <= 10 && it.all { char -> char.isDigit() }) phoneSearch = it },
             modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text("Phone Number (e.g. 0882123456)") },
+            placeholder = { Text(stringResource(R.string.phone_number_search_hint)) },
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = TextSecondary) },
             trailingIcon = {
                 if (uiState.isLoading) {
                     CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp, color = NavyBlue)
                 } else {
                     TextButton(
-                        onClick = { viewModel.searchMemberByPhone(phoneSearch) },
+                        onClick = { 
+                            viewModel.searchMemberByPhone(phoneSearch)
+                            focusManager.clearFocus()
+                        },
                         enabled = phoneSearch.length >= 9
                     ) {
-                        Text("SEARCH", fontWeight = FontWeight.Bold, color = if (phoneSearch.length >= 9) NavyBlue else Color.LightGray)
+                        Text(stringResource(R.string.search_button), fontWeight = FontWeight.Bold, color = if (phoneSearch.length >= 9) NavyBlue else Color.LightGray)
                     }
                 }
             },
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Phone,
+                imeAction = ImeAction.Search
+            ),
+            keyboardActions = KeyboardActions(
+                onSearch = {
+                    if (phoneSearch.length >= 9) {
+                        viewModel.searchMemberByPhone(phoneSearch)
+                        focusManager.clearFocus()
+                    }
+                }
+            ),
             shape = RoundedCornerShape(12.dp),
             singleLine = true,
             colors = OutlinedTextFieldDefaults.colors(
@@ -310,20 +291,26 @@ fun AddMemberBottomSheetContent(
                         if (result.alreadyInGroup) {
                             Spacer(modifier = Modifier.height(12.dp))
                             Text(
-                                "User is already in group: ${result.groupName ?: "Unknown"}",
+                                stringResource(R.string.user_already_in_group_msg, result.groupName ?: stringResource(R.string.not_available)),
                                 color = RedAccent,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Medium
                             )
                         } else {
                             Spacer(modifier = Modifier.height(16.dp))
-                            Text("SELECT ROLE", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = TextSecondary)
+                            Text(stringResource(R.string.select_role_label), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = TextSecondary)
                             Row(
                                 modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 listOf("MEMBER", "SECRETARY", "TREASURER").forEach { role ->
                                     val isSelected = selectedRole == role
+                                    val roleLabel = when (role) {
+                                        "MEMBER" -> stringResource(R.string.role_member)
+                                        "SECRETARY" -> stringResource(R.string.role_secretary)
+                                        "TREASURER" -> stringResource(R.string.role_treasurer)
+                                        else -> role
+                                    }.uppercase()
                                     Surface(
                                         modifier = Modifier.weight(1f).clickable { selectedRole = role },
                                         color = if (isSelected) NavyBlue else White,
@@ -331,7 +318,7 @@ fun AddMemberBottomSheetContent(
                                         border = androidx.compose.foundation.BorderStroke(1.dp, if (isSelected) NavyBlue else Color.LightGray)
                                     ) {
                                         Text(
-                                            role,
+                                            roleLabel,
                                             modifier = Modifier.padding(vertical = 8.dp),
                                             textAlign = TextAlign.Center,
                                             fontSize = 11.sp,
@@ -352,13 +339,13 @@ fun AddMemberBottomSheetContent(
                                 if (uiState.isLoading) {
                                     CircularProgressIndicator(color = White, modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                                 } else {
-                                    Text("Add Member")
+                                    Text(stringResource(R.string.add_member_desc))
                                 }
                             }
                         }
                     } else {
                         Text(
-                            "No user found with this phone number. They must register on Tisunga first.",
+                            stringResource(R.string.no_user_found_msg),
                             color = RedAccent,
                             fontSize = 13.sp,
                             textAlign = TextAlign.Center,
@@ -375,14 +362,17 @@ fun AddMemberBottomSheetContent(
 fun MemberRowItem(
     member: User,
     isChair: Boolean,
+    currentUserId: String,
     onRemove: () -> Unit,
-    onUpdateRole: (String) -> Unit
+    onUpdateRole: (String) -> Unit,
+    onLoansClick: () -> Unit
 ) {
     var showMenu by remember { mutableStateOf(false) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
+    val isMe = member.id == currentUserId
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().clickable { onLoansClick() },
         colors = CardDefaults.cardColors(containerColor = White),
         shape = androidx.compose.ui.graphics.RectangleShape
     ) {
@@ -397,7 +387,7 @@ fun MemberRowItem(
                     .background(NavyBlue.copy(alpha = 0.1f), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                val initial = if (member.firstName.isNotEmpty()) member.firstName.take(1).uppercase() else "?"
+                val initial = if (isMe) "Y" else if (member.firstName.isNotEmpty()) member.firstName.take(1).uppercase() else "?"
                 Text(
                     text = initial,
                     color = NavyBlue,
@@ -409,7 +399,7 @@ fun MemberRowItem(
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "${member.firstName} ${member.lastName}",
+                    text = if (isMe) stringResource(R.string.you_label).uppercase() else "${member.firstName} ${member.lastName}",
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp,
                     color = TextPrimary
@@ -418,12 +408,7 @@ fun MemberRowItem(
                     text = member.role.uppercase(),
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
-                    color = when (member.role.lowercase()) {
-                        "chairperson" -> NavyBlue
-                        "treasurer" -> GreenAccent
-                        "secretary" -> Color(0xFFE65100)
-                        else -> TextSecondary
-                    }
+                    color = NavyBlue
                 )
             }
 
@@ -440,7 +425,7 @@ fun MemberRowItem(
                         IconButton(onClick = { showMenu = true }) {
                             Icon(
                                 Icons.Default.MoreVert,
-                                contentDescription = "Actions",
+                                contentDescription = stringResource(R.string.actions_desc),
                                 tint = TextSecondary
                             )
                         }
@@ -450,7 +435,7 @@ fun MemberRowItem(
                             modifier = Modifier.background(White)
                         ) {
                             Text(
-                                "Change Role To:",
+                                stringResource(R.string.change_role_to_label),
                                 modifier = Modifier.padding(12.dp),
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
@@ -458,8 +443,14 @@ fun MemberRowItem(
                             )
                             val roles = listOf("TREASURER", "SECRETARY", "MEMBER")
                             roles.filter { it.lowercase() != member.role.lowercase() }.forEach { role ->
+                                val roleLabel = when (role) {
+                                    "TREASURER" -> stringResource(R.string.role_treasurer)
+                                    "SECRETARY" -> stringResource(R.string.role_secretary)
+                                    "MEMBER" -> stringResource(R.string.role_member)
+                                    else -> role
+                                }.uppercase()
                                 DropdownMenuItem(
-                                    text = { Text(role) },
+                                    text = { Text(roleLabel) },
                                     onClick = {
                                         onUpdateRole(role)
                                         showMenu = false
@@ -468,7 +459,7 @@ fun MemberRowItem(
                             }
                             HorizontalDivider()
                             DropdownMenuItem(
-                                text = { Text("Remove from Group", color = Color.Red) },
+                                text = { Text(stringResource(R.string.remove_from_group_option), color = Color.Red) },
                                 onClick = {
                                     showMenu = false
                                     showDeleteConfirm = true
@@ -483,9 +474,9 @@ fun MemberRowItem(
 
     if (showDeleteConfirm) {
         TisungaConfirmDialog(
-            title = "Remove Member",
-            message = "Are you sure you want to remove ${member.firstName} from the group?",
-            confirmText = "Remove",
+            title = stringResource(R.string.remove_member_title),
+            message = stringResource(R.string.remove_member_name_confirm_msg, member.firstName),
+            confirmText = stringResource(R.string.remove_button),
             isDestructive = true,
             onConfirm = {
                 onRemove()

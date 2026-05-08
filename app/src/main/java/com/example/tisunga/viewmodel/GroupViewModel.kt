@@ -1,5 +1,6 @@
 package com.example.tisunga.viewmodel
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tisunga.data.model.Group
@@ -60,6 +61,7 @@ data class GroupUiState(
     val joinRequests: List<User> = emptyList(),
     val transactions: List<Transaction> = emptyList(),
     val currentUserRole: String = "member",
+    val currentUserId: String = "",
     val isSuccess: Boolean = false,
     val successMessage: String = "",
     val errorMessage: String = "",
@@ -68,8 +70,11 @@ data class GroupUiState(
     val draft: GroupCreationDraft = GroupCreationDraft()
 )
 
-class GroupViewModel(private val sessionManager: SessionManager) : ViewModel() {
-    private val _uiState = MutableStateFlow(GroupUiState())
+class GroupViewModel(
+    private val sessionManager: SessionManager,
+    private val savedStateHandle: SavedStateHandle
+) : ViewModel() {
+    private val _uiState = MutableStateFlow(GroupUiState(currentUserId = sessionManager.getUserId()))
     val uiState: StateFlow<GroupUiState> = _uiState.asStateFlow()
 
     private val apiService = ApiClient.getClient()

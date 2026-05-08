@@ -3,6 +3,7 @@ package com.example.tisunga.ui.screens.loans
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -15,10 +16,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.tisunga.R
 import com.example.tisunga.data.model.Loan
 import com.example.tisunga.ui.theme.*
 import com.example.tisunga.viewmodel.GroupViewModel
@@ -40,7 +43,7 @@ fun GroupLoansScreen(
     val myRole = groupUiState?.value?.currentUserRole?.uppercase() ?: "MEMBER"
     val canApprove = myRole == "CHAIR" || myRole == "SECRETARY"
 
-    var selectedStatus  by remember { mutableStateOf("PENDING") }
+    var selectedStatus  by remember { mutableStateOf("ACTIVE") }
     var rejectingLoanId by remember { mutableStateOf<String?>(null) }
     var rejectReason    by remember { mutableStateOf("") }
     val snackbarHost    = remember { SnackbarHostState() }
@@ -70,14 +73,14 @@ fun GroupLoansScreen(
                 Icon(Icons.Default.DoNotDisturb, null,
                     tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(32.dp))
             },
-            title = { Text("Reject Loan?", fontWeight = FontWeight.Bold) },
+            title = { Text(stringResource(R.string.reject_loan_title), fontWeight = FontWeight.Bold) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Explain why so the member can understand.", fontSize = 13.sp, color = TextSecondary)
+                    Text(stringResource(R.string.reject_reason_instruction), fontSize = 13.sp, color = TextSecondary)
                     OutlinedTextField(
                         value = rejectReason,
                         onValueChange = { rejectReason = it },
-                        placeholder = { Text("Enter reason...") },
+                        placeholder = { Text(stringResource(R.string.enter_reason_hint)) },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(10.dp),
                         minLines = 2
@@ -92,10 +95,10 @@ fun GroupLoansScreen(
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
                     enabled = rejectReason.isNotBlank()
-                ) { Text("Reject", color = Color.White) }
+                ) { Text(stringResource(R.string.reject_button_label), color = Color.White) }
             },
             dismissButton = {
-                OutlinedButton(onClick = { rejectingLoanId = null; rejectReason = "" }) { Text("Cancel") }
+                OutlinedButton(onClick = { rejectingLoanId = null; rejectReason = "" }) { Text(stringResource(R.string.cancel_button)) }
             }
         )
     }
@@ -104,15 +107,15 @@ fun GroupLoansScreen(
         snackbarHost = { SnackbarHost(snackbarHost) },
         topBar = {
             TopAppBar(
-                title = { Text("Group Loans", fontSize = 18.sp, fontWeight = FontWeight.Bold) },
+                title = { Text(stringResource(R.string.group_loans_title), fontSize = 18.sp, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back_desc))
                     }
                 },
                 actions = {
                     IconButton(onClick = { viewModel.getGroupLoans(groupId) }) {
-                        Icon(Icons.Default.Refresh, contentDescription = "Refresh")
+                        Icon(Icons.Default.Refresh, contentDescription = stringResource(R.string.refresh_desc))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
@@ -131,31 +134,48 @@ fun GroupLoansScreen(
             }
 
             // Status Tabs
-            Row(
+            LazyRow(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(Color.White)
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                    .padding(vertical = 8.dp),
+                contentPadding = PaddingValues(horizontal = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                val tabs = listOf("PENDING", "ACTIVE", "COMPLETED", "REJECTED")
-                tabs.forEach { status ->
+                val tabs = listOf("ACTIVE", "PENDING", "COMPLETED", "REJECTED")
+                items(tabs) { status ->
                     val count = uiState.groupLoans.count { it.status == status }
                     val isSelected = selectedStatus == status
+                    val label = when (status) {
+                        "PENDING" -> stringResource(R.string.filter_pending)
+                        "ACTIVE" -> stringResource(R.string.filter_active)
+                        "COMPLETED" -> stringResource(R.string.filter_closed)
+                        "REJECTED" -> stringResource(R.string.filter_rejected)
+                        else -> status.lowercase().replaceFirstChar { it.uppercase() }
+                    }
+                    
                     FilterChip(
                         selected = isSelected,
                         onClick  = { selectedStatus = status },
                         label    = {
                             Text(
-                                if (count > 0) "${status.lowercase().replaceFirstChar { it.uppercase() }} ($count)"
-                                else status.lowercase().replaceFirstChar { it.uppercase() },
-                                fontSize = 12.sp
+                                if (count > 0) "$label ($count)" else label,
+                                fontSize = 12.sp,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                             )
                         },
                         modifier = Modifier.height(34.dp),
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = NavyBlue,
-                            selectedLabelColor     = Color.White
+                            selectedLabelColor     = Color.White,
+                            containerColor = BackgroundGray.copy(alpha = 0.5f),
+                            labelColor = TextSecondary
+                        ),
+                        border = FilterChipDefaults.filterChipBorder(
+                            enabled = true,
+                            selected = isSelected,
+                            borderColor = Color.Transparent,
+                            selectedBorderColor = NavyBlue
                         )
                     )
                 }
@@ -172,7 +192,7 @@ fun GroupLoansScreen(
                 ) {
                     Icon(Icons.Default.Info, null, tint = TextSecondary, modifier = Modifier.size(14.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text("Only CHAIR or SECRETARY can approve loans.", fontSize = 11.sp, color = TextSecondary)
+                    Text(stringResource(R.string.approve_permission_notice), fontSize = 11.sp, color = TextSecondary)
                 }
             }
 
@@ -184,10 +204,18 @@ fun GroupLoansScreen(
                         Icon(Icons.Default.CreditCard, null,
                             tint = TextSecondary.copy(alpha = 0.3f), modifier = Modifier.size(48.dp))
                         Spacer(Modifier.height(8.dp))
-                        Text("No ${selectedStatus.lowercase()} loans", color = TextSecondary, fontSize = 14.sp)
+                        val statusLabel = when (selectedStatus) {
+                            "PENDING" -> stringResource(R.string.filter_pending)
+                            "ACTIVE" -> stringResource(R.string.filter_active)
+                            "COMPLETED" -> stringResource(R.string.filter_closed)
+                            "REJECTED" -> stringResource(R.string.filter_rejected)
+                            else -> selectedStatus.lowercase()
+                        }
+                        Text(stringResource(R.string.no_loans_found_msg, statusLabel), color = TextSecondary, fontSize = 14.sp)
                     }
                 }
-            } else {
+            }
+else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(16.dp),
@@ -209,7 +237,7 @@ fun GroupLoansScreen(
     }
 }
 
-// ─── Full Group Loan Card ─────────────────────────────────────────────────────
+// Full Group Loan Card
 
 @Composable
 fun FullGroupLoanCard(
@@ -276,11 +304,11 @@ fun FullGroupLoanCard(
             HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = BackgroundGray)
 
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                LoanDetail("Duration", "${loan.durationMonths} mo.")
-                LoanDetail("Interest",
+                LoanDetail(stringResource(R.string.duration_label), "${loan.durationMonths} mo.")
+                LoanDetail(stringResource(R.string.interest_label),
                     "MK ${String.format(Locale.US, "%,.0f", loan.totalRepayable - loan.principalAmount)}")
-                LoanDetail("Total", "MK ${String.format(Locale.US, "%,.0f", loan.totalRepayable)}")
-                LoanDetail("Applied", loan.createdAt.take(10))
+                LoanDetail(stringResource(R.string.total_label), "MK ${String.format(Locale.US, "%,.0f", loan.totalRepayable)}")
+                LoanDetail(stringResource(R.string.applied_label), loan.createdAt.take(10))
             }
 
             // Progress (ACTIVE loans)
@@ -296,8 +324,8 @@ fun FullGroupLoanCard(
                 )
                 Row(modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
                     horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("${(pct * 100).toInt()}% repaid", fontSize = 10.sp, color = TextSecondary)
-                    Text("MK ${String.format(Locale.US, "%,.0f", loan.remainingBalance)} left",
+                    Text(stringResource(R.string.loan_repaid_percent_alt, (pct * 100).toInt()), fontSize = 10.sp, color = TextSecondary)
+                    Text(stringResource(R.string.amount_left_label, String.format(Locale.US, "%,.0f", loan.remainingBalance)),
                         fontSize = 10.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
                 }
             }
@@ -308,7 +336,7 @@ fun FullGroupLoanCard(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.Info, null, tint = RedAccent, modifier = Modifier.size(12.dp))
                     Spacer(Modifier.width(4.dp))
-                    Text("Purpose: ${loan.purpose}", fontSize = 11.sp, color = RedAccent)
+                    Text(stringResource(R.string.purpose_display_label, loan.purpose), fontSize = 11.sp, color = RedAccent)
                 }
             }
 
@@ -319,7 +347,7 @@ fun FullGroupLoanCard(
                     Icon(Icons.Default.VerifiedUser, null,
                         tint = GreenAccent, modifier = Modifier.size(12.dp))
                     Spacer(Modifier.width(4.dp))
-                    Text("Approved by ${loan.approverName}", fontSize = 11.sp, color = TextSecondary)
+                    Text(stringResource(R.string.approved_by_label, loan.approverName), fontSize = 11.sp, color = TextSecondary)
                     if (!loan.approvedAt.isNullOrBlank())
                         Text("  ${loan.approvedAt.take(10)}", fontSize = 10.sp, color = TextSecondary)
                 }
@@ -345,7 +373,7 @@ fun FullGroupLoanCard(
                         else {
                             Icon(Icons.Default.Close, null, Modifier.size(14.dp))
                             Spacer(Modifier.width(4.dp))
-                            Text("Decline", fontSize = 13.sp)
+                            Text(stringResource(R.string.decline_button), fontSize = 13.sp)
                         }
                     }
                     Button(
@@ -360,7 +388,7 @@ fun FullGroupLoanCard(
                         else {
                             Icon(Icons.Default.Check, null, Modifier.size(14.dp), tint = Color.White)
                             Spacer(Modifier.width(4.dp))
-                            Text("Approve", color = Color.White, fontSize = 13.sp)
+                            Text(stringResource(R.string.approve_button), color = Color.White, fontSize = 13.sp)
                         }
                     }
                 }

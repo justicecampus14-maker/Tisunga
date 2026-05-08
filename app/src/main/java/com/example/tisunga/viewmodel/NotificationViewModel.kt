@@ -1,5 +1,6 @@
 package com.example.tisunga.viewmodel
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tisunga.data.model.AppNotification
@@ -16,7 +17,9 @@ data class NotificationUiState(
     val errorMessage: String = ""
 )
 
-class NotificationViewModel : ViewModel() {
+class NotificationViewModel(
+    private val savedStateHandle: SavedStateHandle
+) : ViewModel() {
 
     private val repo = NotificationRepository()
 
