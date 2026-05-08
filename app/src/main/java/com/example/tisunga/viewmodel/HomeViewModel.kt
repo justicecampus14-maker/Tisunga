@@ -1,6 +1,7 @@
 package com.example.tisunga.viewmodel
 
 import android.util.Log
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tisunga.data.model.Group
@@ -24,7 +25,10 @@ data class HomeUiState(
     val errorMessage: String = ""
 )
 
-class HomeViewModel(private val sessionManager: SessionManager) : ViewModel() {
+class HomeViewModel(
+    private val sessionManager: SessionManager,
+    private val savedStateHandle: SavedStateHandle
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()

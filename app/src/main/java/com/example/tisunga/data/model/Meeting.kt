@@ -1,5 +1,9 @@
 package com.example.tisunga.data.model
 
+import android.os.Parcelable
+import kotlinx.parcelize.Parcelize
+
+@Parcelize
 data class Meeting(
     val id: String,
     val groupId: String,
@@ -16,4 +20,4 @@ data class Meeting(
     val presentCount: Int = 0,
     val totalCount: Int = 0,
     val attendancePercent: Int = 0
-)
+) : Parcelable

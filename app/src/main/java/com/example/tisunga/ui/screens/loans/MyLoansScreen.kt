@@ -32,7 +32,8 @@ fun MyLoansScreen(
     navController: NavController,
     groupId: String,
     viewModel: LoanViewModel,
-    homeViewModel: HomeViewModel
+    homeViewModel: HomeViewModel,
+    userName: String? = null
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val homeUiState by homeViewModel.uiState.collectAsState()

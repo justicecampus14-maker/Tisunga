@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -17,8 +18,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import com.example.tisunga.R
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -40,6 +47,8 @@ fun ApplyLoanScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val groupState by groupViewModel.uiState.collectAsState()
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
 
     // Priority: live dashboard → seeded selectedGroup → HomeViewModel group (prevents "always insufficient")
     val totalSavings = groupState.groupDashboard?.group?.totalSavings
@@ -76,10 +85,10 @@ fun ApplyLoanScreen(
                         Icon(Icons.Default.CheckCircle, null, tint = GreenAccent, modifier = Modifier.size(48.dp))
                     }
                     Spacer(modifier = Modifier.height(20.dp))
-                    Text("Application Sent", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.application_sent_title), fontSize = 20.sp, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
-                        "Your loan request has been submitted and is awaiting approval from the group officials.",
+                        stringResource(R.string.application_sent_msg),
                         fontSize = 14.sp, color = TextSecondary, textAlign = TextAlign.Center
                     )
                     Spacer(modifier = Modifier.height(24.dp))
@@ -93,7 +102,7 @@ fun ApplyLoanScreen(
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = NavyBlue)
                     ) {
-                        Text("Back to Loans", color = White, fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.back_to_loans_button), color = White, fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -103,10 +112,10 @@ fun ApplyLoanScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Apply for Loan", fontSize = 20.sp, fontWeight = FontWeight.Bold) },
+                title = { Text(stringResource(R.string.apply_for_loan_title), fontSize = 20.sp, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back_desc))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = White)
@@ -135,7 +144,7 @@ fun ApplyLoanScreen(
                         Icon(Icons.Default.Info, null, tint = NavyBlue)
                         Spacer(modifier = Modifier.width(12.dp))
                         Text(
-                            "Interest is 5% flat. The CHAIR or SECRETARY will review your request.",
+                            stringResource(R.string.loan_interest_notice),
                             fontSize = 13.sp, color = NavyBlue, fontWeight = FontWeight.Medium
                         )
                     }
@@ -144,7 +153,7 @@ fun ApplyLoanScreen(
                         Icon(Icons.Default.Warning, null, tint = NavyBlue, modifier = Modifier.size(20.dp))
                         Spacer(modifier = Modifier.width(12.dp))
                         Text(
-                            "Group Balance: MK ${String.format("%,.0f", totalSavings)}",
+                            stringResource(R.string.group_balance_label, String.format("%,.0f", totalSavings)),
                             fontSize = 13.sp, color = NavyBlue, fontWeight = FontWeight.Bold
                         )
                     }
@@ -160,7 +169,7 @@ fun ApplyLoanScreen(
                 elevation = CardDefaults.cardElevation(2.dp)
             ) {
                 Column(modifier = Modifier.padding(20.dp)) {
-                    Text("Loan Amount (MK)", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = TextPrimary)
+                    Text(stringResource(R.string.loan_amount_mk_label), fontWeight = FontWeight.Bold, fontSize = 14.sp, color = TextPrimary)
                     Spacer(modifier = Modifier.height(8.dp))
                     OutlinedTextField(
                         value = amount,
@@ -169,8 +178,17 @@ fun ApplyLoanScreen(
                             it.toDoubleOrNull()?.let { valAmt -> viewModel.calculateInterest(valAmt, duration) }
                         },
                         modifier = Modifier.fillMaxWidth(),
-                        placeholder = { Text("e.g. 50000") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        placeholder = { Text(stringResource(R.string.loan_amount_hint)) },
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Number,
+                            imeAction = ImeAction.Next
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onNext = {
+                                focusManager.moveFocus(FocusDirection.Down)
+                                keyboardController?.hide()
+                            }
+                        ),
                         shape = RoundedCornerShape(12.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             unfocusedContainerColor = BackgroundGray,
@@ -182,14 +200,14 @@ fun ApplyLoanScreen(
                     if (amount.isNotEmpty()) {
                         Spacer(modifier = Modifier.height(16.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            InfoBox(label = "Interest (5%)", value = "MK ${String.format("%,.0f", uiState.calculatedInterest)}", Modifier.weight(1f))
-                            InfoBox(label = "Total Repayable", value = "MK ${String.format("%,.0f", uiState.calculatedRepayable)}", Modifier.weight(1f))
+                            InfoBox(label = stringResource(R.string.interest_percent_label), value = stringResource(R.string.amount_mk, String.format("%,.0f", uiState.calculatedInterest)), Modifier.weight(1f))
+                            InfoBox(label = stringResource(R.string.total_repayable_label), value = stringResource(R.string.amount_mk, String.format("%,.0f", uiState.calculatedRepayable)), Modifier.weight(1f))
                         }
                     }
 
                     Spacer(modifier = Modifier.height(20.dp))
 
-                    Text("Duration (Months)", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = TextPrimary)
+                    Text(stringResource(R.string.duration_months_label), fontWeight = FontWeight.Bold, fontSize = 14.sp, color = TextPrimary)
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -221,13 +239,22 @@ fun ApplyLoanScreen(
 
                     Spacer(modifier = Modifier.height(20.dp))
 
-                    Text("Purpose", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = TextPrimary)
+                    Text(stringResource(R.string.purpose_label), fontWeight = FontWeight.Bold, fontSize = 14.sp, color = TextPrimary)
                     Spacer(modifier = Modifier.height(8.dp))
                     OutlinedTextField(
                         value = purpose,
                         onValueChange = { purpose = it },
                         modifier = Modifier.fillMaxWidth().height(100.dp),
-                        placeholder = { Text("What is this loan for?") },
+                        placeholder = { Text(stringResource(R.string.loan_purpose_hint)) },
+                        keyboardOptions = KeyboardOptions(
+                            imeAction = ImeAction.Done
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onDone = {
+                                keyboardController?.hide()
+                                focusManager.clearFocus()
+                            }
+                        ),
                         shape = RoundedCornerShape(12.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             unfocusedContainerColor = BackgroundGray,
@@ -258,7 +285,7 @@ fun ApplyLoanScreen(
                             CircularProgressIndicator(color = White, modifier = Modifier.size(24.dp))
                         } else {
                             Text(
-                                if (isInsufficient) "Insufficient Group Balance" else "Submit Application",
+                                if (isInsufficient) stringResource(R.string.insufficient_balance_button) else stringResource(R.string.submit_application_button),
                                 color = White, fontSize = 16.sp, fontWeight = FontWeight.Bold
                             )
                         }
@@ -278,7 +305,7 @@ fun ApplyLoanScreen(
                                 Icon(Icons.Default.Error, null, tint = Color.Red, modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
-                                    "The requested amount (MK ${String.format("%,.0f", amtVal)}) exceeds the available group balance (MK ${String.format("%,.0f", totalSavings)}).",
+                                    stringResource(R.string.insufficient_balance_error, String.format("%,.0f", amtVal), String.format("%,.0f", totalSavings)),
                                     color = Color.Red, fontSize = 12.sp, lineHeight = 16.sp
                                 )
                             }

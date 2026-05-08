@@ -1,6 +1,7 @@
 package com.example.tisunga.viewmodel
 
 import androidx.compose.runtime.*
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tisunga.data.model.Event
@@ -10,12 +11,12 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 
-class ActivitiesViewModel : ViewModel() {
+class ActivitiesViewModel(private val savedStateHandle: SavedStateHandle) : ViewModel() {
 
-    var meetings by mutableStateOf<List<Meeting>>(emptyList())
+    var meetings by mutableStateOf<List<Meeting>>(savedStateHandle.get<List<Meeting>>("meetings") ?: emptyList())
         private set
 
-    var events by mutableStateOf<List<Event>>(emptyList())
+    var events by mutableStateOf<List<Event>>(savedStateHandle.get<List<Event>>("events") ?: emptyList())
         private set
 
     var loading by mutableStateOf(false)
@@ -24,9 +25,18 @@ class ActivitiesViewModel : ViewModel() {
     var error by mutableStateOf<String?>(null)
         private set
 
+    private fun saveState() {
+        savedStateHandle.set("meetings", meetings)
+        savedStateHandle.set("events", events)
+    }
+
     fun clearError() { error = null }
 
     fun load(groupId: String) {
+        // If we already have data (restored from savedStateHandle), don't force a reload
+        // unless you want to refresh. For persistence, we keep what we have.
+        if (meetings.isNotEmpty() || events.isNotEmpty()) return 
+        
         viewModelScope.launch {
             loading = true
             error = null
@@ -36,16 +46,23 @@ class ActivitiesViewModel : ViewModel() {
     }
 
     private suspend fun fetchActivities(groupId: String) {
+        val api = ApiClient.getClient()
+        
         try {
-            val api = ApiClient.getClient()
             val fetchedMeetings = api.getGroupMeetings(groupId)
             meetings = fetchedMeetings.distinctBy { it.id }
-            
-            val fetchedEvents = api.getGroupEvents(groupId)
-            events = fetchedEvents.distinctBy { it.id }
+            saveState()
         } catch (e: Exception) {
             e.printStackTrace()
-            error = "Failed to load activities: ${e.message}"
+        }
+        
+        try {
+            val fetchedEvents = api.getGroupEvents(groupId)
+            events = fetchedEvents.distinctBy { it.id }
+            saveState()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            error = "Failed to load events: ${e.message}"
         }
     }
 
@@ -54,9 +71,7 @@ class ActivitiesViewModel : ViewModel() {
             val inputFormat = if (isDateTime) {
                 SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US)
             } else {
-                SimpleDateFormat("yyyy-MM-dd", Locale.US).apply {
-                    timeZone = TimeZone.getTimeZone("UTC")
-                }
+                SimpleDateFormat("yyyy-MM-dd", Locale.US)
             }
             val date = inputFormat.parse(dateStr)
             val outputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US)
@@ -89,6 +104,7 @@ class ActivitiesViewModel : ViewModel() {
                 )
                 val newMeeting = api.createMeeting(groupId, body)
                 meetings = (listOf(newMeeting) + meetings).distinctBy { it.id }
+                saveState()
                 onSuccess()
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -116,10 +132,7 @@ class ActivitiesViewModel : ViewModel() {
                 val isoDate = formatToIso(date, false)
                 val api = ApiClient.getClient()
                 
-                // Mappings to match server-side Enums
-                val normalizedType = if (type.equals("OTHERS", ignoreCase = true)) "OTHER" else type.uppercase()
-                // Server expects 'SAVINGS', 'EVENT', or 'FLEXIBLE'. 
-                // We map 'FIXED' from UI to 'EVENT'
+                val normalizedType = if (type.uppercase().contains("SAVING")) "SAVINGS" else "OTHER"
                 val normalizedContrib = if (amountType.equals("FIXED", ignoreCase = true)) "EVENT" else "FLEXIBLE"
 
                 val body = mutableMapOf<String, Any>(
@@ -129,7 +142,7 @@ class ActivitiesViewModel : ViewModel() {
                     "contributionType" to normalizedContrib
                 )
                 
-                if (amount > 0) {
+                if (normalizedContrib == "EVENT" && amount > 0) {
                     body["fixedAmount"] = amount
                 }
                 
@@ -139,10 +152,11 @@ class ActivitiesViewModel : ViewModel() {
 
                 val newEvent = api.createEvent(groupId, body)
                 events = (listOf(newEvent) + events).distinctBy { it.id }
+                saveState()
                 onSuccess()
             } catch (e: Exception) {
                 e.printStackTrace()
-                error = "Failed to create event: ${e.message}"
+                error = "Create Event Failed: ${e.message}"
             } finally {
                 loading = false
             }

@@ -1,5 +1,6 @@
 package com.example.tisunga.viewmodel
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tisunga.data.model.Loan
@@ -28,7 +29,10 @@ data class LoanUiState(
     val isRepaying: Boolean       = false
 )
 
-class LoanViewModel(private val sessionManager: SessionManager) : ViewModel() {
+class LoanViewModel(
+    private val sessionManager: SessionManager,
+    private val savedStateHandle: SavedStateHandle
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(LoanUiState())
     val uiState: StateFlow<LoanUiState> = _uiState.asStateFlow()

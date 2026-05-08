@@ -2,14 +2,14 @@ package com.example.tisunga.utils
 
 object Constants {
     /** 
-     * Wireless Network Connection:
-     * Replace with your PC's IP from 'ipconfig' (Wireless LAN adapter Wi-Fi)
-     * e.g., "http://192.168.1.5:3000/api/v1/"
+     * Production Backend URL
+     * Note: Retrofit requires the base URL to end with a trailing slash.
+     * We include /api/v1/ as the endpoints in ApiService are defined relative to it.
      */
-    const val BASE_URL = "http://192.168.137.193:3000/api/v1/"
+    const val BASE_URL = "https://tisunga-backend.onrender.com/api/v1/"
 
-    // Development flag
-    const val IS_DEVELOPMENT_MODE = true
+    // Set to false for production
+    const val IS_DEVELOPMENT_MODE = false
 
     const val TOKEN_KEY = "auth_token"
     const val USER_ID_KEY = "user_id"

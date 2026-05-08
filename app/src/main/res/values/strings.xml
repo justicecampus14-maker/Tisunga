@@ -114,12 +114,25 @@
     <string name="placeholder_member_name">Search Result Name</string>
     <string name="placeholder_group_code">67WEISH6</string>
     <string name="group_members_title_placeholder">%1$s Members</string>
+    <string name="group_members_default_title">Group Members</string>
+    <string name="group_members_header_label">GROUP MEMBERS</string>
+    <string name="members_count_label">%1$d members</string>
+    <string name="add_member_desc">Add Member</string>
+    <string name="action_role">Role</string>
+    <string name="action_manage_label">Manage</string>
+    <string name="change_role_header">CHANGE ROLE</string>
+    <string name="admin_options_header">ADMIN OPTIONS</string>
+    <string name="deactivate_user_option">Deactivate User</string>
+    <string name="reset_user_stats_option">Reset User Stats</string>
+    <string name="remove_from_group_option">Remove from Group</string>
+    <string name="remove_member_name_confirm_msg">Are you sure you want to remove %1$s from the group?</string>
     <string name="add_label">Add</string>
     <string name="join_request_label">Join request</string>
     <string name="group_code_label_simple">Group code</string>
     <string name="share_label">Share</string>
     <string name="you_label">You</string>
     <string name="loans_label">Loans</string>
+    <string name="savings_label">Savings</string>
     <string name="contributions_label">Contributions</string>
     <string name="actions_label">Actions</string>
     <string name="change_role_option">Change Role</string>
@@ -164,7 +177,7 @@
     <!-- Common Filters -->
     <string name="filter_active">Active</string>
     <string name="filter_upcoming">Upcoming</string>
-    <string name="filter_closed">Closed</string>
+    <string name="filter_closed">Completed</string>
     <string name="filter_pending">Pending</string>
     <string name="filter_history">History</string>
 
@@ -208,6 +221,20 @@
     <string name="placeholder_group_name">Doman Group</string>
 
     <!-- Apply Loan Screen -->
+    <string name="apply_for_loan_title">Apply for Loan</string>
+    <string name="application_sent_title">Application Sent</string>
+    <string name="application_sent_msg">Your loan request has been submitted and is awaiting approval from the group officials.</string>
+    <string name="back_to_loans_button">Back to Loans</string>
+    <string name="loan_interest_notice">Interest is 5% flat. The CHAIR or SECRETARY will review your request.</string>
+    <string name="group_balance_label">Group Balance: MK %1$s</string>
+    <string name="loan_amount_mk_label">Loan Amount (MK)</string>
+    <string name="loan_amount_hint">e.g. 50000</string>
+    <string name="interest_percent_label">Interest (5%)</string>
+    <string name="duration_months_label">Duration (Months)</string>
+    <string name="loan_purpose_hint">What is this loan for?</string>
+    <string name="insufficient_balance_button">Insufficient Group Balance</string>
+    <string name="submit_application_button">Submit Application</string>
+    <string name="insufficient_balance_error">The requested amount (MK %1$s) exceeds the available group balance (MK %2$s).</string>
     <string name="apply_loan_title">Apply Loan</string>
     <string name="loan_notice">The requested loan will be repayed with an interest of 5%.\nAnd the interest will increase by 5% if not paid on time.</string>
     <string name="loan_amount_label">Loan Amount</string>
@@ -223,6 +250,20 @@
     <string name="period_3_months">3 Months</string>
     <string name="period_6_months">6 Months</string>
     <string name="period_12_months">12 Months</string>
+
+    <!-- Repay Loan Screen -->
+    <string name="repay_loan_title">Repay Loan</string>
+    <string name="remaining_balance_label">Remaining Balance</string>
+    <string name="status_active_caps">ACTIVE</string>
+    <string name="total_amount_label">Total: MK %1$s</string>
+    <string name="amount_to_repay_label">Amount to Repay</string>
+    <string name="enter_amount_hint">Enter amount</string>
+    <string name="full_payment_button">Full Payment</string>
+    <string name="half_payment_button">Half Payment</string>
+    <string name="phone_number_input_label">Airtel/TNM Phone Number</string>
+    <string name="phone_number_hint">099...</string>
+    <string name="initiate_payment_button">Initiate Payment</string>
+    <string name="stk_push_notice">You will receive an STK Push prompt on your phone to enter your PIN.</string>
 
     <!-- Group Loans Screen -->
     <string name="filter_request">Request</string>
@@ -320,4 +361,29 @@
     <string name="status_present">PRESENT</string>
     <string name="status_absent">ABSENT</string>
     <string name="status_excused">EXCUSED</string>
+    <string name="add_new_member_title">Add New Member</string>
+    <string name="add_member_instructions">Search for a user by their phone number to add them to your group.</string>
+    <string name="phone_number_search_hint">Phone Number (e.g. 0882123456)</string>
+    <string name="search_button">SEARCH</string>
+    <string name="select_role_label">SELECT ROLE</string>
+    <string name="user_already_in_group_msg">User is already in group: %1$s</string>
+    <string name="no_user_found_msg">No user found with this phone number. They must register on Tisunga first.</string>
+    <string name="actions_desc">Actions</string>
+    <string name="change_role_to_label">Change Role To:</string>
+    <string name="reject_loan_title">Reject Loan?</string>
+    <string name="reject_reason_instruction">Explain why so the member can understand.</string>
+    <string name="enter_reason_hint">Enter reason...</string>
+    <string name="reject_button_label">Reject</string>
+    <string name="refresh_desc">Refresh</string>
+    <string name="approve_permission_notice">Only CHAIR or SECRETARY can approve loans.</string>
+    <string name="no_loans_found_msg">No %1$s loans</string>
+    <string name="duration_label">Duration</string>
+    <string name="total_label">Total</string>
+    <string name="applied_label">Applied</string>
+    <string name="loan_repaid_percent_alt">%1$d%% repaid</string>
+    <string name="amount_left_label">MK %1$s left</string>
+    <string name="purpose_display_label">Purpose: %1$s</string>
+    <string name="approved_by_label">Approved by %1$s</string>
+    <string name="decline_button">Decline</string>
+    <string name="approve_button">Approve</string>
 </resources>

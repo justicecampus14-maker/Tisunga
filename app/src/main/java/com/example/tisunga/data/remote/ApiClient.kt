@@ -12,18 +12,22 @@ import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
+import java.net.InetAddress
+import java.net.Inet4Address
+import okhttp3.Dns
 
 object ApiClient {
     private var retrofit: Retrofit? = null
     private var sessionManager: SessionManager? = null
 
-    /** Call once from Application.onCreate() before first use */
     fun init(context: Context) {
         sessionManager = SessionManager(context)
     }
 
     fun getClient(): ApiService {
-        if (retrofit == null) {
+        val currentBaseUrl = Constants.BASE_URL
+        
+        if (retrofit == null || retrofit?.baseUrl()?.toString() != currentBaseUrl) {
             val logging = HttpLoggingInterceptor().apply {
                 level = HttpLoggingInterceptor.Level.BODY
             }
@@ -31,21 +35,22 @@ object ApiClient {
             val client = OkHttpClient.Builder()
                 .addInterceptor(AuthInterceptor())
                 .addInterceptor(logging)
-                .connectTimeout(30, TimeUnit.SECONDS)
-                .readTimeout(30, TimeUnit.SECONDS)
+                .connectTimeout(60, TimeUnit.SECONDS)
+                .readTimeout(60, TimeUnit.SECONDS)
+                .writeTimeout(60, TimeUnit.SECONDS)
+                .retryOnConnectionFailure(true)
+                .proxy(java.net.Proxy.NO_PROXY)
+                .protocols(listOf(okhttp3.Protocol.HTTP_1_1))
+                .dns(object : Dns {
+                    override fun lookup(hostname: String): List<InetAddress> {
+                        // Force IPv4 to avoid handshake hangs on local hotspots
+                        val addresses = Dns.SYSTEM.lookup(hostname)
+                        val ipv4 = addresses.filter { it is Inet4Address }
+                        return if (ipv4.isNotEmpty()) ipv4 else addresses
+                    }
+                })
                 .build()
 
-            // ── ONE shared Gson, registered globally for all Double fields ──
-            // The backend sends numeric fields like totalSavings / mySavings /
-            // minContribution as JSON strings ("0", "2000").  Registering
-            // StringToDouble here means EVERY Double field in the app is handled
-            // correctly without needing @JsonAdapter on each one individually.
-           /* val gson = GsonBuilder()
-                .setLenient()
-                .registerTypeAdapter(Double::class.java,              StringToDouble())
-                .registerTypeAdapter(Double::class.javaPrimitiveType, StringToDouble())
-                .create()
-            */
             val gson = GsonBuilder()
                 .setLenient()
                 .registerTypeAdapter(Double::class.java, StringToDouble())
@@ -54,11 +59,8 @@ object ApiClient {
                 .create()
 
             retrofit = Retrofit.Builder()
-                .baseUrl(Constants.BASE_URL)
-                // Pass the SAME configured Gson to the unwrapping factory so it
-                // uses the same adapters — this is what was broken before.
+                .baseUrl(currentBaseUrl)
                 .addConverterFactory(UnwrappingGsonConverterFactory.create(gson))
-                // Fallback for request body serialisation (POST bodies).
                 .addConverterFactory(GsonConverterFactory.create(gson))
                 .client(client)
                 .build()
@@ -66,23 +68,23 @@ object ApiClient {
         return retrofit!!.create(ApiService::class.java)
     }
 
-    /** Call on logout so the next login picks up a fresh token */
     fun reset() {
         retrofit = null
     }
 
-    // ── Attaches Bearer token to every request ────────────────────────────
     private class AuthInterceptor : Interceptor {
         override fun intercept(chain: Interceptor.Chain): Response {
             val token = sessionManager?.fetchAuthToken()
-            val request = if (!token.isNullOrBlank()) {
-                chain.request().newBuilder()
-                    .addHeader("Authorization", "Bearer $token")
-                    .build()
-            } else {
-                chain.request()
+            val requestBuilder = chain.request().newBuilder()
+                .header("Connection", "close")
+                .header("Accept", "application/json")
+                .header("User-Agent", "Mozilla/5.0 (Android 14; Mobile)")
+            
+            if (!token.isNullOrBlank()) {
+                requestBuilder.addHeader("Authorization", "Bearer $token")
             }
-            return chain.proceed(request)
+            
+            return chain.proceed(requestBuilder.build())
         }
     }
 }

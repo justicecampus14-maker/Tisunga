@@ -1,5 +1,6 @@
 package com.example.tisunga.viewmodel
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tisunga.data.model.Contribution
@@ -22,7 +23,8 @@ data class ContributionUiState(
 )
 
 class ContributionViewModel(
-    private val sessionManager: SessionManager
+    private val sessionManager: SessionManager,
+    private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
     private val repository = ContributionRepository(ApiClient.getClient())
