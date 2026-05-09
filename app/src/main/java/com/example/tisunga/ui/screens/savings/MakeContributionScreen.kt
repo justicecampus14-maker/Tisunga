@@ -22,6 +22,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.compose.ui.res.stringResource
+import com.example.tisunga.R
 import com.example.tisunga.ui.theme.*
 import com.example.tisunga.viewmodel.ContributionViewModel
 
@@ -39,8 +41,8 @@ fun MakeContributionScreen(
     val focusManager = LocalFocusManager.current
     
     val contributionTypes = listOf(
-        "SAVINGS" to "Regular Contribution",
-        "SOCIAL_FUND" to "Social Welfare"
+        "SAVINGS" to stringResource(R.string.regular_contribution_label),
+        "SOCIAL_FUND" to stringResource(R.string.social_welfare_label)
     )
     var expanded by remember { mutableStateOf(false) }
     var selectedType by remember { mutableStateOf(contributionTypes[0]) }
@@ -53,13 +55,13 @@ fun MakeContributionScreen(
                     viewModel.dismissPendingDialog()
                     navController.popBackStack() 
                 }) {
-                    Text("OK", color = MaterialTheme.colorScheme.primary)
+                    Text(stringResource(R.string.ok_button), color = MaterialTheme.colorScheme.primary)
                 }
             },
-            title = { Text("Payment Initiated", fontWeight = FontWeight.Bold) },
+            title = { Text(stringResource(R.string.payment_initiated_title), fontWeight = FontWeight.Bold) },
             text = {
                 Column {
-                    Text("Please check your phone ($phone) for a PIN prompt to authorize the payment of MK${amount}.")
+                    Text(stringResource(R.string.payment_initiated_msg, phone, amount))
                     Spacer(modifier = Modifier.height(8.dp))
                     Text("Ref: ${uiState.initResponse?.transactionRef}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
@@ -71,10 +73,10 @@ fun MakeContributionScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Make Contribution", fontSize = 20.sp, fontWeight = FontWeight.Bold) },
+                title = { Text(stringResource(R.string.make_contribution_title), fontSize = 20.sp, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back_desc))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -98,10 +100,10 @@ fun MakeContributionScreen(
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text("New Contribution", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                    Text(stringResource(R.string.new_contribution_label), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    Text("Contribution Type", fontSize = 14.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface)
+                    Text(stringResource(R.string.contribution_type_label), fontSize = 14.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface)
                     ExposedDropdownMenuBox(
                         expanded = expanded,
                         onExpandedChange = { expanded = !expanded }
@@ -132,7 +134,7 @@ fun MakeContributionScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    Text("Phone Number", fontSize = 14.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface)
+                    Text(stringResource(R.string.phone_number_label), fontSize = 14.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface)
                     OutlinedTextField(
                         value = phone,
                         onValueChange = { phone = it },
@@ -142,12 +144,12 @@ fun MakeContributionScreen(
                             keyboardType = KeyboardType.Phone,
                             imeAction = ImeAction.Next
                         ),
-                        placeholder = { Text("+265...") }
+                        placeholder = { Text(stringResource(R.string.phone_placeholder)) }
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    Text("Amount (MK)", fontSize = 14.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface)
+                    Text(stringResource(R.string.amount_mk_input_label), fontSize = 14.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface)
                     OutlinedTextField(
                         value = amount,
                         onValueChange = { if (it.all { char -> char.isDigit() }) amount = it },
@@ -163,7 +165,7 @@ fun MakeContributionScreen(
                                 keyboardController?.hide()
                             }
                         ),
-                        placeholder = { Text("Enter amount") }
+                        placeholder = { Text(stringResource(R.string.enter_amount_hint)) }
                     )
 
                     Spacer(modifier = Modifier.height(12.dp))
@@ -198,13 +200,13 @@ fun MakeContributionScreen(
                         if (uiState.isLoading) {
                             CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(24.dp))
                         } else {
-                            Text("Make Contribution", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary)
+                            Text(stringResource(R.string.make_contribution_title), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary)
                         }
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        "You will receive a PIN prompt on your phone to authorize this transaction.",
+                        stringResource(R.string.pin_prompt_confirmation_notice),
                         fontSize = 12.sp,
                         textAlign = TextAlign.Center,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,

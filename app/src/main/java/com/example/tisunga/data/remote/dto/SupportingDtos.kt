@@ -122,6 +122,12 @@ data class RejectLoanRequest(
     @SerializedName("reason") val reason: String
 )
 
+data class MemberLoansResponse(
+    @SerializedName("borrowerName") val borrowerName: String,
+    @SerializedName("title")        val title: String,
+    @SerializedName("loans")        val loans: List<Loan>
+)
+
 data class ApproveLoanResponse(
     @SerializedName("id")            val id: String,
     @SerializedName("status")        val status: String,

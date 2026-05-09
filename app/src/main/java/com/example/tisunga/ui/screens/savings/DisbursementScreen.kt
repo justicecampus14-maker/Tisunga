@@ -64,10 +64,10 @@ fun DisbursementScreen(
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Disbursement", fontWeight = Bold) },
+                title = { Text(stringResource(R.string.disbursement_label), fontWeight = Bold) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back_desc))
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = White)
@@ -127,7 +127,7 @@ fun DisbursementScreen(
                     if (uiState.history.isNotEmpty()) {
                         item {
                             Spacer(Modifier.height(8.dp))
-                            Text("History", fontWeight = Bold, fontSize = 16.sp)
+                            Text(stringResource(R.string.filter_history), fontWeight = Bold, fontSize = 16.sp)
                         }
                         items(uiState.history) { past ->
                             HistoryItem(past)
@@ -169,15 +169,15 @@ fun DisbursementScreen(
     if (showRejectDialog) {
         AlertDialog(
             onDismissRequest = { showRejectDialog = false },
-            title = { Text("Reject Request", fontWeight = Bold) },
+            title = { Text(stringResource(R.string.reject_request_title), fontWeight = Bold) },
             text = {
                 Column {
-                    Text("Please provide a reason for rejecting this disbursement request.")
+                    Text(stringResource(R.string.reject_reason_instruction))
                     Spacer(Modifier.height(12.dp))
                     OutlinedTextField(
                         value = rejectionReason,
                         onValueChange = { rejectionReason = it },
-                        placeholder = { Text("e.g. Incomplete records") },
+                        placeholder = { Text(stringResource(R.string.enter_reason_hint)) },
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -193,12 +193,12 @@ fun DisbursementScreen(
                     colors = ButtonDefaults.buttonColors(containerColor = RedAccent),
                     enabled = rejectionReason.isNotBlank()
                 ) {
-                    Text("Reject")
+                    Text(stringResource(R.string.reject_button))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showRejectDialog = false }) {
-                    Text("Cancel", color = TextSecondary)
+                    Text(stringResource(R.string.cancel_button), color = TextSecondary)
                 }
             }
         )
@@ -238,7 +238,7 @@ fun CurrentDisbursementCard(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.Info, null, tint = TextSecondary, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text("Waiting for Chairperson to initiate disbursement.", fontSize = 12.sp, color = TextSecondary)
+                        Text(stringResource(R.string.waiting_chairperson_disbursement), fontSize = 12.sp, color = TextSecondary)
                     }
                 }
             } else {
@@ -248,14 +248,14 @@ fun CurrentDisbursementCard(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column {
-                        Text("Disbursement Request", fontSize = 14.sp, color = TextSecondary)
+                        Text(stringResource(R.string.disbursement_request_label), fontSize = 14.sp, color = TextSecondary)
                         Text(FormatUtils.formatMoney(disbursement.amount), fontSize = 24.sp, fontWeight = Bold, color = NavyBlue)
                     }
                     StatusBadge(disbursement.status)
                 }
 
                 Spacer(Modifier.height(8.dp))
-                Text("Requested by ${disbursement.requestedByName ?: "Chairperson"}", fontSize = 12.sp, color = TextSecondary)
+                Text(stringResource(R.string.requested_by_user_label, disbursement.requestedByName ?: stringResource(R.string.role_chairperson)), fontSize = 12.sp, color = TextSecondary)
 
                 if (disbursement.status == "PENDING") {
                     Spacer(Modifier.height(16.dp))
@@ -278,17 +278,17 @@ fun CurrentDisbursementCard(
                             Text(stringResource(R.string.reject_button), color = RedAccent, fontWeight = SemiBold)
                         }
                     } else {
-                        Text("Awaiting Treasurer's approval to release funds.", fontSize = 13.sp, color = NavyBlue, fontWeight = SemiBold)
+                        Text(stringResource(R.string.awaiting_treasurer_approval), fontSize = 13.sp, color = NavyBlue, fontWeight = SemiBold)
                     }
                 } else if (disbursement.status == "REJECTED") {
                     Spacer(Modifier.height(12.dp))
                     Box(Modifier.fillMaxWidth().background(RedAccent.copy(alpha = 0.05f), RoundedCornerShape(8.dp)).padding(12.dp)) {
-                        Text("Reason: ${disbursement.rejectionReason}", color = RedAccent, fontSize = 13.sp)
+                        Text("${stringResource(R.string.purpose_label)}: ${disbursement.rejectionReason}", color = RedAccent, fontSize = 13.sp)
                     }
                     if (role == "chairperson") {
                         Spacer(Modifier.height(12.dp))
                         Button(onClick = onRequest, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = NavyBlue)) {
-                            Text("Resubmit Request")
+                            Text(stringResource(R.string.resubmit_request_button))
                         }
                     }
                 }
@@ -311,7 +311,7 @@ fun PayoutItem(payout: MemberSharePayout) {
         ) {
             Column(Modifier.weight(1f)) {
                 Text(payout.userName, fontWeight = Bold, fontSize = 15.sp)
-                Text("Savings: ${FormatUtils.formatMoney(payout.memberSavings)}", fontSize = 12.sp, color = TextSecondary)
+                Text(stringResource(R.string.savings_value_label, FormatUtils.formatMoney(payout.memberSavings)), fontSize = 12.sp, color = TextSecondary)
             }
             Column(horizontalAlignment = Alignment.End) {
                 Text(FormatUtils.formatMoney(payout.shareAmount), fontWeight = Bold, color = GreenAccent)

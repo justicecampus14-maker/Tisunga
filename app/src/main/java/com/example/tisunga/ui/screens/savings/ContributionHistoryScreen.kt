@@ -18,6 +18,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.compose.ui.res.stringResource
+import com.example.tisunga.R
 import com.example.tisunga.data.model.Contribution
 import com.example.tisunga.ui.theme.*
 import com.example.tisunga.viewmodel.SavingsViewModel
@@ -40,10 +42,10 @@ fun ContributionHistoryScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Contribution History", fontSize = 20.sp, fontWeight = FontWeight.Bold) },
+                title = { Text(stringResource(R.string.contribution_history_title), fontSize = 20.sp, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back_desc))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -74,12 +76,12 @@ fun ContributionHistoryScreen(
                 Tab(
                     selected = selectedTab == 0,
                     onClick = { selectedTab = 0 },
-                    text = { Text("My History") }
+                    text = { Text(stringResource(R.string.my_history_tab)) }
                 )
                 Tab(
                     selected = selectedTab == 1,
                     onClick = { selectedTab = 1 },
-                    text = { Text("Group History") }
+                    text = { Text(stringResource(R.string.group_history_tab)) }
                 )
             }
 
@@ -95,7 +97,7 @@ fun ContributionHistoryScreen(
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Icon(Icons.Default.History, contentDescription = null, modifier = Modifier.size(64.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f))
                             Spacer(modifier = Modifier.height(8.dp))
-                            Text("No contributions found", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(stringResource(R.string.no_contributions_found), color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 } else {
@@ -143,7 +145,7 @@ fun ContributionCard(contribution: Contribution, isMyHistory: Boolean) {
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = if (isMyHistory) contribution.group?.name ?: "Personal" 
+                        text = if (isMyHistory) contribution.group?.name ?: stringResource(R.string.personal_loan_default)
                                else "${contribution.user?.firstName} ${contribution.user?.lastName}",
                         fontSize = 13.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant

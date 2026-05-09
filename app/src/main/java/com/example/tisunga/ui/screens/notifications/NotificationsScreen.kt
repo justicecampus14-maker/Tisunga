@@ -19,9 +19,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.compose.ui.res.stringResource
+import com.example.tisunga.R
 import com.example.tisunga.data.model.AppNotification
 import com.example.tisunga.ui.theme.*
 import com.example.tisunga.viewmodel.NotificationViewModel
+import androidx.compose.ui.platform.LocalContext
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -37,16 +40,16 @@ fun NotificationsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Notifications", fontWeight = FontWeight.Bold) },
+                title = { Text(stringResource(R.string.notifications_title), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back_desc))
                     }
                 },
                 actions = {
                     if (state.unreadCount > 0) {
                         TextButton(onClick = { vm.markAllRead() }) {
-                            Text("Mark all read", fontSize = 13.sp, color = MaterialTheme.colorScheme.primary)
+                            Text(stringResource(R.string.mark_all_read_label), fontSize = 13.sp, color = MaterialTheme.colorScheme.primary)
                         }
                     }
                 },
@@ -71,14 +74,14 @@ fun NotificationsScreen(
                         Text(state.errorMessage, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(Modifier.height(12.dp))
                         Button(onClick = { vm.load() }, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)) { 
-                            Text("Retry", color = MaterialTheme.colorScheme.onPrimary) 
+                            Text(stringResource(R.string.retry_button), color = MaterialTheme.colorScheme.onPrimary)
                         }
                     }
                 }
             }
             state.notifications.isEmpty() -> {
                 Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                    Text("No notifications yet", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.no_notifications_msg), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
             else -> {
@@ -153,7 +156,7 @@ fun NotificationCard(
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        text = formatTimestamp(notification.createdAt),
+                        text = formatTimestamp(notification.createdAt, LocalContext.current),
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -182,15 +185,15 @@ fun NotificationCard(
     }
 }
 
-fun formatTimestamp(iso: String): String = try {
+fun formatTimestamp(iso: String, context: android.content.Context): String = try {
     val instant = Instant.parse(iso)
     val now = Instant.now()
     val diffSeconds = now.epochSecond - instant.epochSecond
     when {
-        diffSeconds < 60            -> "Just now"
-        diffSeconds < 3600          -> "${diffSeconds / 60}m ago"
-        diffSeconds < 86400         -> "${diffSeconds / 3600}h ago"
-        diffSeconds < 604800        -> "${diffSeconds / 86400}d ago"
+        diffSeconds < 60            -> context.getString(R.string.just_now_label)
+        diffSeconds < 3600          -> context.getString(R.string.minutes_ago_label, (diffSeconds / 60).toInt())
+        diffSeconds < 86400         -> context.getString(R.string.hours_ago_label, (diffSeconds / 3600).toInt())
+        diffSeconds < 604800        -> context.getString(R.string.days_ago_label, (diffSeconds / 86400).toInt())
         else -> DateTimeFormatter
             .ofPattern("MMM d")
             .withZone(ZoneId.systemDefault())

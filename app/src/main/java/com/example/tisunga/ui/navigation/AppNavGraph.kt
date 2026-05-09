@@ -50,9 +50,8 @@ object Routes {
     const val CONTRIBUTION_HISTORY  = "contribution_history/{groupId}"
     const val DISBURSEMENT          = "disbursement/{groupId}"
     const val ALL_LOANS             = "all_loans"
-    const val MY_LOANS              = "my_loans/{groupId}?userName={userName}"
+    const val MY_LOANS              = "my_loans/{groupId}?userName={userName}&userId={userId}"
     const val GROUP_LOANS           = "group_loans/{groupId}"
-    const val GROUP_LOANS_DETAIL    = "group_loans_detail/{groupId}"
     const val APPLY_LOAN            = "apply_loan/{groupId}"
     const val REPAY_LOAN            = "repay_loan/{loanId}"
     const val EVENTS                = "events/{groupId}"
@@ -228,13 +227,19 @@ fun AppNavGraph(
                     type = NavType.StringType
                     nullable = true
                     defaultValue = null
+                },
+                navArgument("userId") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
                 }
             )
         ) { back ->
             val groupId = back.arguments?.getString("groupId") ?: ""
             val userName = back.arguments?.getString("userName")
+            val userId = back.arguments?.getString("userId")
             MyLoansScreen(
-                navController, groupId, loanViewModel, homeViewModel, userName
+                navController, groupId, loanViewModel, homeViewModel, userName, userId
             )
         }
 
@@ -250,14 +255,6 @@ fun AppNavGraph(
                 viewModel     = loanViewModel,
                 groupViewModel = groupViewModel
             )
-        }
-
-        composable(
-            Routes.GROUP_LOANS_DETAIL,
-            arguments = listOf(navArgument("groupId") { type = NavType.StringType })
-        ) { back ->
-            val groupId = back.arguments?.getString("groupId") ?: ""
-            GroupLoansDetailScreen(navController, groupId, loanViewModel)
         }
 
         composable(

@@ -15,11 +15,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
+import com.example.tisunga.R
 import com.example.tisunga.data.model.Loan
 import com.example.tisunga.ui.navigation.Routes
 import com.example.tisunga.ui.theme.*
@@ -33,14 +35,15 @@ fun MyLoansScreen(
     groupId: String,
     viewModel: LoanViewModel,
     homeViewModel: HomeViewModel,
-    userName: String? = null
+    userName: String? = null,
+    userId: String? = null
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val homeUiState by homeViewModel.uiState.collectAsState()
     
-    val filterActive = "Active"
-    val filterPending = "Request"
-    val filterHistory = "History"
+    val filterActive = stringResource(R.string.filter_active)
+    val filterPending = stringResource(R.string.filter_request)
+    val filterHistory = stringResource(R.string.filter_history)
 
     var selectedTab by remember { mutableStateOf(filterActive) }
 
@@ -71,10 +74,10 @@ fun MyLoansScreen(
                     showSuccessDialog = false
                     viewModel.resetState()
                 }) {
-                    Text("Continue", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.continue_button), color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
                 }
             },
-            title = { Text("Success") },
+            title = { Text(stringResource(R.string.success_title)) },
             text = { Text(uiState.successMessage) },
             shape = RoundedCornerShape(16.dp),
             containerColor = MaterialTheme.colorScheme.surface
@@ -88,14 +91,19 @@ fun MyLoansScreen(
     }
 
     val filteredLoans = when (selectedTab) {
-        filterActive -> uiState.myLoans.filter { it.status.lowercase() == "active" }
-        filterPending -> uiState.myLoans.filter { it.status.lowercase() == "pending" }
-        filterHistory -> uiState.myLoans.filter { it.status.lowercase() == "completed" || it.status.lowercase() == "rejected" }
+        filterActive -> uiState.myLoans.filter { it.status.uppercase() == "ACTIVE" }
+        filterPending -> uiState.myLoans.filter { it.status.uppercase() == "PENDING" }
+        filterHistory -> uiState.myLoans.filter { it.status.uppercase() == "COMPLETED" || it.status.uppercase() == "REJECTED" }
         else -> uiState.myLoans
     }
 
-    LaunchedEffect(groupId) {
-        viewModel.getMyLoans()
+    LaunchedEffect(groupId, userId) {
+        val effectiveUserId = if (userId != null && (userId.isBlank() || userId.startsWith("{"))) null else userId
+        if (!effectiveUserId.isNullOrBlank()) {
+            viewModel.getUserLoans(effectiveUserId)
+        } else {
+            viewModel.getMyLoans()
+        }
     }
 
     Scaffold(
@@ -115,7 +123,7 @@ fun MyLoansScreen(
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                 ) {
-                    Text("Apply Loan", color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.apply_loan_button), color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -146,7 +154,18 @@ fun MyLoansScreen(
                     }
                 }
                 Spacer(modifier = Modifier.width(12.dp))
-                Text("My Loans", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground)
+                val effectiveName = when {
+                    !userName.isNullOrBlank() && userName != "{userName}" -> userName
+                    !uiState.memberLoansName.isNullOrBlank() -> uiState.memberLoansName
+                    else -> null
+                }
+
+                val title = when {
+                    effectiveName != null -> stringResource(R.string.member_loans_title, effectiveName)
+                    !uiState.memberLoansTitle.isNullOrBlank() && !uiState.memberLoansTitle!!.contains("{") -> uiState.memberLoansTitle!!
+                    else -> stringResource(R.string.my_loan_title)
+                }
+                Text(title, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground)
             }
 
             // Tabs
@@ -170,7 +189,7 @@ fun MyLoansScreen(
             ) {
                 if (filteredLoans.isEmpty()) {
                     Box(modifier = Modifier.fillMaxWidth().padding(vertical = 40.dp), contentAlignment = Alignment.Center) {
-                        Text("No loans found for this category.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(R.string.no_loans_category_msg), color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 } else {
                     filteredLoans.forEach { loan ->
@@ -255,7 +274,7 @@ fun MySpecificLoanCard(loan: Loan, onClear: () -> Unit) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column {
-                    Text("Loan Amount", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.loan_amount_label), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(
                         text = FormatUtils.formatMoney(loan.principalAmount),
                         fontSize = 20.sp,
@@ -265,13 +284,13 @@ fun MySpecificLoanCard(loan: Loan, onClear: () -> Unit) {
                 }
                 Surface(
                     shape = RoundedCornerShape(8.dp),
-                    color = if (loan.status.lowercase() == "active") Color(0xFFE8F5E9).copy(alpha = 0.1f) else Color(0xFFFFF3E0).copy(alpha = 0.1f)
+                    color = if (loan.status.uppercase() == "ACTIVE") Color(0xFFE8F5E9).copy(alpha = 0.1f) else Color(0xFFFFF3E0).copy(alpha = 0.1f)
                 ) {
                     Text(
                         text = loan.status,
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                         fontSize = 12.sp,
-                        color = if (loan.status.lowercase() == "active") Color(0xFF4CAF50) else Color(0xFFF57C00),
+                        color = if (loan.status.uppercase() == "ACTIVE") Color(0xFF4CAF50) else Color(0xFFF57C00),
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -281,7 +300,7 @@ fun MySpecificLoanCard(loan: Loan, onClear: () -> Unit) {
 
             Row(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("Total Repayable", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.total_repayable_label), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(
                         text = FormatUtils.formatMoney(loan.totalRepayable),
                         fontSize = 18.sp,
@@ -290,12 +309,12 @@ fun MySpecificLoanCard(loan: Loan, onClear: () -> Unit) {
                     )
                 }
                 Column(horizontalAlignment = Alignment.End) {
-                    Text("Interest", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.interest_label), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text("${loan.interestRate.toInt()}%", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                 }
             }
 
-            if (loan.status.lowercase() == "active") {
+            if (loan.status.uppercase() == "ACTIVE") {
                 Spacer(modifier = Modifier.height(16.dp))
                 val progress = if (loan.totalRepayable > 0) (1 - (loan.remainingBalance / loan.totalRepayable)).toFloat() else 0f
                 LinearProgressIndicator(
@@ -306,7 +325,7 @@ fun MySpecificLoanCard(loan: Loan, onClear: () -> Unit) {
                 )
                 
                 Text(
-                    text = "Remaining: ${FormatUtils.formatMoney(loan.remainingBalance)}",
+                    text = stringResource(R.string.remaining_label, FormatUtils.formatMoney(loan.remainingBalance)),
                     modifier = Modifier.align(Alignment.End).padding(top = 4.dp),
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
@@ -320,7 +339,7 @@ fun MySpecificLoanCard(loan: Loan, onClear: () -> Unit) {
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Due: ${FormatUtils.formatDate(loan.dueDate)}", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface)
+                    Text(stringResource(R.string.due_label, FormatUtils.formatDate(loan.dueDate)), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface)
                     
                     Button(
                         onClick = onClear,
@@ -328,7 +347,7 @@ fun MySpecificLoanCard(loan: Loan, onClear: () -> Unit) {
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
                     ) {
-                        Text("Clear", color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.clear_button), color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold)
                         Spacer(modifier = Modifier.width(4.dp))
                         Icon(Icons.AutoMirrored.Filled.ArrowForward, null, Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onPrimary)
                     }
@@ -380,7 +399,7 @@ fun RepayLoanDialog(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "Clear Loan Balance",
+                    text = stringResource(R.string.clear_loan_balance_title),
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
@@ -388,7 +407,7 @@ fun RepayLoanDialog(
                 Spacer(modifier = Modifier.height(16.dp))
                 
                 Text(
-                    text = "Amount to clear:",
+                    text = stringResource(R.string.amount_to_clear_label),
                     modifier = Modifier.fillMaxWidth(),
                     fontSize = 14.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -399,7 +418,7 @@ fun RepayLoanDialog(
                     value = amount,
                     onValueChange = { amount = it },
                     modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("Enter amount") },
+                    placeholder = { Text(stringResource(R.string.enter_amount_hint)) },
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
@@ -415,7 +434,7 @@ fun RepayLoanDialog(
                         modifier = Modifier.weight(1f).height(50.dp),
                         shape = RoundedCornerShape(12.dp)
                     ) {
-                        Text("Cancel", color = MaterialTheme.colorScheme.onSurface)
+                        Text(stringResource(R.string.cancel_button), color = MaterialTheme.colorScheme.onSurface)
                     }
                     Button(
                         onClick = { amount.toDoubleOrNull()?.let { onConfirm(it) } },
@@ -423,7 +442,7 @@ fun RepayLoanDialog(
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                     ) {
-                        Text("Pay Now", color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.pay_now_button), color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold)
                     }
                 }
             }

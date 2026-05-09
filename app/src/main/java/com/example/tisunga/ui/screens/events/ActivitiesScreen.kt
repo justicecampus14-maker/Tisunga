@@ -40,6 +40,9 @@ import com.example.tisunga.data.model.Meeting
 import com.example.tisunga.ui.theme.*
 import com.example.tisunga.viewmodel.*
 
+import androidx.compose.ui.res.stringResource
+import com.example.tisunga.R
+
 @Composable
 fun ActivitiesScreen(
     navController: NavController,
@@ -75,7 +78,7 @@ fun ActivitiesScreen(
                     containerColor = NavyBlue,
                     contentColor = Color.White,
                     icon = { Icon(Icons.Default.Add, contentDescription = null) },
-                    text = { Text("New") }
+                    text = { Text(stringResource(R.string.add_button)) }
                 )
             } else if (tab == 1) { // Only show for Events tab
                 ExtendedFloatingActionButton(
@@ -83,7 +86,7 @@ fun ActivitiesScreen(
                     containerColor = NavyBlue,
                     contentColor = Color.White,
                     icon = { Icon(Icons.Default.Add, contentDescription = null) },
-                    text = { Text("Add event") }
+                    text = { Text(stringResource(R.string.add_event_button)) }
                 )
             }
         },
@@ -96,7 +99,7 @@ fun ActivitiesScreen(
                 onConfirm = { type, title, date, amountType, amount, desc ->
                     viewModel.createEvent(groupId, type, title, date, amountType, amount, desc) {
                         showCreateEventDialog = false
-                        Toast.makeText(context, "Event created successfully!", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, context.getString(R.string.event_created_success), Toast.LENGTH_SHORT).show()
                     }
                 }
             )
@@ -107,7 +110,7 @@ fun ActivitiesScreen(
                 onConfirm = { title, date, location, desc ->
                     viewModel.createMeeting(groupId, title, date, location, desc) {
                         showCreateMeetingDialog = false
-                        Toast.makeText(context, "Meeting scheduled successfully!", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, context.getString(R.string.meeting_scheduled_success), Toast.LENGTH_SHORT).show()
                     }
                 }
             )
@@ -131,12 +134,12 @@ fun ActivitiesScreen(
                 Tab(
                     selected = tab == 0,
                     onClick = { tab = 0 },
-                    text = { Text("Meetings", color = if (tab == 0) MaterialTheme.colorScheme.primary else TextSecondary) }
+                    text = { Text(stringResource(R.string.tab_meetings), color = if (tab == 0) MaterialTheme.colorScheme.primary else TextSecondary) }
                 )
                 Tab(
                     selected = tab == 1,
                     onClick = { tab = 1 },
-                    text = { Text("Other Events", color = if (tab == 1) MaterialTheme.colorScheme.primary else TextSecondary) }
+                    text = { Text(stringResource(R.string.tab_other_events), color = if (tab == 1) MaterialTheme.colorScheme.primary else TextSecondary) }
                 )
             }
 
@@ -172,10 +175,10 @@ fun TopBar(navController: NavController) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         IconButton(onClick = { navController.popBackStack() }) {
-            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.primary)
+            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back_desc), tint = MaterialTheme.colorScheme.primary)
         }
         Column {
-            Text("Events", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+            Text(stringResource(R.string.events_title), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
         }
     }
 }
@@ -196,10 +199,18 @@ fun MeetingsContent(
                 .padding(8.dp)
         ) {
             listOf("ALL", "SCHEDULED", "ONGOING", "COMPLETED", "CANCELLED").forEach {
+                val labelId = when(it) {
+                    "ALL" -> R.string.filter_all_caps
+                    "SCHEDULED" -> R.string.filter_scheduled
+                    "ONGOING" -> R.string.filter_ongoing
+                    "COMPLETED" -> R.string.filter_completed
+                    "CANCELLED" -> R.string.filter_cancelled
+                    else -> R.string.filter_all_caps
+                }
                 FilterChip(
                     selected = filter == it,
                     onClick = { onFilterChange(it) },
-                    label = { Text(it) },
+                    label = { Text(stringResource(labelId)) },
                     modifier = Modifier.padding(end = 6.dp),
                     colors = FilterChipDefaults.filterChipColors(
                         selectedContainerColor = NavyBlue,
@@ -211,7 +222,7 @@ fun MeetingsContent(
 
         if (meetings.isEmpty()) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("No meetings found", color = Color.Gray)
+                Text(stringResource(R.string.no_meetings_msg), color = Color.Gray)
             }
         } else {
             LazyColumn(
@@ -244,7 +255,8 @@ fun MeetingCard(m: Meeting, onClick: () -> Unit) {
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(m.title, fontWeight = FontWeight.Bold, color = NavyBlue)
-                    Text("by ${m.creatorName ?: "Admin"}", fontSize = 12.sp, color = Color.Gray)
+                    val creator = m.creatorName ?: stringResource(R.string.member_default_name)
+                    Text(stringResource(R.string.by_user_placeholder, creator), fontSize = 12.sp, color = Color.Gray)
                 }
                 com.example.tisunga.ui.components.StatusBadge(m.status)
             }
@@ -281,10 +293,17 @@ fun EventsContent(
                 .padding(8.dp)
         ) {
             listOf("ALL", "OPEN", "UPCOMING", "CLOSED").forEach {
+                val labelId = when(it) {
+                    "ALL" -> R.string.filter_all_caps
+                    "OPEN" -> R.string.filter_open
+                    "UPCOMING" -> R.string.filter_upcoming
+                    "CLOSED" -> R.string.filter_closed
+                    else -> R.string.filter_all_caps
+                }
                 FilterChip(
                     selected = filter == it,
                     onClick = { onFilterChange(it) },
-                    label = { Text(it) },
+                    label = { Text(stringResource(labelId)) },
                     modifier = Modifier.padding(end = 6.dp),
                     colors = FilterChipDefaults.filterChipColors(
                         selectedContainerColor = NavyBlue,
@@ -296,7 +315,7 @@ fun EventsContent(
 
         if (events.isEmpty()) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("No events found", color = Color.Gray)
+                Text(stringResource(R.string.no_events_found), color = Color.Gray)
             }
         } else {
             val filteredEvents = if (filter == "ALL") events else events.filter { it.status.uppercase() == filter }
@@ -347,11 +366,11 @@ fun EventCard(e: Event) {
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text("MK ${e.currentAmount}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = com.example.tisunga.ui.theme.GreenAccent)
-                    Text("Target: MK ${e.targetAmount}", fontSize = 12.sp, color = Color.Gray)
+                    Text(stringResource(R.string.amount_mk, e.currentAmount.toString()), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = com.example.tisunga.ui.theme.GreenAccent)
+                    Text(stringResource(R.string.target_amount_label, e.targetAmount.toString()), fontSize = 12.sp, color = Color.Gray)
                 }
             } else {
-                Text("Collected: MK ${e.currentAmount}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = com.example.tisunga.ui.theme.GreenAccent)
+                Text(stringResource(R.string.collected_amount_label, e.currentAmount.toString()), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = com.example.tisunga.ui.theme.GreenAccent)
             }
 
             Spacer(Modifier.height(8.dp))
@@ -413,13 +432,13 @@ fun CreateMeetingDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Schedule New Meeting", fontWeight = FontWeight.Bold, color = NavyBlue) },
+        title = { Text(stringResource(R.string.schedule_meeting_title), fontWeight = FontWeight.Bold, color = NavyBlue) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
                     value = title,
                     onValueChange = { title = it },
-                    label = { Text("Meeting Title") },
+                    label = { Text(stringResource(R.string.meeting_title_label)) },
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                     keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
                     modifier = Modifier.fillMaxWidth()
@@ -429,11 +448,11 @@ fun CreateMeetingDialog(
                     OutlinedTextField(
                         value = date,
                         onValueChange = { },
-                        label = { Text("Scheduled At") },
+                        label = { Text(stringResource(R.string.schedule_datetime_label)) },
                         readOnly = true,
                         isError = !isDateValid,
-                        supportingText = { if (!isDateValid) Text("Invalid format. Use YYYY-MM-DD HH:MM", color = Color.Red) },
-                        trailingIcon = { Icon(Icons.Default.CalendarMonth, "select date") },
+                        supportingText = { if (!isDateValid) Text(stringResource(R.string.invalid_datetime_format), color = Color.Red) },
+                        trailingIcon = { Icon(Icons.Default.CalendarMonth, stringResource(R.string.select_date_label)) },
                         modifier = Modifier.fillMaxWidth()
                     )
                     Box(
@@ -454,7 +473,7 @@ fun CreateMeetingDialog(
                 OutlinedTextField(
                     value = location,
                     onValueChange = { location = it },
-                    label = { Text("Location") },
+                    label = { Text(stringResource(R.string.location_label)) },
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                     keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
                     modifier = Modifier.fillMaxWidth()
@@ -462,7 +481,7 @@ fun CreateMeetingDialog(
                 OutlinedTextField(
                     value = description,
                     onValueChange = { description = it },
-                    label = { Text("Description") },
+                    label = { Text(stringResource(R.string.description_label)) },
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                     keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
                     modifier = Modifier.fillMaxWidth()
@@ -477,12 +496,12 @@ fun CreateMeetingDialog(
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = NavyBlue)
             ) {
-                Text("Schedule")
+                Text(stringResource(R.string.schedule_button))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel", color = Color.Gray)
+                Text(stringResource(R.string.cancel_button), color = Color.Gray)
             }
         }
     )
@@ -518,15 +537,23 @@ fun CreateEventDialog(
         }
     }
 
+    val eventTypes = listOf(
+        stringResource(R.string.event_type_wedding) to "Wedding",
+        stringResource(R.string.event_type_funeral) to "Funeral",
+        stringResource(R.string.event_type_birthday) to "Birthday",
+        stringResource(R.string.event_type_other) to "Others"
+    )
+    val displayType = eventTypes.find { it.second == type }?.first ?: type
+
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Create New Event", fontWeight = FontWeight.Bold, color = NavyBlue) },
+        title = { Text(stringResource(R.string.create_event_title), fontWeight = FontWeight.Bold, color = NavyBlue) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
                     value = title,
                     onValueChange = { title = it },
-                    label = { Text("Event Title") },
+                    label = { Text(stringResource(R.string.event_title_label)) },
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                     keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
                     trailingIcon = {
@@ -537,18 +564,18 @@ fun CreateEventDialog(
                                     .clickable { expanded = true }
                                     .padding(end = 8.dp)
                             ) {
-                                Text(type, color = NavyBlue, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                                Text(displayType, color = NavyBlue, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                                 ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
                             }
                             DropdownMenu(
                                 expanded = expanded,
                                 onDismissRequest = { expanded = false }
                             ) {
-                                listOf("Wedding", "Funeral", "Birthday", "Others").forEach { option ->
+                                eventTypes.forEach { (label, value) ->
                                     DropdownMenuItem(
-                                        text = { Text(option) },
+                                        text = { Text(label) },
                                         onClick = {
-                                            type = option
+                                            type = value
                                             expanded = false
                                         }
                                     )
@@ -562,11 +589,11 @@ fun CreateEventDialog(
                     OutlinedTextField(
                         value = date,
                         onValueChange = { },
-                        label = { Text("Date") },
+                        label = { Text(stringResource(R.string.date_label)) },
                         readOnly = true,
                         isError = !isDateValid,
-                        supportingText = { if (!isDateValid) Text("Invalid format. Use YYYY-MM-DD", color = Color.Red) },
-                        trailingIcon = { Icon(Icons.Default.CalendarMonth, "select date") },
+                        supportingText = { if (!isDateValid) Text(stringResource(R.string.invalid_date_format), color = Color.Red) },
+                        trailingIcon = { Icon(Icons.Default.CalendarMonth, stringResource(R.string.select_date_label)) },
                         modifier = Modifier.fillMaxWidth()
                     )
                     Box(
@@ -583,13 +610,14 @@ fun CreateEventDialog(
                 
 
 
-                Text("Amount Type", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.amount_type_label), fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     listOf("FIXED", "FLEXIBLE").forEach {
+                        val labelId = if (it == "FIXED") R.string.amount_type_fixed else R.string.amount_type_flexible
                         FilterChip(
                             selected = amountType == it,
                             onClick = { amountType = it },
-                            label = { Text(it, fontSize = 10.sp) }
+                            label = { Text(stringResource(labelId), fontSize = 10.sp) }
                         )
                     }
                 }
@@ -597,7 +625,7 @@ fun CreateEventDialog(
                 OutlinedTextField(
                     value = amount,
                     onValueChange = { amount = it },
-                    label = { Text("Target Amount") },
+                    label = { Text(stringResource(R.string.event_target_amount_label)) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Next),
                     keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
                     modifier = Modifier.fillMaxWidth()
@@ -605,7 +633,7 @@ fun CreateEventDialog(
                 OutlinedTextField(
                     value = description,
                     onValueChange = { description = it },
-                    label = { Text("Description") },
+                    label = { Text(stringResource(R.string.description_label)) },
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                     keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
                     modifier = Modifier.fillMaxWidth()
@@ -620,12 +648,12 @@ fun CreateEventDialog(
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = NavyBlue)
             ) {
-                Text("Create")
+                Text(stringResource(R.string.create_button))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel", color = Color.Gray)
+                Text(stringResource(R.string.cancel_button), color = Color.Gray)
             }
         }
     )
