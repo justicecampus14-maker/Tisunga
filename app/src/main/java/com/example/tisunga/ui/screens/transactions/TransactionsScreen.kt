@@ -56,15 +56,16 @@ fun TransactionsScreen(
     }
 
     Scaffold(
+        containerColor = BackgroundGray,
         topBar = {
-            TopAppBar(
-                title = { Text("Transaction History", fontSize = 20.sp, fontWeight = FontWeight.Bold) },
+            CenterAlignedTopAppBar(
+                title = { Text("Transaction History", fontSize = 18.sp, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = White)
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = White)
             )
         }
     ) { padding ->
@@ -72,7 +73,6 @@ fun TransactionsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .background(BackgroundGray)
         ) {
             // Filter Chips
             ScrollableTabRow(

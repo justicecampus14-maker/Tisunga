@@ -48,7 +48,6 @@ fun GroupDetailScreen(
     
     // UI state derived from group dashboard
     val groupName = uiState.selectedGroup?.name ?: homeUiState.myGroups.firstOrNull { it.id == groupId }?.name ?: stringResource(R.string.placeholder_group_name)
-    val userPhone = homeUiState.userPhone
     
     // Check if user is Chair or Secretary for this group
     val groupRole = homeUiState.myRole?.uppercase() ?: "MEMBER"
@@ -87,12 +86,12 @@ fun GroupDetailScreen(
                     .padding(padding)
             ) {
                 HomeHeader(
-                    userPhone = userPhone,
+                    userPhone = homeUiState.userPhone,
                     unreadCount = notificationState.unreadCount,
                     navController = navController,
                     onMenuClick = { scope.launch { drawerState.open() } }
                 )
-                
+
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(bottom = 16.dp)
@@ -203,11 +202,7 @@ fun QuickActionsGrid(navController: NavController, groupId: String, isChair: Boo
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             ActionCard(Icons.Default.SwapHoriz, stringResource(R.string.action_view_loans), Modifier.weight(1f)) {
-                if (isChair) {
-                    navController.navigate(Routes.GROUP_LOANS.replace("{groupId}", groupId))
-                } else {
-                    navController.navigate(Routes.MY_LOANS.replace("{groupId}", groupId))
-                }
+                navController.navigate(Routes.GROUP_LOANS.replace("{groupId}", groupId))
             }
             ActionCard(Icons.Default.Groups, "History", Modifier.weight(1f)) {
                 navController.navigate(Routes.CONTRIBUTION_HISTORY.replace("{groupId}", groupId))

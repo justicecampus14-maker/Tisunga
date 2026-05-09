@@ -239,20 +239,20 @@ fun AppNavGraph(
             val userName = back.arguments?.getString("userName")
             val userId = back.arguments?.getString("userId")
             MyLoansScreen(
-                navController, groupId, loanViewModel, homeViewModel, userName, userId
+                navController, groupId, loanViewModel, homeViewModel, groupViewModel, userName, userId
             )
         }
 
-        @Suppress("RedundantSamConstructor")
         composable(
             Routes.GROUP_LOANS,
             arguments = listOf(navArgument("groupId") { type = NavType.StringType })
         ) { back ->
             val groupId = back.arguments?.getString("groupId") ?: ""
-            GroupLoansScreen(
+            MyLoansScreen(
                 navController = navController,
                 groupId       = groupId,
                 viewModel     = loanViewModel,
+                homeViewModel = homeViewModel,
                 groupViewModel = groupViewModel
             )
         }

@@ -51,7 +51,7 @@ fun GroupMembersChairScreen(navController: NavController, groupId: String, viewM
                 title = {
                     Text(
                         uiState.selectedGroup?.name ?: stringResource(R.string.group_members_default_title),
-                        fontSize = 20.sp,
+                        fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         color = TextPrimary
                     )
