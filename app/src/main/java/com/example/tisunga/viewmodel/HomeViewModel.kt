@@ -17,6 +17,7 @@ private const val TAG = "HomeViewModel"
 
 data class HomeUiState(
     val isLoading: Boolean = false,
+    val userId: String = "",
     val userName: String = "",
     val userPhone: String = "",
     val myGroups: List<Group> = emptyList(),
@@ -40,6 +41,7 @@ class HomeViewModel(
             _uiState.value = _uiState.value.copy(
                 isLoading = true,
                 errorMessage = "",
+                userId    = sessionManager.getUserId().ifEmpty { "" },
                 userName  = sessionManager.getUserName().ifEmpty { "" },
                 userPhone = sessionManager.getUserPhone().ifEmpty { "" }
             )
