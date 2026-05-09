@@ -204,7 +204,7 @@ fun QuickActionsGrid(navController: NavController, groupId: String, isChair: Boo
         ) {
             ActionCard(Icons.Default.SwapHoriz, stringResource(R.string.action_view_loans), Modifier.weight(1f)) {
                 if (isChair) {
-                    navController.navigate(Routes.GROUP_LOANS_DETAIL.replace("{groupId}", groupId))
+                    navController.navigate(Routes.GROUP_LOANS.replace("{groupId}", groupId))
                 } else {
                     navController.navigate(Routes.MY_LOANS.replace("{groupId}", groupId))
                 }

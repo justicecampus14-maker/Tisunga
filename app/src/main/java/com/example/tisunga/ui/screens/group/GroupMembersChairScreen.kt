@@ -222,7 +222,15 @@ private fun ChairMemberCard(
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         MemberActionChip(stringResource(R.string.loans_label), Modifier.weight(1f)) { 
-                            navController.navigate(Routes.MY_LOANS.replace("{groupId}", groupId))
+                            if (isMe) {
+                                navController.navigate(Routes.MY_LOANS.replace("{groupId}", groupId))
+                            } else {
+                                navController.navigate(
+                                    Routes.MY_LOANS.replace("{groupId}", groupId)
+                                        .replace("{userId}", member.id)
+                                        .replace("{userName}", "${member.firstName} ${member.lastName}")
+                                )
+                            }
                         }
                         MemberActionChip(stringResource(R.string.savings_label), Modifier.weight(1f)) { 
                             navController.navigate(Routes.CONTRIBUTION_HISTORY.replace("{groupId}", groupId)) 

@@ -15,11 +15,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.tisunga.R
 import com.example.tisunga.data.model.Loan
 import com.example.tisunga.ui.components.BottomNavBar
 import com.example.tisunga.ui.navigation.Routes
@@ -89,14 +91,14 @@ fun AllLoansScreen(
                 Icon(Icons.Default.DoNotDisturb, null,
                     tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(32.dp))
             },
-            title = { Text("Reject Loan?", fontWeight = FontWeight.Bold) },
+            title = { Text(stringResource(R.string.reject_loan_title), fontWeight = FontWeight.Bold) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Provide a reason so the member understands the decision.", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.reject_reason_instruction), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     OutlinedTextField(
                         value = rejectReason,
                         onValueChange = { rejectReason = it },
-                        placeholder = { Text("Enter reason...") },
+                        placeholder = { Text(stringResource(R.string.enter_reason_hint)) },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(10.dp),
                         minLines = 2
@@ -112,10 +114,10 @@ fun AllLoansScreen(
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
                     enabled = rejectReason.isNotBlank()
-                ) { Text("Reject", color = Color.White) }
+                ) { Text(stringResource(R.string.reject_button_label), color = Color.White) }
             },
             dismissButton = {
-                OutlinedButton(onClick = { rejectingLoanId = null; rejectReason = "" }) { Text("Cancel") }
+                OutlinedButton(onClick = { rejectingLoanId = null; rejectReason = "" }) { Text(stringResource(R.string.cancel_button)) }
             }
         )
     }
@@ -157,7 +159,7 @@ fun AllLoansScreen(
                     ExtendedFloatingActionButton(
                         onClick = { navController.navigate("apply_loan/$groupId") },
                         icon    = { Icon(Icons.Default.Add, null) },
-                        text    = { Text("Apply for Loan") },
+                        text    = { Text(stringResource(R.string.apply_loan_button)) },
                         containerColor = MaterialTheme.colorScheme.primary,
                         contentColor   = MaterialTheme.colorScheme.onPrimary,
                         shape = RoundedCornerShape(16.dp)
@@ -182,7 +184,7 @@ fun AllLoansScreen(
                 // ── Section: Pending Approvals (CHAIR / SECRETARY only) ────────
                 if (canApprove && pendingLoans.isNotEmpty()) {
                     SectionHeader(
-                        title   = "Pending Approvals",
+                        title   = stringResource(R.string.pending_approvals_title),
                         badge   = pendingLoans.size.toString(),
                         action  = null
                     )
@@ -205,8 +207,8 @@ fun AllLoansScreen(
 
                 // ── Section: My Loan status ───────────────────────────────────
                 SectionHeader(
-                    title  = "My Loan",
-                    action = if (uiState.myLoans.isNotEmpty()) Pair("History") {
+                    title  = stringResource(R.string.my_loan_title),
+                    action = if (uiState.myLoans.isNotEmpty()) Pair(stringResource(R.string.filter_history)) {
                         navController.navigate("my_loans/$groupId")
                     } else null
                 )
@@ -236,8 +238,8 @@ fun AllLoansScreen(
                 if (activeGroupLoans.isNotEmpty()) {
                     Spacer(Modifier.height(8.dp))
                     SectionHeader(
-                        title  = "Group Loan Activity",
-                        action = Pair("All") { navController.navigate("group_loans/$groupId") }
+                        title  = stringResource(R.string.group_loan_activity_title),
+                        action = Pair(stringResource(R.string.all_link)) { navController.navigate("group_loans/$groupId") }
                     )
                     Column(
                         modifier = Modifier.padding(horizontal = 16.dp),
@@ -251,7 +253,7 @@ fun AllLoansScreen(
                                 onClick = { navController.navigate("group_loans/$groupId") },
                                 modifier = Modifier.fillMaxWidth()
                             ) {
-                                Text("+${activeGroupLoans.size - 3} more loans", color = MaterialTheme.colorScheme.primary)
+                                Text(stringResource(R.string.more_loans_link, activeGroupLoans.size - 3), color = MaterialTheme.colorScheme.primary)
                             }
                         }
                     }
@@ -348,13 +350,13 @@ private fun PendingApprovalCard(
                     Column {
                         Text(loan.borrowerName, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurface)
                         Text(
-                            loan.purpose?.ifBlank { "Personal loan" } ?: "Personal loan",
+                            loan.purpose?.ifBlank { stringResource(R.string.personal_loan_default) } ?: stringResource(R.string.personal_loan_default),
                             fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
                 Text(
-                    "MK ${String.format(Locale.US, "%,.0f", loan.principalAmount)}",
+                    stringResource(R.string.amount_mk, String.format(Locale.US, "%,.0f", loan.principalAmount)),
                     fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = MaterialTheme.colorScheme.primary
                 )
             }
@@ -366,12 +368,12 @@ private fun PendingApprovalCard(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                LoanDetail("Duration", "${loan.durationMonths} mo.")
-                LoanDetail("Interest", "MK ${String.format(Locale.US, "%,.0f",
-                    loan.totalRepayable - loan.principalAmount)}")
-                LoanDetail("Total Repay", "MK ${String.format(Locale.US, "%,.0f",
-                    loan.totalRepayable)}")
-                LoanDetail("Applied", loan.createdAt.take(10))
+                LoanDetail(stringResource(R.string.duration_label), "${loan.durationMonths} mo.")
+                LoanDetail(stringResource(R.string.interest_label), stringResource(R.string.amount_mk, String.format(Locale.US, "%,.0f",
+                    loan.totalRepayable - loan.principalAmount)))
+                LoanDetail(stringResource(R.string.total_repay_label), stringResource(R.string.amount_mk, String.format(Locale.US, "%,.0f",
+                    loan.totalRepayable)))
+                LoanDetail(stringResource(R.string.applied_label), loan.createdAt.take(10))
             }
 
             Spacer(Modifier.height(14.dp))
@@ -394,7 +396,7 @@ private fun PendingApprovalCard(
                     } else {
                         Icon(Icons.Default.Close, null, Modifier.size(14.dp))
                         Spacer(Modifier.width(4.dp))
-                        Text("Decline", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                        Text(stringResource(R.string.decline_button), fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                     }
                 }
                 Button(
@@ -409,7 +411,7 @@ private fun PendingApprovalCard(
                     } else {
                         Icon(Icons.Default.Check, null, Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSecondary)
                         Spacer(Modifier.width(4.dp))
-                        Text("Approve", color = MaterialTheme.colorScheme.onSecondary, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                        Text(stringResource(R.string.approve_button), color = MaterialTheme.colorScheme.onSecondary, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                     }
                 }
             }
@@ -439,14 +441,14 @@ private fun ActiveLoanCard(loan: Loan, onRepayClick: () -> Unit) {
                 verticalAlignment = Alignment.Top
             ) {
                 Column {
-                    Text("Outstanding Balance", color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f), fontSize = 12.sp)
+                    Text(stringResource(R.string.outstanding_balance_label), color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f), fontSize = 12.sp)
                     Text(
-                        "MK ${String.format(Locale.US, "%,.0f", loan.remainingBalance)}",
+                        stringResource(R.string.amount_mk, String.format(Locale.US, "%,.0f", loan.remainingBalance)),
                         color = MaterialTheme.colorScheme.onPrimary, fontSize = 26.sp, fontWeight = FontWeight.ExtraBold
                     )
                 }
                 Surface(shape = RoundedCornerShape(8.dp), color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f)) {
-                    Text("ACTIVE", modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                    Text(stringResource(R.string.status_active_caps), modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
                         color = MaterialTheme.colorScheme.secondary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                 }
             }
@@ -464,9 +466,9 @@ private fun ActiveLoanCard(loan: Loan, onRepayClick: () -> Unit) {
             Spacer(Modifier.height(6.dp))
 
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("${(pct * 100).toInt()}% repaid", color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f), fontSize = 11.sp)
+                Text(stringResource(R.string.loan_repaid_percent_alt, (pct * 100).toInt()), color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f), fontSize = 11.sp)
                 if (!loan.dueDate.isNullOrBlank())
-                    Text("Due ${loan.dueDate.take(10)}", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.due_label, loan.dueDate.take(10)), color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
             }
 
             Spacer(Modifier.height(16.dp))
@@ -476,7 +478,7 @@ private fun ActiveLoanCard(loan: Loan, onRepayClick: () -> Unit) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.VerifiedUser, null, tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(14.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text("Approved by ${loan.approverName}", color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f), fontSize = 11.sp)
+                    Text(stringResource(R.string.approved_by_label, loan.approverName), color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f), fontSize = 11.sp)
                 }
                 Spacer(Modifier.height(12.dp))
             }
@@ -492,7 +494,7 @@ private fun ActiveLoanCard(loan: Loan, onRepayClick: () -> Unit) {
             ) {
                 Icon(Icons.Default.Payment, null, Modifier.size(16.dp))
                 Spacer(Modifier.width(6.dp))
-                Text("Make a Repayment", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                Text(stringResource(R.string.make_repayment_button), fontWeight = FontWeight.Bold, fontSize = 14.sp)
             }
         }
     }
@@ -517,13 +519,13 @@ private fun PendingOwnLoanCard(loan: Loan) {
             Icon(Icons.Default.HourglassTop, null,
                 tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(32.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text("Pending Review", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurface)
+                Text(stringResource(R.string.pending_review_title), fontWeight = FontWeight.Bold, fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurface)
                 Text(
-                    "MK ${String.format(Locale.US, "%,.0f", loan.principalAmount)} — awaiting CHAIR / SECRETARY approval.",
+                    stringResource(R.string.awaiting_approval_msg, stringResource(R.string.amount_mk, String.format(Locale.US, "%,.0f", loan.principalAmount))),
                     fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, lineHeight = 16.sp
                 )
                 loan.purpose?.let {
-                    Text("Purpose: $it", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 2.dp))
+                    Text(stringResource(R.string.purpose_display_label, it), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 2.dp))
                 }
             }
         }
@@ -547,10 +549,10 @@ private fun NoLoanCard(hasGroup: Boolean, onApply: () -> Unit) {
             Icon(Icons.Default.CreditCard, null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f), modifier = Modifier.size(48.dp))
             Spacer(Modifier.height(12.dp))
-            Text("No active loan", fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurface)
+            Text(stringResource(R.string.no_active_loan_title), fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurface)
             Text(
-                if (hasGroup) "You can apply once you need funds from the group."
-                else "Join or create a group to access loans.",
+                if (hasGroup) stringResource(R.string.apply_funds_msg)
+                else stringResource(R.string.join_group_loan_msg),
                 fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center, modifier = Modifier.padding(top = 4.dp)
             )
@@ -563,7 +565,7 @@ private fun NoLoanCard(hasGroup: Boolean, onApply: () -> Unit) {
                 ) {
                     Icon(Icons.Default.Add, null, Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
                     Spacer(Modifier.width(6.dp))
-                    Text("Apply for a Loan", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.apply_loan_button), color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
                 }
             }
         }
@@ -602,7 +604,7 @@ fun GroupLoanCard(loan: Loan) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    loan.borrowerName.ifBlank { "Member" },
+                    loan.borrowerName.ifBlank { stringResource(R.string.member_default_name) },
                     fontWeight = FontWeight.SemiBold,
                     fontSize   = 14.sp,
                     modifier   = Modifier.weight(1f),
@@ -613,7 +615,7 @@ fun GroupLoanCard(loan: Loan) {
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     Text(
-                        "MK ${String.format(Locale.US, "%,.0f", loan.principalAmount)}",
+                        stringResource(R.string.amount_mk, String.format(Locale.US, "%,.0f", loan.principalAmount)),
                         fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.primary
                     )
                     Surface(
@@ -642,9 +644,9 @@ fun GroupLoanCard(loan: Loan) {
                     modifier = Modifier.fillMaxWidth().padding(top = 3.dp),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text("${(pct * 100).toInt()}% repaid", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.loan_repaid_percent_alt, (pct * 100).toInt()), fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(
-                        "MK ${String.format(Locale.US, "%,.0f", loan.remainingBalance)} left",
+                        stringResource(R.string.amount_left_label, String.format(Locale.US, "%,.0f", loan.remainingBalance)),
                         fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }

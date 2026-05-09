@@ -61,6 +61,9 @@ interface ApiService {
     @GET("users/me/loans")
     suspend fun getMyLoans(): List<Loan>
 
+    @GET("loans/user/{userId}")
+    suspend fun getUserLoans(@Path("userId") userId: String): MemberLoansResponse
+
     // ── GROUPS ────────────────────────────────────────────────────────────
 
     @GET("groups/my")

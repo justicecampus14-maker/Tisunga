@@ -168,7 +168,7 @@ fun SavingsSummaryCard(groupTotal: Double, mySavings: Double) {
             // Group Savings column
             Column {
                 Text(
-                    "Group Savings",
+                    stringResource(R.string.group_savings_title),
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f),
                     fontWeight = FontWeight.Medium
@@ -184,7 +184,7 @@ fun SavingsSummaryCard(groupTotal: Double, mySavings: Double) {
             // My Savings column
             Column {
                 Text(
-                    "My Savings",
+                    stringResource(R.string.my_savings_label),
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f),
                     fontWeight = FontWeight.Medium
@@ -246,7 +246,7 @@ fun MemberSavingsCard(row: MemberSavingsRow) {
 
                 Column {
                     Text(
-                        text = row.userName.ifBlank { "Member" },
+                        text = row.userName.ifBlank { stringResource(R.string.member_default_name) },
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 14.sp,
                         color = MaterialTheme.colorScheme.onSurface
@@ -288,13 +288,13 @@ fun GroupSavingsCard(summary: GroupSavingsSummary, onSaveClick: () -> Unit) {
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "Total: ${FormatUtils.formatMoney(summary.totalSavings)}",
+                text = stringResource(R.string.total_amount_with_label, FormatUtils.formatMoney(summary.totalSavings)),
                 fontSize = 14.sp,
                 color = MaterialTheme.colorScheme.primary,
                 fontWeight = FontWeight.SemiBold
             )
             Text(
-                text = "My Savings: ${FormatUtils.formatMoney(summary.mySavings)}",
+                text = stringResource(R.string.my_savings_amount_label, FormatUtils.formatMoney(summary.mySavings)),
                 fontSize = 13.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

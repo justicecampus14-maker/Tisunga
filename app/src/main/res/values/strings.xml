@@ -74,6 +74,7 @@
     <string name="discover_title">Discover</string>
     <string name="search_placeholder">search by name or location</string>
     <string name="filter_all">All</string>
+    <string name="filter_all_caps">ALL</string>
     <string name="filter_open">Open</string>
     <string name="filter_short_period">Short period</string>
     <string name="filter_popular">Popular</string>
@@ -108,6 +109,7 @@
     <string name="add_button">Add</string>
     <string name="members_added_title">Members Added</string>
     <string name="role_member">Member</string>
+    <string name="role_chairperson">Chairperson</string>
     <string name="role_secretary">Secretary</string>
     <string name="role_treasurer">Treasurer</string>
     <string name="done_button">Done</string>
@@ -178,14 +180,35 @@
     <string name="filter_active">Active</string>
     <string name="filter_upcoming">Upcoming</string>
     <string name="filter_closed">Completed</string>
+    <string name="filter_ongoing">Ongoing</string>
+    <string name="filter_scheduled">Scheduled</string>
+    <string name="filter_cancelled">Cancelled</string>
     <string name="filter_pending">Pending</string>
     <string name="filter_history">History</string>
+    <string name="filter_requested">Requested</string>
+    <string name="filter_rejected">Rejected</string>
+    <string name="filter_failed">Failed</string>
+    <string name="filter_completed">Completed</string>
 
     <!-- Events Screen -->
     <string name="events_title">Events</string>
+    <string name="tab_meetings">Meetings</string>
+    <string name="tab_other_events">Other Events</string>
     <string name="filter_all_events">All events</string>
     <string name="active_events_count">Active Events(%1$d)</string>
     <string name="create_link">Create</string>
+    <string name="add_event_button">Add event</string>
+    <string name="event_created_success">Event created successfully!</string>
+    <string name="meeting_scheduled_success">Meeting scheduled successfully!</string>
+    <string name="no_events_found">No events found</string>
+    <string name="target_amount_label">Target: MK %1$s</string>
+    <string name="collected_amount_label">Collected: MK %1$s</string>
+    <string name="invalid_datetime_format">Invalid format. Use YYYY-MM-DD HH:MM</string>
+    <string name="invalid_date_format">Invalid format. Use YYYY-MM-DD</string>
+    <string name="event_target_amount_label">Target Amount</string>
+    <string name="create_button">Create</string>
+    <string name="by_admin">by Admin</string>
+    <string name="by_user_placeholder">by %1$s</string>
     <string name="closed_events_title">Closed Events</string>
     <string name="close_event_button">Close Event</string>
     <string name="close_event_confirm_msg">Are you sure you want to close this event?</string>
@@ -225,6 +248,7 @@
     <string name="application_sent_title">Application Sent</string>
     <string name="application_sent_msg">Your loan request has been submitted and is awaiting approval from the group officials.</string>
     <string name="back_to_loans_button">Back to Loans</string>
+    <string name="retry_button">Retry</string>
     <string name="loan_interest_notice">Interest is 5% flat. The CHAIR or SECRETARY will review your request.</string>
     <string name="group_balance_label">Group Balance: MK %1$s</string>
     <string name="loan_amount_mk_label">Loan Amount (MK)</string>
@@ -267,7 +291,6 @@
 
     <!-- Group Loans Screen -->
     <string name="filter_request">Request</string>
-    <string name="filter_rejected">Rejected</string>
     <!-- Savings Screen -->
     <string name="savings_title">Savings</string>
     <string name="total_savings_label">Total Savings:</string>
@@ -276,6 +299,8 @@
     <string name="saving_groups_count">%1$d saving groups</string>
     <string name="withdraw_date_label">Withdraw date: %1$s</string>
     <string name="members_count">%1$d members</string>
+    <string name="my_savings_amount_label">My Savings: %1$s</string>
+    <string name="total_amount_with_label">Total: %1$s</string>
 
     <!-- Disbursement Screen -->
     <string name="disburse_funds_title">Disburse Funds</string>
@@ -287,6 +312,14 @@
     <string name="reject_button">Reject</string>
     <string name="request_disbursement_confirm_msg">Request disbursement of MK %1$s to %2$d members? Treasurer must approve before funds are sent.</string>
     <string name="approve_disbursement_confirm_msg">Send MK %1$s to all %2$d members mobile wallets? This cannot be undone.</string>
+    <string name="disbursement_label">Disbursement</string>
+    <string name="reject_request_title">Reject Request</string>
+    <string name="waiting_chairperson_disbursement">Waiting for Chairperson to initiate disbursement.</string>
+    <string name="disbursement_request_label">Disbursement Request</string>
+    <string name="requested_by_user_label">Requested by %1$s</string>
+    <string name="awaiting_treasurer_approval">Awaiting Treasurer\'s approval to release funds.</string>
+    <string name="resubmit_request_button">Resubmit Request</string>
+    <string name="savings_value_label">Savings: %1$s</string>
 
     <!-- Make Contribution Screen -->
     <string name="make_contribution_title">Make Contribution</string>
@@ -299,9 +332,18 @@
     <string name="contribution_type_event">Event Contribution</string>
     <string name="amount_mk_input_label">Amount (MK)</string>
     <string name="receive_pin_msg">You will receive a massage to enter your pin on your phone</string>
+    <string name="payment_initiated_title">Payment Initiated</string>
+    <string name="payment_initiated_msg">Please check your phone (%1$s) for a PIN prompt to authorize the payment of MK%2$s.</string>
+    <string name="new_contribution_label">New Contribution</string>
+    <string name="regular_contribution_label">Regular Contribution</string>
+    <string name="social_welfare_label">Social Welfare</string>
+    <string name="pin_prompt_confirmation_notice">You will receive a PIN prompt on your phone to authorize this transaction.</string>
 
     <!-- Contribution History Screen -->
     <string name="contribution_history_title">Contribution History</string>
+    <string name="my_history_tab">My History</string>
+    <string name="group_history_tab">Group History</string>
+    <string name="no_contributions_found">No contributions found</string>
 
     <!-- Transactions Screen -->
     <string name="tab_all">All</string>
@@ -311,6 +353,7 @@
     <string name="transaction_date_placeholder">Friday, March 19, 2026 9:00am</string>
     <string name="transaction_time_placeholder">5:00PM</string>
     <string name="my_loan_title">My Loan</string>
+    <string name="member_loans_title">%1$s\'s Loan</string>
     <string name="group_loans_title">Group Loans</string>
     <string name="requests_link">Requests</string>
     <string name="loan_approved_by_full">Approved by %1$s\n%2$s. %3$s</string>
@@ -318,7 +361,13 @@
     <string name="repay_now_label">Repay Now</string>
 
     <!-- Notifications Screen -->
-    <string name="notifications_title">Notification</string>
+    <string name="notifications_title">Notifications</string>
+    <string name="mark_all_read_label">Mark all read</string>
+    <string name="no_notifications_msg">No notifications yet</string>
+    <string name="just_now_label">Just now</string>
+    <string name="minutes_ago_label">%1$dm ago</string>
+    <string name="hours_ago_label">%1$dh ago</string>
+    <string name="days_ago_label">%1$dd ago</string>
 
     <!-- Profile Screen -->
     <string name="my_profile_title">My Profile</string>
@@ -386,4 +435,28 @@
     <string name="approved_by_label">Approved by %1$s</string>
     <string name="decline_button">Decline</string>
     <string name="approve_button">Approve</string>
+
+    <!-- My Loans & All Loans Extras -->
+    <string name="success_title">Success</string>
+    <string name="no_loans_category_msg">No loans found for this category.</string>
+    <string name="remaining_label">Remaining: %1$s</string>
+    <string name="due_label">Due: %1$s</string>
+    <string name="clear_button">Clear</string>
+    <string name="clear_loan_balance_title">Clear Loan Balance</string>
+    <string name="amount_to_clear_label">Amount to clear:</string>
+    <string name="pay_now_button">Pay Now</string>
+    <string name="pending_approvals_title">Pending Approvals</string>
+    <string name="group_loan_activity_title">Group Loan Activity</string>
+    <string name="all_link">All</string>
+    <string name="more_loans_link">+%1$d more loans</string>
+    <string name="personal_loan_default">Personal loan</string>
+    <string name="total_repay_label">Total Repay</string>
+    <string name="outstanding_balance_label">Outstanding Balance</string>
+    <string name="make_repayment_button">Make a Repayment</string>
+    <string name="pending_review_title">Pending Review</string>
+    <string name="awaiting_approval_msg">%1$s — awaiting CHAIR / SECRETARY approval.</string>
+    <string name="no_active_loan_title">No active loan</string>
+    <string name="apply_funds_msg">You can apply once you need funds from the group.</string>
+    <string name="join_group_loan_msg">Join or create a group to access loans.</string>
+    <string name="member_default_name">Member</string>
 </resources>

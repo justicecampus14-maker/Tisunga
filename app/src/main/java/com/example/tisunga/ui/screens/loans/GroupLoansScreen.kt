@@ -34,7 +34,7 @@ fun GroupLoansScreen(
     navController: NavController,
     groupId: String,
     viewModel: LoanViewModel,
-    groupViewModel: GroupViewModel? = null   // optional — used to read role if available
+    groupViewModel: GroupViewModel? = null
 ) {
     val uiState       by viewModel.uiState.collectAsState()
     val groupUiState  = groupViewModel?.uiState?.collectAsState()
@@ -65,7 +65,7 @@ fun GroupLoansScreen(
         }
     }
 
-    // ── Reject dialog ─────────────────────────────────────────────────────────
+    //Reject dialog
     if (rejectingLoanId != null) {
         AlertDialog(
             onDismissRequest = { rejectingLoanId = null },

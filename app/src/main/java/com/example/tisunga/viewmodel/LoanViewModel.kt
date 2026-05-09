@@ -23,6 +23,8 @@ data class LoanUiState(
     val isSuccess: Boolean        = false,
     val successMessage: String    = "",
     val errorMessage: String      = "",
+    val memberLoansTitle: String? = null,
+    val memberLoansName: String?  = null,
     // Action-specific loading flags (avoid blocking the whole screen)
     val isApproving: String?      = null,   // loanId being approved
     val isRejecting: String?      = null,   // loanId being rejected
@@ -51,6 +53,26 @@ class LoanViewModel(
                 _uiState.value = _uiState.value.copy(
                     isLoading    = false,
                     errorMessage = e.message ?: "Failed to load loans"
+                )
+            }
+        }
+    }
+
+    fun getUserLoans(userId: String) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = "")
+            try {
+                val response = api.getUserLoans(userId)
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    myLoans = response.loans,
+                    memberLoansTitle = response.title,
+                    memberLoansName = response.borrowerName
+                )
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading    = false,
+                    errorMessage = e.message ?: "Failed to load member loans"
                 )
             }
         }
