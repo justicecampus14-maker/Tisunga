@@ -156,16 +156,9 @@ fun GroupMembersScreen(
                             onRemove = { viewModel.removeMember(groupId, member.id) },
                             onUpdateRole = { newRole -> viewModel.updateMemberRole(groupId, member.id, newRole) },
                             onLoansClick = {
-                                val isMe = member.id == uiState.currentUserId
-                                val route = if (isMe) {
-                                    Routes.MY_LOANS.replace("{groupId}", groupId)
-                                        .replace("{userName}", "")
-                                        .replace("{userId}", "")
-                                } else {
-                                    Routes.MY_LOANS.replace("{groupId}", groupId)
-                                        .replace("{userId}", member.id)
-                                        .replace("{userName}", "${member.firstName} ${member.lastName}")
-                                }
+                                val route = Routes.MY_LOANS.replace("{groupId}", groupId)
+                                    .replace("{userId}", member.id)
+                                    .replace("{userName}", "${member.firstName} ${member.lastName}")
                                 navController.navigate(route)
                             }
                         )
