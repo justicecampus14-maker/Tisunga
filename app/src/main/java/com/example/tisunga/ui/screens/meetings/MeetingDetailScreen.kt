@@ -19,6 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.compose.ui.platform.LocalContext
 import android.widget.Toast
 import androidx.compose.ui.res.stringResource
@@ -42,6 +43,7 @@ fun MeetingDetailScreen(
     val meeting = uiState.selectedMeeting
     val context = LocalContext.current
     val sessionManager = remember { com.example.tisunga.utils.SessionManager(context) }
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
     
     var showCompleteDialog by remember { mutableStateOf(false) }
     var showCancelDialog by remember { mutableStateOf(false) }
@@ -49,20 +51,24 @@ fun MeetingDetailScreen(
     val groupRole = sessionManager.getGroupRole(groupId)?.uppercase() ?: "MEMBER"
     val isChair = groupRole == "CHAIR" || groupRole == "CHAIRPERSON" || groupRole == "SECRETARY" || groupRole == "ADMIN"
 
-    LaunchedEffect(groupId, meetingId) {
-        viewModel.getMeeting(groupId, meetingId)
+    LaunchedEffect(groupId, meetingId, navBackStackEntry) {
+        // Refresh data whenever we are on this screen
+        if (navBackStackEntry?.destination?.route?.startsWith("meeting_detail") == true) {
+            viewModel.getMeeting(groupId, meetingId)
+        }
     }
 
-    LaunchedEffect(uiState.isSuccess, uiState.errorMessage) {
-        if (uiState.isSuccess && uiState.successMessage.isNotEmpty()) {
-            Toast.makeText(context, uiState.successMessage, Toast.LENGTH_SHORT).show()
-            // The ViewModel already updated selectedMeeting in the state,
-            // so we just need to reset the success flag to avoid repeated toasts.
-            viewModel.resetState()
-        }
-        if (uiState.errorMessage.isNotEmpty()) {
-            Toast.makeText(context, uiState.errorMessage, Toast.LENGTH_LONG).show()
-            viewModel.resetState()
+    LaunchedEffect(uiState.isSuccess, uiState.errorMessage, navBackStackEntry) {
+        val isCurrent = navBackStackEntry?.destination?.route?.startsWith("meeting_detail") == true
+        if (isCurrent) {
+            if (uiState.isSuccess && uiState.successMessage.isNotEmpty()) {
+                Toast.makeText(context, uiState.successMessage, Toast.LENGTH_SHORT).show()
+                viewModel.resetState()
+            }
+            if (uiState.errorMessage.isNotEmpty()) {
+                Toast.makeText(context, uiState.errorMessage, Toast.LENGTH_LONG).show()
+                viewModel.resetState()
+            }
         }
     }
 
@@ -82,7 +88,10 @@ fun MeetingDetailScreen(
             val status = meeting?.status?.uppercase() ?: ""
             if (isChair && status != "COMPLETED" && status != "CANCELLED") {
                 ExtendedFloatingActionButton(
-                    onClick = { navController.navigate("attendance/$groupId/${meeting?.id}") },
+                    onClick = { 
+                        viewModel.resetState()
+                        navController.navigate("attendance/$groupId/${meeting?.id}") 
+                    },
                     containerColor = GreenAccent,
                     contentColor = Color.White,
                     icon = { Icon(Icons.Default.CalendarToday, contentDescription = null) },

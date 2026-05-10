@@ -50,10 +50,9 @@ fun ApplyLoanScreen(
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
 
-    // Priority: live dashboard → seeded selectedGroup → HomeViewModel group (prevents "always insufficient")
-    val totalSavings = groupState.groupDashboard?.group?.totalSavings
-        ?: groupState.selectedGroup?.totalSavings
-        ?: homeViewModel?.uiState?.collectAsState()?.value?.myGroups?.firstOrNull()?.totalSavings
+    // Priority: live dashboard → seeded selectedGroup → HomeViewModel group
+    val personalSavings = groupState.groupDashboard?.mySavings
+        ?: groupState.selectedGroup?.mySavings
         ?: 0.0
 
     var amount by remember { mutableStateOf("") }
@@ -144,7 +143,7 @@ fun ApplyLoanScreen(
                         Icon(Icons.Default.Info, null, tint = NavyBlue)
                         Spacer(modifier = Modifier.width(12.dp))
                         Text(
-                            stringResource(R.string.loan_interest_notice),
+                            "Interest: 1wk(5%), 2wks(10%), 4wks(20%). CHAIR/SECRETARY will review.",
                             fontSize = 13.sp, color = NavyBlue, fontWeight = FontWeight.Medium
                         )
                     }
@@ -153,7 +152,7 @@ fun ApplyLoanScreen(
                         Icon(Icons.Default.Warning, null, tint = NavyBlue, modifier = Modifier.size(20.dp))
                         Spacer(modifier = Modifier.width(12.dp))
                         Text(
-                            stringResource(R.string.group_balance_label, String.format("%,.0f", totalSavings)),
+                            stringResource(R.string.my_savings_label, String.format("%,.0f", personalSavings)),
                             fontSize = 13.sp, color = NavyBlue, fontWeight = FontWeight.Bold
                         )
                     }
@@ -174,8 +173,11 @@ fun ApplyLoanScreen(
                     OutlinedTextField(
                         value = amount,
                         onValueChange = {
-                            amount = it
-                            it.toDoubleOrNull()?.let { valAmt -> viewModel.calculateInterest(valAmt, duration) }
+                            if (it.isEmpty() || it.all { char -> char.isDigit() }) {
+                                amount = it
+                                val valAmt = it.toDoubleOrNull() ?: 0.0
+                                viewModel.calculateInterest(valAmt, duration)
+                            }
                         },
                         modifier = Modifier.fillMaxWidth(),
                         placeholder = { Text(stringResource(R.string.loan_amount_hint)) },
@@ -198,23 +200,29 @@ fun ApplyLoanScreen(
                     )
 
                     if (amount.isNotEmpty()) {
+                        val currentRate = when(duration) {
+                            1 -> "5%"
+                            2 -> "10%"
+                            4 -> "20%"
+                            else -> ""
+                        }
                         Spacer(modifier = Modifier.height(16.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            InfoBox(label = stringResource(R.string.interest_percent_label), value = stringResource(R.string.amount_mk, String.format("%,.0f", uiState.calculatedInterest)), Modifier.weight(1f))
+                            InfoBox(label = "Interest ($currentRate)", value = stringResource(R.string.amount_mk, String.format("%,.0f", uiState.calculatedInterest)), Modifier.weight(1f))
                             InfoBox(label = stringResource(R.string.total_repayable_label), value = stringResource(R.string.amount_mk, String.format("%,.0f", uiState.calculatedRepayable)), Modifier.weight(1f))
                         }
                     }
 
                     Spacer(modifier = Modifier.height(20.dp))
 
-                    Text(stringResource(R.string.duration_months_label), fontWeight = FontWeight.Bold, fontSize = 14.sp, color = TextPrimary)
+                    Text("Duration (Weeks)", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = TextPrimary)
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        listOf(1, 2, 3, 6, 12).forEach { months ->
-                            val isSelected = duration == months
+                        listOf(1, 2, 4).forEach { weeks ->
+                            val isSelected = duration == weeks
                             Surface(
                                 modifier = Modifier
                                     .weight(1f)
@@ -222,13 +230,14 @@ fun ApplyLoanScreen(
                                 shape = RoundedCornerShape(10.dp),
                                 color = if (isSelected) NavyBlue else BackgroundGray,
                                 onClick = {
-                                    duration = months
-                                    amount.toDoubleOrNull()?.let { valAmt -> viewModel.calculateInterest(valAmt, duration) }
+                                    duration = weeks
+                                    val valAmt = amount.toDoubleOrNull() ?: 0.0
+                                    viewModel.calculateInterest(valAmt, duration)
                                 }
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
                                     Text(
-                                        "$months",
+                                        "$weeks wk${if(weeks > 1) "s" else ""}",
                                         color = if (isSelected) White else TextPrimary,
                                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                                     )
@@ -266,7 +275,8 @@ fun ApplyLoanScreen(
                     Spacer(modifier = Modifier.height(32.dp))
 
                     val amtVal = amount.toDoubleOrNull() ?: 0.0
-                    val isInsufficient = amtVal > totalSavings
+                    val totalPayable = uiState.calculatedRepayable
+                    val isInsufficient = amount.isNotEmpty() && totalPayable > personalSavings
 
                     Button(
                         onClick = {
@@ -285,7 +295,7 @@ fun ApplyLoanScreen(
                             CircularProgressIndicator(color = White, modifier = Modifier.size(24.dp))
                         } else {
                             Text(
-                                if (isInsufficient) stringResource(R.string.insufficient_balance_button) else stringResource(R.string.submit_application_button),
+                                if (isInsufficient) stringResource(R.string.insufficient_personal_balance_button) else stringResource(R.string.submit_application_button),
                                 color = White, fontSize = 16.sp, fontWeight = FontWeight.Bold
                             )
                         }
@@ -305,7 +315,7 @@ fun ApplyLoanScreen(
                                 Icon(Icons.Default.Error, null, tint = Color.Red, modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
-                                    stringResource(R.string.insufficient_balance_error, String.format("%,.0f", amtVal), String.format("%,.0f", totalSavings)),
+                                    stringResource(R.string.insufficient_personal_balance_error, String.format("%,.0f", totalPayable), String.format("%,.0f", personalSavings)),
                                     color = Color.Red, fontSize = 12.sp, lineHeight = 16.sp
                                 )
                             }

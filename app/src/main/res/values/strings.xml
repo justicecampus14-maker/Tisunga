@@ -273,7 +273,9 @@
     <string name="loan_purpose_hint">What is this loan for?</string>
     <string name="insufficient_balance_button">Insufficient Group Balance</string>
     <string name="submit_application_button">Submit Application</string>
-    <string name="insufficient_balance_error">The requested amount (MK %1$s) exceeds the available group balance (MK %2$s).</string>
+    <string name="insufficient_balance_error">The total repayable amount (MK %1$s) exceeds the available group balance (MK %2$s).</string>
+    <string name="insufficient_personal_balance_error">The total repayable amount (MK %1$s) exceeds your personal savings (MK %2$s).</string>
+    <string name="insufficient_personal_balance_button">Insufficient Personal Savings</string>
     <string name="apply_loan_title">Apply Loan</string>
     <string name="loan_notice">The requested loan will be repayed with an interest of 5%.\nAnd the interest will increase by 5% if not paid on time.</string>
     <string name="loan_amount_label">Loan Amount</string>

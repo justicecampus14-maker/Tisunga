@@ -31,6 +31,12 @@ interface ApiService {
     @POST("auth/login")
     suspend fun login(@Body request: LoginRequest): LoginResponse
 
+    @POST("auth/refresh")
+    suspend fun refresh(@Body body: Map<String, String>): LoginResponse
+
+    @POST("auth/refresh")
+    fun refreshSync(@Body body: Map<String, String>): retrofit2.Call<LoginResponse>
+
     @POST("auth/forgot-password")
     suspend fun forgotPassword(@Body body: Map<String, String>): ForgotPasswordResponse
 
