@@ -35,6 +35,7 @@ fun AttendanceScreen(
     val attendanceEntries = remember { mutableStateMapOf<String, String>() }
 
     LaunchedEffect(groupId, meetingId) {
+        viewModel.resetState()
         viewModel.getMeetingAttendance(groupId, meetingId)
     }
 
@@ -56,6 +57,7 @@ fun AttendanceScreen(
     LaunchedEffect(uiState.isSuccess) {
         if (uiState.isSuccess) {
             navController.popBackStack()
+            viewModel.resetState()
         }
     }
 
@@ -81,11 +83,17 @@ fun AttendanceScreen(
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp),
+                    .padding(16.dp)
+                    .height(50.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = GreenAccent),
-                shape = RoundedCornerShape(8.dp)
+                shape = RoundedCornerShape(8.dp),
+                enabled = !uiState.isLoading
             ) {
-                Text(stringResource(R.string.submit_attendance_button), fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                if (uiState.isLoading) {
+                    CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                } else {
+                    Text(stringResource(R.string.submit_attendance_button), fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                }
             }
         }
     ) { padding ->
@@ -95,6 +103,20 @@ fun AttendanceScreen(
                 .padding(padding)
                 .background(BackgroundGray)
         ) {
+            if (uiState.errorMessage.isNotEmpty()) {
+                Card(
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFFEBEE))
+                ) {
+                    Text(
+                        uiState.errorMessage,
+                        color = Color.Red,
+                        modifier = Modifier.padding(12.dp),
+                        fontSize = 14.sp
+                    )
+                }
+            }
+
             val presentCount = attendanceEntries.values.count { it.uppercase() == "PRESENT" }
             val totalCount = uiState.attendance.size
             

@@ -2,23 +2,34 @@ package com.example.tisunga.data.remote
 
 import android.content.Context
 import com.example.tisunga.data.model.StringToDouble
+import com.example.tisunga.data.remote.dto.LoginResponse
 import com.example.tisunga.utils.Constants
 import com.example.tisunga.utils.SessionManager
 import com.google.gson.GsonBuilder
+import okhttp3.Authenticator
+import okhttp3.Dns
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
+import okhttp3.Request
 import okhttp3.Response
+import okhttp3.Route
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
-import java.util.concurrent.TimeUnit
-import java.net.InetAddress
 import java.net.Inet4Address
-import okhttp3.Dns
+import java.net.InetAddress
+import java.util.concurrent.TimeUnit
 
 object ApiClient {
     private var retrofit: Retrofit? = null
     private var sessionManager: SessionManager? = null
+
+    private val gson = GsonBuilder()
+        .setLenient()
+        .registerTypeAdapter(Double::class.java, StringToDouble())
+        .registerTypeAdapter(Double::class.javaPrimitiveType, StringToDouble())
+        .registerTypeHierarchyAdapter(Double::class.java, StringToDouble())
+        .create()
 
     fun init(context: Context) {
         sessionManager = SessionManager(context)
@@ -34,6 +45,7 @@ object ApiClient {
 
             val client = OkHttpClient.Builder()
                 .addInterceptor(AuthInterceptor())
+                .authenticator(TokenAuthenticator())
                 .addInterceptor(logging)
                 .connectTimeout(60, TimeUnit.SECONDS)
                 .readTimeout(60, TimeUnit.SECONDS)
@@ -50,13 +62,6 @@ object ApiClient {
                     }
                 })
                 .build()
-
-            val gson = GsonBuilder()
-                .setLenient()
-                .registerTypeAdapter(Double::class.java, StringToDouble())
-                .registerTypeAdapter(Double::class.javaPrimitiveType, StringToDouble())
-                .registerTypeHierarchyAdapter(Double::class.java, StringToDouble())
-                .create()
 
             retrofit = Retrofit.Builder()
                 .baseUrl(currentBaseUrl)
@@ -85,6 +90,64 @@ object ApiClient {
             }
             
             return chain.proceed(requestBuilder.build())
+        }
+    }
+
+    private class TokenAuthenticator : Authenticator {
+        override fun authenticate(route: Route?, response: Response): Request? {
+            synchronized(this) {
+                val refreshToken = sessionManager?.fetchRefreshToken()
+                if (refreshToken.isNullOrBlank()) return null
+
+                // To avoid infinite loops, if the failed request was already a refresh attempt, stop.
+                if (response.request.url.encodedPath.contains("auth/refresh")) {
+                    return null
+                }
+
+                try {
+                    // We need a separate retrofit instance without the authenticator to avoid loops
+                    val logging = HttpLoggingInterceptor().apply {
+                        level = HttpLoggingInterceptor.Level.BODY
+                    }
+                    val refreshClient = OkHttpClient.Builder()
+                        .addInterceptor(logging)
+                        .build()
+
+                    val refreshRetrofit = Retrofit.Builder()
+                        .baseUrl(Constants.BASE_URL)
+                        .addConverterFactory(UnwrappingGsonConverterFactory.create(gson))
+                        .addConverterFactory(GsonConverterFactory.create(gson))
+                        .client(refreshClient)
+                        .build()
+
+                    val api = refreshRetrofit.create(ApiService::class.java)
+                    
+                    // Call refresh synchronously
+                    val refreshCall = api.refreshSync(mapOf("refreshToken" to refreshToken))
+                    val refreshResponse = refreshCall.execute()
+
+                    if (refreshResponse.isSuccessful) {
+                        val body = refreshResponse.body()
+                        if (body != null) {
+                            // If the response is success, save tokens
+                            sessionManager?.saveAuthToken(body.accessToken)
+                            sessionManager?.saveRefreshToken(body.refreshToken)
+
+                            return response.request.newBuilder()
+                                .header("Authorization", "Bearer ${body.accessToken}")
+                                .build()
+                        }
+                    }
+else {
+                        // Refresh failed, possibly log out user
+                        // sessionManager?.clearSession()
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+
+                return null
+            }
         }
     }
 }

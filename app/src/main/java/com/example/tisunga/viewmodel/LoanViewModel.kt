@@ -199,9 +199,15 @@ class LoanViewModel(
 
     // ── Interest calculator (local — no API call) ─────────────────────────────
 
-    fun calculateInterest(amount: Double, durationMonths: Int) {
-        // Backend uses flat 5% interest rate (not per month — confirmed from controller)
-        val interest    = amount * 0.05
+    fun calculateInterest(amount: Double, durationWeeks: Int) {
+        // Dynamic interest logic: 5% for 1 week, 10% for 2 weeks, 20% for 4 weeks
+        val rate = when (durationWeeks) {
+            1 -> 0.05
+            2 -> 0.10
+            4 -> 0.20
+            else -> 0.05 * durationWeeks // Fallback or linear scaling if needed
+        }
+        val interest    = amount * rate
         val totalRepay  = amount + interest
         _uiState.value = _uiState.value.copy(
             calculatedInterest  = interest,

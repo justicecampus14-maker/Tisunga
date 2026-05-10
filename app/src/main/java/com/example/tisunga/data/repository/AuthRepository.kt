@@ -31,6 +31,10 @@ class AuthRepository(private val apiService: ApiService) {
     suspend fun login(request: LoginRequest) =
         apiService.login(request)
 
+    /** Refresh token */
+    suspend fun refresh(refreshToken: String) =
+        apiService.refresh(mapOf("refreshToken" to refreshToken))
+
     /** Forgot password — GET OTP */
     suspend fun forgotPassword(phone: String) =
         apiService.forgotPassword(mapOf("phone" to phone))
