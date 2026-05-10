@@ -19,6 +19,8 @@ class SessionManager(context: Context) {
         const val USER_ROLE          = "user_role"
         const val GROUP_ROLES        = "group_roles"
         const val IS_DARK_MODE       = "is_dark_mode"
+        const val NOTIFICATIONS_ENABLED = "notifications_enabled"
+        const val BIOMETRIC_ENABLED  = "biometric_enabled"
     }
 
     fun saveAuthToken(token: String) =
@@ -68,6 +70,12 @@ class SessionManager(context: Context) {
 
     fun isDarkMode(): Boolean = prefs.getBoolean(IS_DARK_MODE, false)
     fun setDarkMode(isDark: Boolean) = prefs.edit().putBoolean(IS_DARK_MODE, isDark).apply()
+
+    fun isNotificationsEnabled(): Boolean = prefs.getBoolean(NOTIFICATIONS_ENABLED, true)
+    fun setNotificationsEnabled(enabled: Boolean) = prefs.edit().putBoolean(NOTIFICATIONS_ENABLED, enabled).apply()
+
+    fun isBiometricEnabled(): Boolean = prefs.getBoolean(BIOMETRIC_ENABLED, false)
+    fun setBiometricEnabled(enabled: Boolean) = prefs.edit().putBoolean(BIOMETRIC_ENABLED, enabled).apply()
 
     fun isLoggedIn(): Boolean = !fetchAuthToken().isNullOrBlank()
 

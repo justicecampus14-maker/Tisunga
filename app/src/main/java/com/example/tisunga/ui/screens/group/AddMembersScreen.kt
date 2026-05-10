@@ -9,7 +9,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -17,15 +17,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.example.tisunga.R
 import com.example.tisunga.data.remote.dto.MembershipResponse
 import com.example.tisunga.ui.navigation.Routes
 import com.example.tisunga.ui.theme.*
@@ -42,7 +37,6 @@ fun AddMembersScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
-    val clipboardManager = LocalClipboardManager.current
 
     var phoneSearch  by remember { mutableStateOf("") }
     var selectedRole by remember { mutableStateOf("MEMBER") }
@@ -114,22 +108,6 @@ fun AddMembersScreen(
         ) {
             item { Spacer(modifier = Modifier.height(8.dp)) }
 
-            // Group Code Identifier Card (Simplified)
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(24.dp),
-                    colors = CardDefaults.cardColors(containerColor = NavyBlue)
-                ) {
-                    Column(modifier = Modifier.padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("UNIQUE GROUP CODE", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = White.copy(alpha = 0.7f))
-                        Spacer(modifier = Modifier.height(4.dp))
-                        val code = uiState.selectedGroup?.groupCode ?: "---"
-                        Text(code, fontWeight = FontWeight.ExtraBold, fontSize = 36.sp, color = White, letterSpacing = 2.sp)
-                    }
-                }
-            }
-
             // Search Section
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -144,7 +122,10 @@ fun AddMembersScreen(
                             if (uiState.isLoading) {
                                 CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp, color = NavyBlue)
                             } else {
-                                TextButton(onClick = { if (phoneSearch.length >= 9) viewModel.searchMemberByPhone(phoneSearch) }, enabled = phoneSearch.length >= 9) {
+                                TextButton(
+                                    onClick = { if (phoneSearch.length >= 9) viewModel.searchMemberByPhone(phoneSearch) }, 
+                                    enabled = phoneSearch.length >= 9 && !uiState.isLoading
+                                ) {
                                     Text("SEARCH", fontWeight = FontWeight.Bold, color = if (phoneSearch.length >= 9) NavyBlue else Color.LightGray)
                                 }
                             }
@@ -164,73 +145,86 @@ fun AddMembersScreen(
             // Search Result Card
             uiState.searchResult?.let { result ->
                 item {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(24.dp),
-                        colors = CardDefaults.cardColors(containerColor = White),
-                        elevation = CardDefaults.cardElevation(2.dp)
-                    ) {
-                        Column(modifier = Modifier.padding(20.dp)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Box(modifier = Modifier.size(52.dp).background(NavyBlue.copy(alpha = 0.1f), CircleShape), contentAlignment = Alignment.Center) {
-                                    val char = result.user?.firstName?.take(1)?.uppercase() ?: "?"
-                                    Text(char, fontWeight = FontWeight.Bold, color = NavyBlue, fontSize = 22.sp)
-                                }
-                                Spacer(modifier = Modifier.width(16.dp))
-                                Column(modifier = Modifier.weight(1f)) {
-                                    if (result.found && result.user != null) {
-                                        Text("${result.user.firstName} ${result.user.lastName}", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = TextPrimary)
-                                        Text(result.user.phone, color = TextSecondary, fontSize = 14.sp)
-                                    } else {
-                                        Text("User Not Found", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = RedAccent)
+                    if (result.alreadyInGroup) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.4f))
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(Icons.Default.Info, null, tint = RedAccent)
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Text(
+                                    text = "$phoneSearch already registered",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 15.sp,
+                                    color = RedAccent
+                                )
+                            }
+                        }
+                    } else {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(24.dp),
+                            colors = CardDefaults.cardColors(containerColor = White),
+                            elevation = CardDefaults.cardElevation(2.dp)
+                        ) {
+                            Column(modifier = Modifier.padding(20.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Box(modifier = Modifier.size(52.dp).background(NavyBlue.copy(alpha = 0.1f), CircleShape), contentAlignment = Alignment.Center) {
+                                        val char = result.user?.firstName?.take(1)?.uppercase() ?: "?"
+                                        Text(char, fontWeight = FontWeight.Bold, color = NavyBlue, fontSize = 22.sp)
+                                    }
+                                    Spacer(modifier = Modifier.width(16.dp))
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        if (result.found && result.user != null) {
+                                            Text("${result.user.firstName} ${result.user.lastName}", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = TextPrimary)
+                                            Text(result.user.phone, color = TextSecondary, fontSize = 14.sp)
+                                        } else {
+                                            Text("User Not Found", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = RedAccent)
+                                        }
+                                    }
+                                    // Badge
+                                    val badgeColor = if (!result.found) RedAccent else GreenAccent
+                                    val badgeText = if (!result.found) "UNREGISTERED" else "ELIGIBLE"
+                                    
+                                    Surface(color = badgeColor.copy(alpha = 0.1f), shape = RoundedCornerShape(8.dp)) {
+                                        Text(badgeText, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp), color = badgeColor, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                                     }
                                 }
-                                // Badge
-                                val badgeColor = when {
-                                    !result.found -> RedAccent
-                                    result.alreadyInGroup -> RedAccent
-                                    else -> GreenAccent
-                                }
-                                val badgeText = when {
-                                    !result.found -> "UNREGISTERED"
-                                    result.alreadyInGroup -> "IN GROUP"
-                                    else -> "ELIGIBLE"
-                                }
-                                Surface(color = badgeColor.copy(alpha = 0.1f), shape = RoundedCornerShape(8.dp)) {
-                                    Text(badgeText, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp), color = badgeColor, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                                }
-                            }
 
-                            if (result.alreadyInGroup) {
-                                Text("This user is already a member of ${result.groupName ?: "another group"}.", color = RedAccent, fontSize = 12.sp, modifier = Modifier.padding(top = 12.dp))
-                            } else if (!result.found) {
-                                Text("No account associated with this number. The member needs to register on Tisunga first.", color = TextSecondary, fontSize = 13.sp, modifier = Modifier.padding(top = 12.dp))
-                            } else {
-                                Spacer(modifier = Modifier.height(20.dp))
-                                Text("ASSIGN ROLE", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = TextSecondary)
-                                Row(modifier = Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    listOf("MEMBER", "SECRETARY", "TREASURER").forEach { role ->
-                                        val isSelected = selectedRole == role
-                                        Surface(
-                                            modifier = Modifier.weight(1f).height(44.dp).clickable { selectedRole = role },
-                                            color = if (isSelected) NavyBlue else BackgroundGray,
-                                            shape = RoundedCornerShape(12.dp),
-                                            border = if (isSelected) null else androidx.compose.foundation.BorderStroke(1.dp, Color.LightGray.copy(alpha = 0.3f))
-                                        ) {
-                                            Box(contentAlignment = Alignment.Center) {
-                                                Text(role, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = if (isSelected) White else TextSecondary)
+                                if (!result.found) {
+                                    Text("No account associated with this number. The member needs to register on Tisunga first.", color = TextSecondary, fontSize = 13.sp, modifier = Modifier.padding(top = 12.dp))
+                                } else {
+                                    Spacer(modifier = Modifier.height(20.dp))
+                                    Text("ASSIGN ROLE", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = TextSecondary)
+                                    Row(modifier = Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        listOf("MEMBER", "SECRETARY", "TREASURER").forEach { role ->
+                                            val isSelected = selectedRole == role
+                                            Surface(
+                                                modifier = Modifier.weight(1f).height(44.dp).clickable { selectedRole = role },
+                                                color = if (isSelected) NavyBlue else BackgroundGray,
+                                                shape = RoundedCornerShape(12.dp),
+                                                border = if (isSelected) null else androidx.compose.foundation.BorderStroke(1.dp, Color.LightGray.copy(alpha = 0.3f))
+                                            ) {
+                                                Box(contentAlignment = Alignment.Center) {
+                                                    Text(role, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = if (isSelected) White else TextSecondary)
+                                                }
                                             }
                                         }
                                     }
-                                }
-                                Button(
-                                    onClick = { viewModel.addMemberWithRole(groupId, result.user!!.phone, selectedRole) },
-                                    modifier = Modifier.fillMaxWidth().padding(top = 20.dp).height(48.dp),
-                                    shape = RoundedCornerShape(14.dp),
-                                    colors = ButtonDefaults.buttonColors(containerColor = NavyBlue),
-                                    enabled = !uiState.isLoading
-                                ) {
-                                    Text("Add to Group", fontWeight = FontWeight.Bold)
+                                    Button(
+                                        onClick = { viewModel.addMemberWithRole(groupId, result.user!!.phone, selectedRole) },
+                                        modifier = Modifier.fillMaxWidth().padding(top = 20.dp).height(48.dp),
+                                        shape = RoundedCornerShape(14.dp),
+                                        colors = ButtonDefaults.buttonColors(containerColor = NavyBlue),
+                                        enabled = !uiState.isLoading
+                                    ) {
+                                        Text("Add to Group", fontWeight = FontWeight.Bold)
+                                    }
                                 }
                             }
                         }
