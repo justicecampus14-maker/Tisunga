@@ -55,10 +55,11 @@ fun AddMembersScreen(
         }
     }
 
+    val memberAddedMsg = stringResource(R.string.member_added_msg_substring)
     LaunchedEffect(uiState.successMessage) {
         if (uiState.successMessage.isNotEmpty()) {
             snackbarHostState.showSnackbar(uiState.successMessage)
-            if (uiState.successMessage.contains("Member added")) {
+            if (uiState.successMessage.contains(memberAddedMsg)) {
                 uiState.searchResult?.user?.let { userSummary ->
                     sessionMembers.add(0, MembershipResponse(role = selectedRole, user = userSummary))
                 }
@@ -81,10 +82,10 @@ fun AddMembersScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Add Members", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = TextPrimary) },
+                title = { Text(stringResource(R.string.add_members_title), fontSize = 20.sp, fontWeight = FontWeight.Bold, color = TextPrimary) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = TextPrimary)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back_desc), tint = TextPrimary)
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = White)
@@ -103,7 +104,7 @@ fun AddMembersScreen(
                     shape = RoundedCornerShape(16.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = NavyBlue)
                 ) {
-                    Text("Done", color = White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.done_button), color = White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -114,38 +115,23 @@ fun AddMembersScreen(
         ) {
             item { Spacer(modifier = Modifier.height(8.dp)) }
 
-            // Group Code Identifier Card (Simplified)
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(24.dp),
-                    colors = CardDefaults.cardColors(containerColor = NavyBlue)
-                ) {
-                    Column(modifier = Modifier.padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("UNIQUE GROUP CODE", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = White.copy(alpha = 0.7f))
-                        Spacer(modifier = Modifier.height(4.dp))
-                        val code = uiState.selectedGroup?.groupCode ?: "---"
-                        Text(code, fontWeight = FontWeight.ExtraBold, fontSize = 36.sp, color = White, letterSpacing = 2.sp)
-                    }
-                }
-            }
 
             // Search Section
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("FIND MEMBER", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = TextSecondary, letterSpacing = 1.sp)
+                    Text(stringResource(R.string.find_member_label), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = TextSecondary, letterSpacing = 1.sp)
                     OutlinedTextField(
                         value = phoneSearch,
                         onValueChange = { if (it.all { c -> c.isDigit() } && it.length <= 10) phoneSearch = it },
                         modifier = Modifier.fillMaxWidth(),
-                        placeholder = { Text("Phone (e.g. 0882 123 456)") },
+                        placeholder = { Text(stringResource(R.string.phone_placeholder_hint)) },
                         leadingIcon = { Icon(Icons.Default.Search, null, tint = TextSecondary) },
                         trailingIcon = {
                             if (uiState.isLoading) {
                                 CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp, color = NavyBlue)
                             } else {
                                 TextButton(onClick = { if (phoneSearch.length >= 9) viewModel.searchMemberByPhone(phoneSearch) }, enabled = phoneSearch.length >= 9) {
-                                    Text("SEARCH", fontWeight = FontWeight.Bold, color = if (phoneSearch.length >= 9) NavyBlue else Color.LightGray)
+                                    Text(stringResource(R.string.search_button), fontWeight = FontWeight.Bold, color = if (phoneSearch.length >= 9) NavyBlue else Color.LightGray)
                                 }
                             }
                         },
@@ -182,7 +168,7 @@ fun AddMembersScreen(
                                         Text("${result.user.firstName} ${result.user.lastName}", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = TextPrimary)
                                         Text(result.user.phone, color = TextSecondary, fontSize = 14.sp)
                                     } else {
-                                        Text("User Not Found", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = RedAccent)
+                                        Text(stringResource(R.string.user_not_found_label), fontWeight = FontWeight.Bold, fontSize = 18.sp, color = RedAccent)
                                     }
                                 }
                                 // Badge
@@ -192,9 +178,9 @@ fun AddMembersScreen(
                                     else -> GreenAccent
                                 }
                                 val badgeText = when {
-                                    !result.found -> "UNREGISTERED"
-                                    result.alreadyInGroup -> "IN GROUP"
-                                    else -> "ELIGIBLE"
+                                    !result.found -> stringResource(R.string.status_unregistered)
+                                    result.alreadyInGroup -> stringResource(R.string.status_in_group)
+                                    else -> stringResource(R.string.status_eligible)
                                 }
                                 Surface(color = badgeColor.copy(alpha = 0.1f), shape = RoundedCornerShape(8.dp)) {
                                     Text(badgeText, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp), color = badgeColor, fontSize = 10.sp, fontWeight = FontWeight.Bold)
@@ -202,15 +188,21 @@ fun AddMembersScreen(
                             }
 
                             if (result.alreadyInGroup) {
-                                Text("This user is already a member of ${result.groupName ?: "another group"}.", color = RedAccent, fontSize = 12.sp, modifier = Modifier.padding(top = 12.dp))
+                                Text(stringResource(R.string.member_already_in_group_msg, result.groupName ?: stringResource(R.string.another_group_label)), color = RedAccent, fontSize = 12.sp, modifier = Modifier.padding(top = 12.dp))
                             } else if (!result.found) {
-                                Text("No account associated with this number. The member needs to register on Tisunga first.", color = TextSecondary, fontSize = 13.sp, modifier = Modifier.padding(top = 12.dp))
+                                Text(stringResource(R.string.no_user_found_msg), color = TextSecondary, fontSize = 13.sp, modifier = Modifier.padding(top = 12.dp))
                             } else {
                                 Spacer(modifier = Modifier.height(20.dp))
-                                Text("ASSIGN ROLE", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = TextSecondary)
+                                Text(stringResource(R.string.assign_role_label), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = TextSecondary)
                                 Row(modifier = Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                     listOf("MEMBER", "SECRETARY", "TREASURER").forEach { role ->
                                         val isSelected = selectedRole == role
+                                        val roleLabel = when(role) {
+                                            "MEMBER" -> stringResource(R.string.role_member)
+                                            "SECRETARY" -> stringResource(R.string.role_secretary)
+                                            "TREASURER" -> stringResource(R.string.role_treasurer)
+                                            else -> role
+                                        }
                                         Surface(
                                             modifier = Modifier.weight(1f).height(44.dp).clickable { selectedRole = role },
                                             color = if (isSelected) NavyBlue else BackgroundGray,
@@ -218,7 +210,7 @@ fun AddMembersScreen(
                                             border = if (isSelected) null else androidx.compose.foundation.BorderStroke(1.dp, Color.LightGray.copy(alpha = 0.3f))
                                         ) {
                                             Box(contentAlignment = Alignment.Center) {
-                                                Text(role, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = if (isSelected) White else TextSecondary)
+                                                Text(roleLabel, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = if (isSelected) White else TextSecondary)
                                             }
                                         }
                                     }
@@ -230,7 +222,7 @@ fun AddMembersScreen(
                                     colors = ButtonDefaults.buttonColors(containerColor = NavyBlue),
                                     enabled = !uiState.isLoading
                                 ) {
-                                    Text("Add to Group", fontWeight = FontWeight.Bold)
+                                    Text(stringResource(R.string.add_to_group_button), fontWeight = FontWeight.Bold)
                                 }
                             }
                         }
@@ -240,7 +232,7 @@ fun AddMembersScreen(
 
             // Recently Added
             if (sessionMembers.isNotEmpty()) {
-                item { Text("RECENTLY ADDED", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = TextSecondary, modifier = Modifier.padding(top = 8.dp)) }
+                item { Text(stringResource(R.string.recently_added_label), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = TextSecondary, modifier = Modifier.padding(top = 8.dp)) }
                 items(sessionMembers) { member ->
                     Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = White)) {
                         Row(modifier = Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -250,7 +242,13 @@ fun AddMembersScreen(
                             Spacer(modifier = Modifier.width(12.dp))
                             Column(modifier = Modifier.weight(1f)) {
                                 Text("${member.user?.firstName} ${member.user?.lastName}", fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                                Text(member.role, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = GreenAccent)
+                                val displayRole = when(member.role.uppercase()) {
+                                    "MEMBER" -> stringResource(R.string.role_member)
+                                    "SECRETARY" -> stringResource(R.string.role_secretary)
+                                    "TREASURER" -> stringResource(R.string.role_treasurer)
+                                    else -> member.role
+                                }
+                                Text(displayRole, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = GreenAccent)
                             }
                             Text(member.user?.phone ?: "", fontSize = 12.sp, color = TextSecondary)
                         }

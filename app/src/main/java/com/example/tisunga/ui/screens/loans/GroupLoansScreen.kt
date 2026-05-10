@@ -43,7 +43,7 @@ fun GroupLoansScreen(
     val myRole = groupUiState?.value?.currentUserRole?.uppercase() ?: "MEMBER"
     val canApprove = myRole == "CHAIR" || myRole == "SECRETARY"
 
-    var selectedStatus  by remember { mutableStateOf("ACTIVE") }
+    var selectedStatus  by remember { mutableStateOf("ALL") }
     var rejectingLoanId by remember { mutableStateOf<String?>(null) }
     var rejectReason    by remember { mutableStateOf("") }
     val snackbarHost    = remember { SnackbarHostState() }
@@ -142,11 +142,12 @@ fun GroupLoansScreen(
                 contentPadding = PaddingValues(horizontal = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                val tabs = listOf("ACTIVE", "PENDING", "COMPLETED", "REJECTED")
+                val tabs = listOf("ALL", "ACTIVE", "PENDING", "COMPLETED", "REJECTED")
                 items(tabs) { status ->
-                    val count = uiState.groupLoans.count { it.status == status }
+                    val count = if (status == "ALL") uiState.groupLoans.size else uiState.groupLoans.count { it.status == status }
                     val isSelected = selectedStatus == status
                     val label = when (status) {
+                        "ALL" -> stringResource(R.string.filter_all)
                         "PENDING" -> stringResource(R.string.filter_pending)
                         "ACTIVE" -> stringResource(R.string.filter_active)
                         "COMPLETED" -> stringResource(R.string.filter_closed)
@@ -196,7 +197,7 @@ fun GroupLoansScreen(
                 }
             }
 
-            val filtered = uiState.groupLoans.filter { it.status == selectedStatus }
+            val filtered = if (selectedStatus == "ALL") uiState.groupLoans else uiState.groupLoans.filter { it.status == selectedStatus }
 
             if (filtered.isEmpty() && !uiState.isLoading) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -205,8 +206,9 @@ fun GroupLoansScreen(
                             tint = TextSecondary.copy(alpha = 0.3f), modifier = Modifier.size(48.dp))
                         Spacer(Modifier.height(8.dp))
                         val statusLabel = when (selectedStatus) {
-                            "PENDING" -> stringResource(R.string.filter_pending)
+                            "ALL" -> stringResource(R.string.filter_all).lowercase()
                             "ACTIVE" -> stringResource(R.string.filter_active)
+                            "PENDING" -> stringResource(R.string.filter_pending)
                             "COMPLETED" -> stringResource(R.string.filter_closed)
                             "REJECTED" -> stringResource(R.string.filter_rejected)
                             else -> selectedStatus.lowercase()
@@ -234,6 +236,14 @@ else {
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun LoanDetailItem(label: String, value: String) {
+    Column(horizontalAlignment = Alignment.Start) {
+        Text(label, fontSize = 10.sp, color = TextSecondary)
+        Text(value, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
     }
 }
 
@@ -287,7 +297,7 @@ fun FullGroupLoanCard(
                     }
                     Column {
                         Text(loan.borrowerName, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                        Text(loan.purpose?.ifBlank { "Personal loan" } ?: "Personal loan",
+                        Text(loan.purpose?.ifBlank { stringResource(R.string.personal_loan_default) } ?: stringResource(R.string.personal_loan_default),
                             fontSize = 11.sp, color = TextSecondary)
                     }
                 }
@@ -304,11 +314,11 @@ fun FullGroupLoanCard(
             HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = BackgroundGray)
 
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                LoanDetail(stringResource(R.string.duration_label), "${loan.durationMonths} mo.")
-                LoanDetail(stringResource(R.string.interest_label),
+                LoanDetailItem(stringResource(R.string.duration_label), "${loan.durationMonths} ${stringResource(id = if (loan.durationMonths == 1) R.string.period_1_month else R.string.duration_months_label).lowercase()}")
+                LoanDetailItem(stringResource(R.string.interest_label),
                     "MK ${String.format(Locale.US, "%,.0f", loan.totalRepayable - loan.principalAmount)}")
-                LoanDetail(stringResource(R.string.total_label), "MK ${String.format(Locale.US, "%,.0f", loan.totalRepayable)}")
-                LoanDetail(stringResource(R.string.applied_label), loan.createdAt.take(10))
+                LoanDetailItem(stringResource(R.string.total_label), "MK ${String.format(Locale.US, "%,.0f", loan.totalRepayable)}")
+                LoanDetailItem(stringResource(R.string.applied_label), loan.createdAt.take(10))
             }
 
             // Progress (ACTIVE loans)
