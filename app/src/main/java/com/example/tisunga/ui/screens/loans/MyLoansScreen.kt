@@ -61,7 +61,7 @@ fun MyLoansScreen(
     val myRole = groupUiState?.value?.currentUserRole?.uppercase() ?: homeUiState.myRole?.uppercase() ?: "MEMBER"
     val canApprove = myRole == "CHAIR" || myRole == "CHAIRPERSON" || myRole == "SECRETARY"
 
-    var selectedStatus by remember { mutableStateOf("ACTIVE") }
+    var selectedStatus by remember { mutableStateOf("ALL") }
     var rejectingLoanId by remember { mutableStateOf<String?>(null) }
     var rejectReason by remember { mutableStateOf("") }
 
@@ -148,7 +148,17 @@ fun MyLoansScreen(
         }
     }
 
-    val filteredLoans = uiState.groupLoans.filter { it.status.uppercase() == selectedStatus }
+    val filteredLoans = uiState.groupLoans.filter { loan ->
+        val statusMatches = if (selectedStatus == "ALL") true 
+                           else loan.status.uppercase() == selectedStatus.uppercase()
+        val userMatches = if (userId.isNullOrBlank()) true 
+                          else loan.borrowerId == userId
+        statusMatches && userMatches
+    }
+
+    val totalCountForCurrentView = uiState.groupLoans.count { loan ->
+        if (userId.isNullOrBlank()) true else loan.borrowerId == userId
+    }
 
     LaunchedEffect(groupId) {
         viewModel.getGroupLoans(groupId)
@@ -159,14 +169,20 @@ fun MyLoansScreen(
     Scaffold(
         containerColor = BackgroundGray,
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = { navController.navigate(Routes.APPLY_LOAN.replace("{groupId}", groupId)) },
-                containerColor = NavyBlue,
-                contentColor = White,
-                shape = CircleShape,
-                elevation = FloatingActionButtonDefaults.elevation(8.dp)
-            ) {
-                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.apply_loan_button), modifier = Modifier.size(28.dp))
+            if (userId.isNullOrBlank()) {
+                FloatingActionButton(
+                    onClick = { navController.navigate(Routes.APPLY_LOAN.replace("{groupId}", groupId)) },
+                    containerColor = NavyBlue,
+                    contentColor = White,
+                    shape = CircleShape,
+                    elevation = FloatingActionButtonDefaults.elevation(8.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Add,
+                        contentDescription = stringResource(R.string.apply_loan_button),
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
             }
         }
     ) { padding ->
@@ -177,12 +193,13 @@ fun MyLoansScreen(
                 .background(BackgroundGray)
                 .statusBarsPadding()
         ) {
-            val isViewingOtherMember = !currentUserIdParam.isNullOrBlank() && currentUserIdParam != homeUiState.userId
+            val isMemberView = !currentUserIdParam.isNullOrBlank()
 
             // Header Section
-            if (isViewingOtherMember) {
+            if (isMemberView) {
                 MyLoansMemberHeader(
-                    userName = userName ?: uiState.memberLoansName ?: "",
+                    userName = if (currentUserIdParam == homeUiState.userId) homeUiState.userName 
+                              else (userName ?: uiState.memberLoansName ?: ""),
                     navController = navController
                 )
             } else {
@@ -207,11 +224,17 @@ fun MyLoansScreen(
                 contentPadding = PaddingValues(horizontal = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                val tabs = listOf("ACTIVE", "PENDING", "COMPLETED", "REJECTED")
+                val tabs = listOf("ALL", "ACTIVE", "PENDING", "COMPLETED", "REJECTED")
                 items(tabs) { status ->
-                    val count = uiState.groupLoans.count { it.status == status }
+                    val count = if (status == "ALL") totalCountForCurrentView 
+                               else uiState.groupLoans.count { 
+                                   val statusMatch = it.status.uppercase() == status.uppercase()
+                                   val userMatch = if (userId.isNullOrBlank()) true else it.borrowerId == userId
+                                   statusMatch && userMatch
+                               }
                     val isSelected = selectedStatus == status
                     val label = when (status) {
+                        "ALL" -> stringResource(R.string.filter_all)
                         "PENDING" -> stringResource(R.string.filter_pending)
                         "ACTIVE" -> stringResource(R.string.filter_active)
                         "COMPLETED" -> stringResource(R.string.filter_closed)
@@ -338,16 +361,27 @@ fun MyLoansHeaderSection(userName: String, userPhone: String, navController: Nav
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp)
+            .padding(horizontal = 4.dp, vertical = 8.dp)
     ) {
-        Box(
-            modifier = Modifier
-                .size(40.dp)
-                .background(MaterialTheme.colorScheme.primary, CircleShape)
-                .align(Alignment.CenterStart),
-            contentAlignment = Alignment.Center
+        Row(
+            modifier = Modifier.align(Alignment.CenterStart),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(initials, color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold)
+            IconButton(onClick = { navController.popBackStack() }) {
+                Icon(
+                    Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = stringResource(R.string.back_desc),
+                    tint = MaterialTheme.colorScheme.onBackground
+                )
+            }
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .background(MaterialTheme.colorScheme.primary, CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(initials, color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold)
+            }
         }
 
         Surface(

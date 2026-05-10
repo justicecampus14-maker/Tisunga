@@ -249,11 +249,10 @@ fun AppNavGraph(
             arguments = listOf(navArgument("groupId") { type = NavType.StringType })
         ) { back ->
             val groupId = back.arguments?.getString("groupId") ?: ""
-            MyLoansScreen(
+            GroupLoansScreen(
                 navController = navController,
                 groupId       = groupId,
                 viewModel     = loanViewModel,
-                homeViewModel = homeViewModel,
                 groupViewModel = groupViewModel
             )
         }
