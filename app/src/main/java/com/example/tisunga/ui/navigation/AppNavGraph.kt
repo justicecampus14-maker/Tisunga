@@ -15,6 +15,7 @@ import com.example.tisunga.ui.screens.auth.*
 import com.example.tisunga.ui.screens.events.ActivitiesScreen
 import com.example.tisunga.ui.screens.group.*
 import com.example.tisunga.ui.screens.home.HomeScreen
+import com.example.tisunga.ui.screens.home.SettingsScreen
 import com.example.tisunga.ui.screens.loans.*
 import com.example.tisunga.ui.screens.notifications.NotificationsScreen
 import com.example.tisunga.ui.screens.onboarding.WelcomeScreen
@@ -349,10 +350,18 @@ fun AppNavGraph(
             ThemeScreen(navController, sessionManager, onThemeChange)
         }
 
-        // ── Coming soon (screens not yet created) ──────────────────────────────
-        composable(Routes.MEETINGS) { ComingSoonScreen("Meetings") }
-        composable(Routes.SETTINGS) { ComingSoonScreen("Settings") }
+        // ── Settings ───────────────────────────────────────────────────────
+        composable(Routes.SETTINGS) {
+            SettingsScreen(
+                navController = navController,
+                sessionManager = sessionManager,
+                authViewModel = authViewModel,
+                onThemeChange = onThemeChange
+            )
+        }
+
         composable(Routes.CHANGE_PASSWORD) { ComingSoonScreen("Change Password") }
+        composable(Routes.MEETINGS) { ComingSoonScreen("Meetings") }
     }
 }
 

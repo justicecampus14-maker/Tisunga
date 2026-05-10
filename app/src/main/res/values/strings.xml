@@ -163,6 +163,7 @@
     <string name="summary_row_label_value">%1$s: %2$s</string>
     <string name="saving_period_months">%1$d Months</string>
     <string name="go_to_add_members_button">Go to Add Members</string>
+    <string name="maybe_later_button">Maybe Later</string>
 
     <!-- Group Detail Screen -->
     <string name="group_saving_label">Group saving</string>
