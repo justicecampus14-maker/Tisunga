@@ -31,6 +31,9 @@ class AuthRepository(private val apiService: ApiService) {
     suspend fun login(request: LoginRequest) =
         apiService.login(request)
 
+    /** Fetch full profile after login */
+    suspend fun getMyProfile() = apiService.getMyProfile()
+
     /** Forgot password — GET OTP */
     suspend fun forgotPassword(phone: String) =
         apiService.forgotPassword(mapOf("phone" to phone))
