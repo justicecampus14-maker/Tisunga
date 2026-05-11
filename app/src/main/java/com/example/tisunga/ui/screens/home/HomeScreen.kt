@@ -57,15 +57,17 @@ fun AppDrawerContent(
         Spacer(modifier = Modifier.height(48.dp))
 
         Row(
-            modifier = Modifier.padding(horizontal = 24.dp),
+            modifier = Modifier.padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                Icons.Default.Menu,
-                contentDescription = null,
-                modifier = Modifier.size(32.dp),
-                tint = MaterialTheme.colorScheme.primary
-            )
+            IconButton(onClick = { scope.launch { drawerState.close() } }) {
+                Icon(
+                    Icons.Default.Close,
+                    contentDescription = "Close Menu",
+                    modifier = Modifier.size(32.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
         }
 
         Spacer(modifier = Modifier.height(32.dp))

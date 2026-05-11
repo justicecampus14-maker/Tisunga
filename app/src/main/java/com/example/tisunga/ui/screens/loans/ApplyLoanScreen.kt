@@ -1,5 +1,6 @@
 package com.example.tisunga.ui.screens.loans
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -33,10 +34,12 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import com.example.tisunga.ui.theme.*
+import com.example.tisunga.utils.FormatUtils
 import com.example.tisunga.viewmodel.GroupViewModel
 import com.example.tisunga.viewmodel.LoanViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
+@Suppress("DEPRECATION")
 @Composable
 fun ApplyLoanScreen(
     navController: NavController,
@@ -51,14 +54,22 @@ fun ApplyLoanScreen(
     val keyboardController = LocalSoftwareKeyboardController.current
 
     // Priority: live dashboard → seeded selectedGroup → HomeViewModel group
-    val personalSavings = groupState.groupDashboard?.mySavings
-        ?: groupState.selectedGroup?.mySavings
+    val totalSavings = groupState.groupDashboard?.group?.totalSavings
+        ?: groupState.selectedGroup?.totalSavings
+        ?: homeViewModel?.uiState?.collectAsState()?.value?.myGroups?.firstOrNull()?.totalSavings
         ?: 0.0
 
     var amount by remember { mutableStateOf("") }
-    var duration by remember { mutableStateOf(1) }
+    var durationValue by remember { mutableIntStateOf(1) }
+    var isWeeks by remember { mutableStateOf(false) }
     var purpose by remember { mutableStateOf("") }
     var showSuccessDialog by remember { mutableStateOf(false) }
+
+    // Automatically synchronize calculations whenever inputs change
+    LaunchedEffect(amount, durationValue, isWeeks) {
+        val amt = amount.toDoubleOrNull() ?: 0.0
+        viewModel.calculateInterest(amt, durationValue, isWeeks)
+    }
 
     LaunchedEffect(uiState.isSuccess) {
         if (uiState.isSuccess) {
@@ -143,7 +154,7 @@ fun ApplyLoanScreen(
                         Icon(Icons.Default.Info, null, tint = NavyBlue)
                         Spacer(modifier = Modifier.width(12.dp))
                         Text(
-                            "Interest: 1wk(5%), 2wks(10%), 4wks(20%). CHAIR/SECRETARY will review.",
+                            "Interest rate varies by duration (2% to 55%)",
                             fontSize = 13.sp, color = NavyBlue, fontWeight = FontWeight.Medium
                         )
                     }
@@ -152,7 +163,7 @@ fun ApplyLoanScreen(
                         Icon(Icons.Default.Warning, null, tint = NavyBlue, modifier = Modifier.size(20.dp))
                         Spacer(modifier = Modifier.width(12.dp))
                         Text(
-                            stringResource(R.string.my_savings_label, String.format("%,.0f", personalSavings)),
+                            stringResource(R.string.group_balance_label, String.format("%,.0f", totalSavings)),
                             fontSize = 13.sp, color = NavyBlue, fontWeight = FontWeight.Bold
                         )
                     }
@@ -172,13 +183,7 @@ fun ApplyLoanScreen(
                     Spacer(modifier = Modifier.height(8.dp))
                     OutlinedTextField(
                         value = amount,
-                        onValueChange = {
-                            if (it.isEmpty() || it.all { char -> char.isDigit() }) {
-                                amount = it
-                                val valAmt = it.toDoubleOrNull() ?: 0.0
-                                viewModel.calculateInterest(valAmt, duration)
-                            }
-                        },
+                        onValueChange = { if (it.isEmpty() || it.all { c -> c.isDigit() || c == '.' }) amount = it },
                         modifier = Modifier.fillMaxWidth(),
                         placeholder = { Text(stringResource(R.string.loan_amount_hint)) },
                         keyboardOptions = KeyboardOptions(
@@ -200,44 +205,94 @@ fun ApplyLoanScreen(
                     )
 
                     if (amount.isNotEmpty()) {
-                        val currentRate = when(duration) {
-                            1 -> "5%"
-                            2 -> "10%"
-                            4 -> "20%"
-                            else -> ""
-                        }
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            InfoBox(label = "Interest ($currentRate)", value = stringResource(R.string.amount_mk, String.format("%,.0f", uiState.calculatedInterest)), Modifier.weight(1f))
-                            InfoBox(label = stringResource(R.string.total_repayable_label), value = stringResource(R.string.amount_mk, String.format("%,.0f", uiState.calculatedRepayable)), Modifier.weight(1f))
+                        Spacer(modifier = Modifier.height(24.dp))
+                        Text("Repayment Summary", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = TextPrimary)
+                        Spacer(modifier = Modifier.height(12.dp))
+                        
+                        // 2x2 Grid of Boxes
+                        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                InfoBox(
+                                    label = "Rate",
+                                    value = "${String.format("%.1f", uiState.calculatedInterestRate)}%",
+                                    modifier = Modifier.weight(1f)
+                                )
+                                InfoBox(
+                                    label = "Total Interest",
+                                    value = FormatUtils.formatMoney(uiState.calculatedInterest),
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                InfoBox(
+                                    label = if (isWeeks) "Per Week" else "Per Month",
+                                    value = FormatUtils.formatMoney(uiState.calculatedPeriodicRepayment),
+                                    modifier = Modifier.weight(1f)
+                                )
+                                InfoBox(
+                                    label = "Repayable",
+                                    value = FormatUtils.formatMoney(uiState.calculatedRepayable),
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(modifier = Modifier.height(24.dp))
 
-                    Text("Duration (Weeks)", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = TextPrimary)
+                    // Unit Selection Toggle
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        FilterChip(
+                            selected = isWeeks,
+                            onClick = { 
+                                isWeeks = true
+                                durationValue = 1 
+                            },
+                            label = { Text("Weeks") }
+                        )
+                        Spacer(Modifier.width(16.dp))
+                        FilterChip(
+                            selected = !isWeeks,
+                            onClick = { 
+                                isWeeks = false
+                                durationValue = 1
+                            },
+                            label = { Text("Months") }
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Text("Duration (${if (isWeeks) "Weeks" else "Months"})", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = TextPrimary)
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        listOf(1, 2, 4).forEach { weeks ->
-                            val isSelected = duration == weeks
+                        val options = if (isWeeks) listOf(1, 2, 3, 4) else listOf(1, 2, 3, 6, 12)
+                        options.forEach { value ->
+                            val isSelected = durationValue == value
                             Surface(
                                 modifier = Modifier
                                     .weight(1f)
                                     .height(44.dp),
                                 shape = RoundedCornerShape(10.dp),
                                 color = if (isSelected) NavyBlue else BackgroundGray,
-                                onClick = {
-                                    duration = weeks
-                                    val valAmt = amount.toDoubleOrNull() ?: 0.0
-                                    viewModel.calculateInterest(valAmt, duration)
-                                }
+                                onClick = { durationValue = value }
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
                                     Text(
-                                        "$weeks wk${if(weeks > 1) "s" else ""}",
+                                        "$value",
                                         color = if (isSelected) White else TextPrimary,
                                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                                     )
@@ -275,13 +330,12 @@ fun ApplyLoanScreen(
                     Spacer(modifier = Modifier.height(32.dp))
 
                     val amtVal = amount.toDoubleOrNull() ?: 0.0
-                    val totalPayable = uiState.calculatedRepayable
-                    val isInsufficient = amount.isNotEmpty() && totalPayable > personalSavings
+                    val isInsufficient = amtVal > totalSavings
 
                     Button(
                         onClick = {
                             if (amtVal > 0 && !isInsufficient) {
-                                viewModel.applyForLoan(groupId, amtVal, duration, purpose)
+                                viewModel.applyForLoan(groupId, amtVal, durationValue, isWeeks, purpose)
                             }
                         },
                         modifier = Modifier.fillMaxWidth().height(56.dp),
@@ -295,7 +349,7 @@ fun ApplyLoanScreen(
                             CircularProgressIndicator(color = White, modifier = Modifier.size(24.dp))
                         } else {
                             Text(
-                                if (isInsufficient) stringResource(R.string.insufficient_personal_balance_button) else stringResource(R.string.submit_application_button),
+                                if (isInsufficient) stringResource(R.string.insufficient_balance_button) else stringResource(R.string.submit_application_button),
                                 color = White, fontSize = 16.sp, fontWeight = FontWeight.Bold
                             )
                         }
@@ -315,7 +369,7 @@ fun ApplyLoanScreen(
                                 Icon(Icons.Default.Error, null, tint = Color.Red, modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
-                                    stringResource(R.string.insufficient_personal_balance_error, String.format("%,.0f", totalPayable), String.format("%,.0f", personalSavings)),
+                                    stringResource(R.string.insufficient_balance_error, String.format("%,.0f", amtVal), String.format("%,.0f", totalSavings)),
                                     color = Color.Red, fontSize = 12.sp, lineHeight = 16.sp
                                 )
                             }
@@ -353,12 +407,26 @@ fun ApplyLoanScreen(
 
 @Composable
 fun InfoBox(label: String, value: String, modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier
-            .background(BackgroundGray, RoundedCornerShape(12.dp))
-            .padding(12.dp)
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = BackgroundGray.copy(alpha = 0.4f)),
+        border = BorderStroke(0.5.dp, DividerColor)
     ) {
-        Text(label, fontSize = 11.sp, color = TextSecondary)
-        Text(value, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = TextPrimary)
+        Column(
+            modifier = Modifier
+                .padding(12.dp)
+                .fillMaxWidth()
+        ) {
+            Text(label, fontSize = 10.sp, color = TextSecondary, fontWeight = FontWeight.Medium)
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                value,
+                fontWeight = FontWeight.ExtraBold,
+                fontSize = 14.sp,
+                color = NavyBlue,
+                maxLines = 1
+            )
+        }
     }
 }

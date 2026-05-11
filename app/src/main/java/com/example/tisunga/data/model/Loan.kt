@@ -1,37 +1,42 @@
 package com.example.tisunga.data.model
 
 import com.google.gson.annotations.SerializedName
+import android.os.Parcelable
+import kotlinx.parcelize.Parcelize
 
+@Parcelize
 data class Loan(
-    val id: String,
-    val groupId: String,
-    val borrowerId: String,
-    val borrowerName: String,
-    val principalAmount: Double,
-    val interestRate: Double,
-    val totalRepayable: Double,
-    val remainingBalance: Double,
-    val durationMonths: Int,
-    val dueDate: String,
-    val status: String, // "PENDING", "ACTIVE", "COMPLETED", "REJECTED"
-    val purpose: String?,
-    val approverName: String?,
-    val approvedAt: String?,
-    val createdAt: String,
-    val updatedAt: String,
+    @SerializedName("id")               val id: String,
+    @SerializedName("groupId")          val groupId: String,
+    @SerializedName("borrowerId")       val borrowerId: String,
+    @SerializedName("borrowerName")     val borrowerName: String? = null,
+    @SerializedName("principalAmount")  val principalAmount: Double,
+    @SerializedName("interestRate")     val interestRate: Double,
+    @SerializedName("totalRepayable")   val totalRepayable: Double,
+    @SerializedName("remainingBalance") val remainingBalance: Double,
+    @SerializedName("durationMonths")   val durationMonths: Int,
+    @SerializedName("dueDate")          val dueDate: String? = null,
+    @SerializedName("status")           val status: String, // "PENDING", "ACTIVE", "COMPLETED", "REJECTED"
+    @SerializedName("purpose")          val purpose: String? = null,
+    @SerializedName("approverName")     val approverName: String? = null,
+    @SerializedName("approvedAt")       val approvedAt: String? = null,
+    @SerializedName("disbursedAt")      val disbursedAt: String? = null,
+    @SerializedName("createdAt")        val createdAt: String,
+    @SerializedName("updatedAt")        val updatedAt: String? = null,
     
-    @SerializedName("Group")
+    @SerializedName("group")
     val group: LoanGroupInfo? = null
-)
+) : Parcelable
 
+@Parcelize
 data class LoanGroupInfo(
-    val id: String,
-    val name: String
-)
+    @SerializedName("id")   val id: String,
+    @SerializedName("name") val name: String
+) : Parcelable
 
 data class LoanRepaymentResult(
-    val transactionRef: String,
-    val amount: Double,
-    val remainingBalance: Double,
-    val status: String
+    @SerializedName("transactionRef")   val transactionRef: String,
+    @SerializedName("amount")           val amount: Double,
+    @SerializedName("remainingBalance") val remainingBalance: Double,
+    @SerializedName("status")           val status: String
 )

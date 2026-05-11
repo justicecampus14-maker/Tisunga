@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlin.math.ceil
 
 data class LoanUiState(
     val isLoading: Boolean        = false,
@@ -19,6 +20,8 @@ data class LoanUiState(
     val groupLoans: List<Loan>    = emptyList(),
     val calculatedInterest: Double   = 0.0,
     val calculatedRepayable: Double  = 0.0,
+    val calculatedInterestRate: Double = 0.0,
+    val calculatedPeriodicRepayment: Double = 0.0,
     // Separate success/error so the UI can react precisely
     val isSuccess: Boolean        = false,
     val successMessage: String    = "",
@@ -96,10 +99,8 @@ class LoanViewModel(
     }
 
     // ── Apply for loan ────────────────────────────────────────────────────────
-    // FIX: was sending "period" — backend requires "durationMonths"
-    //      was sending extra "interestRate" which the backend ignores / rejects
 
-    fun applyForLoan(groupId: String, amount: Double, durationMonths: Int, purpose: String) {
+    fun applyForLoan(groupId: String, amount: Double, durationValue: Int, isWeeks: Boolean, purpose: String) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(
                 isLoading    = true,
@@ -107,12 +108,23 @@ class LoanViewModel(
                 isSuccess    = false
             )
             try {
+                // Backend expects durationMonths (Integer)
+                // If weeks, we approximate to months (minimum 1 month for backend consistency)
+                val durationMonths = if (isWeeks) {
+                    ceil(durationValue / 4.0).toInt().coerceAtLeast(1)
+                } else {
+                    durationValue
+                }
+                
+                // Track original requested period in purpose if weeks
+                val finalPurpose = if (isWeeks) "[$durationValue Weeks] $purpose" else purpose
+
                 val body = mutableMapOf<String, Any>(
                     "groupId"        to groupId,
                     "amount"         to amount,
-                    "durationMonths" to durationMonths   // FIX: was "period"
+                    "durationMonths" to durationMonths
                 )
-                if (purpose.isNotBlank()) body["purpose"] = purpose
+                if (finalPurpose.isNotBlank()) body["purpose"] = finalPurpose
 
                 api.applyForLoan(body)
                 _uiState.value = _uiState.value.copy(
@@ -199,19 +211,25 @@ class LoanViewModel(
 
     // ── Interest calculator (local — no API call) ─────────────────────────────
 
-    fun calculateInterest(amount: Double, durationWeeks: Int) {
-        // Dynamic interest logic: 5% for 1 week, 10% for 2 weeks, 20% for 4 weeks
-        val rate = when (durationWeeks) {
-            1 -> 0.05
-            2 -> 0.10
-            4 -> 0.20
-            else -> 0.05 * durationWeeks // Fallback or linear scaling if needed
+    fun calculateInterest(amount: Double, durationValue: Int, isWeeks: Boolean) {
+        // Scaling interest rate logic based on the period
+        // Base rate is 5% for 1 month. 
+        // We'll scale it: 5% per month. 
+        // For weeks, it's (5 / 4)% per week = 1.25% per week.
+        val monthlyRate = 0.05
+        val rate = if (isWeeks) {
+            (monthlyRate / 4.0) * durationValue
+        } else {
+            monthlyRate * durationValue
         }
+        
         val interest    = amount * rate
         val totalRepay  = amount + interest
         _uiState.value = _uiState.value.copy(
             calculatedInterest  = interest,
-            calculatedRepayable = totalRepay
+            calculatedRepayable = totalRepay,
+            calculatedInterestRate = rate * 100,
+            calculatedPeriodicRepayment = if (durationValue > 0) totalRepay / durationValue else totalRepay
         )
     }
 

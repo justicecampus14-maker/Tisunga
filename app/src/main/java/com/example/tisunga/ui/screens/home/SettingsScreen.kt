@@ -24,12 +24,9 @@ import com.example.tisunga.viewmodel.AuthViewModel
 fun SettingsScreen(
     navController: NavController,
     sessionManager: SessionManager,
-    authViewModel: AuthViewModel,
-    onThemeChange: (Boolean) -> Unit
+    authViewModel: AuthViewModel
 ) {
-    var notificationsEnabled by remember { mutableStateOf(sessionManager.isNotificationsEnabled()) }
     var biometricEnabled by remember { mutableStateOf(sessionManager.isBiometricEnabled()) }
-    var isDarkMode by remember { mutableStateOf(sessionManager.isDarkMode()) }
 
     Scaffold(
         topBar = {
@@ -50,28 +47,36 @@ fun SettingsScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
-            // Section: Account
+            // Section: Security
             Text(
-                text = "Account",
+                "Security",
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(vertical = 8.dp)
             )
             ElevatedCard(
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp)
             ) {
                 Column {
                     ListItem(
-                        headlineContent = { Text("My Profile") },
-                        supportingContent = { Text("Manage personal information") },
-                        leadingContent = { Icon(Icons.Default.Person, null) },
-                        trailingContent = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null) },
-                        modifier = Modifier.clickable { navController.navigate(Routes.PROFILE) }
+                        headlineContent = { Text("Biometric Lock") },
+                        supportingContent = { Text("Fingerprint or Face ID") },
+                        leadingContent = { Icon(Icons.Default.Fingerprint, null) },
+                        trailingContent = {
+                            Switch(
+                                checked = biometricEnabled,
+                                onCheckedChange = {
+                                    biometricEnabled = it
+                                    sessionManager.setBiometricEnabled(it)
+                                }
+                            )
+                        }
                     )
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                     ListItem(
                         headlineContent = { Text("Change Password") },
-                        supportingContent = { Text("Security credentials") },
+                        supportingContent = { Text("Update security credentials") },
                         leadingContent = { Icon(Icons.Default.Lock, null) },
                         trailingContent = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null) },
                         modifier = Modifier.clickable { navController.navigate(Routes.CHANGE_PASSWORD) }
@@ -79,81 +84,44 @@ fun SettingsScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
-            // Section: App Preferences
+            // Section: About
             Text(
-                text = "App Preferences",
+                "About",
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(vertical = 8.dp)
             )
             ElevatedCard(
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp)
             ) {
                 Column {
                     ListItem(
-                        headlineContent = { Text("Dark Mode") },
-                        leadingContent = { Icon(Icons.Default.Palette, null) },
-                        trailingContent = {
-                            Switch(
-                                checked = isDarkMode,
-                                onCheckedChange = {
-                                    isDarkMode = it
-                                    sessionManager.setDarkMode(it)
-                                    onThemeChange(it)
-                                }
-                            )
-                        }
+                        headlineContent = { Text("Help Center") },
+                        leadingContent = { Icon(Icons.AutoMirrored.Filled.HelpOutline, null) },
+                        trailingContent = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null) },
+                        modifier = Modifier.clickable { /* Support logic */ }
                     )
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                     ListItem(
-                        headlineContent = { Text("Notifications") },
-                        leadingContent = { Icon(Icons.Default.Notifications, null) },
-                        trailingContent = {
-                            Switch(
-                                checked = notificationsEnabled,
-                                onCheckedChange = {
-                                    notificationsEnabled = it
-                                    sessionManager.setNotificationsEnabled(it)
-                                }
-                            )
-                        }
+                        headlineContent = { Text("Privacy Policy") },
+                        leadingContent = { Icon(Icons.Default.PrivacyTip, null) },
+                        trailingContent = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null) },
+                        modifier = Modifier.clickable { /* Privacy logic */ }
+                    )
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                    ListItem(
+                        headlineContent = { Text("Version") },
+                        supportingContent = { Text("1.0.0") },
+                        leadingContent = { Icon(Icons.Default.Info, null) }
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Section: Security
-            Text(
-                text = "Security",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(vertical = 8.dp)
-            )
-            ElevatedCard(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                ListItem(
-                    headlineContent = { Text("Biometric Lock") },
-                    supportingContent = { Text("Fingerprint or Face ID") },
-                    leadingContent = { Icon(Icons.Default.Fingerprint, null) },
-                    trailingContent = {
-                        Switch(
-                            checked = biometricEnabled,
-                            onCheckedChange = {
-                                biometricEnabled = it
-                                sessionManager.setBiometricEnabled(it)
-                            }
-                        )
-                    }
-                )
-            }
-
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Logout Button
             Button(
                 onClick = {
                     authViewModel.logout()
@@ -161,9 +129,7 @@ fun SettingsScreen(
                         popUpTo(0) { inclusive = true }
                     }
                 },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
+                modifier = Modifier.fillMaxWidth().height(56.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.errorContainer,
                     contentColor = MaterialTheme.colorScheme.error
@@ -174,8 +140,6 @@ fun SettingsScreen(
                 Spacer(Modifier.width(8.dp))
                 Text("Logout", fontWeight = FontWeight.Bold, fontSize = 16.sp)
             }
-            
-            Spacer(modifier = Modifier.height(48.dp))
         }
     }
 }
