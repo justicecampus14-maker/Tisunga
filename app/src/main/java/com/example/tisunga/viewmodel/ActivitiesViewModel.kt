@@ -32,10 +32,9 @@ class ActivitiesViewModel(private val savedStateHandle: SavedStateHandle) : View
 
     fun clearError() { error = null }
 
-    fun load(groupId: String) {
-        // If we already have data (restored from savedStateHandle), don't force a reload
-        // unless you want to refresh. For persistence, we keep what we have.
-        if (meetings.isNotEmpty() || events.isNotEmpty()) return 
+    fun load(groupId: String, forceRefresh: Boolean = false) {
+        // If we already have data and not forcing refresh, don't reload
+        if (!forceRefresh && (meetings.isNotEmpty() || events.isNotEmpty())) return
         
         viewModelScope.launch {
             loading = true

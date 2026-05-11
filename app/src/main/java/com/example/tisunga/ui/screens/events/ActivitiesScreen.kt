@@ -43,6 +43,8 @@ import com.example.tisunga.viewmodel.*
 import androidx.compose.ui.res.stringResource
 import com.example.tisunga.R
 
+import androidx.navigation.compose.currentBackStackEntryAsState
+
 @Composable
 fun ActivitiesScreen(
     navController: NavController,
@@ -50,8 +52,14 @@ fun ActivitiesScreen(
     viewModel: ActivitiesViewModel
 ) {
     val context = LocalContext.current
-    LaunchedEffect(groupId) {
-        viewModel.load(groupId)
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+
+    LaunchedEffect(groupId, navBackStackEntry) {
+        val isCurrent = navBackStackEntry?.destination?.route?.startsWith("activities") == true || 
+                       navBackStackEntry?.destination?.route?.startsWith("events") == true
+        if (isCurrent) {
+            viewModel.load(groupId, forceRefresh = true)
+        }
     }
 
     LaunchedEffect(viewModel.error) {
@@ -182,7 +190,7 @@ fun TopBar(navController: NavController) {
     )
 }
 
-/* -------- MEETINGS -------- */
+//MEETINGS 
 
 @Composable
 fun MeetingsContent(
