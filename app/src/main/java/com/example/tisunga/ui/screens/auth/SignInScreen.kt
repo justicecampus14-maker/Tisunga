@@ -1,6 +1,5 @@
 package com.example.tisunga.ui.screens.auth
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -14,6 +13,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -22,7 +22,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.compose.ui.res.stringResource
 import com.example.tisunga.R
 import com.example.tisunga.ui.navigation.Routes
 import com.example.tisunga.ui.theme.*
@@ -56,7 +55,12 @@ fun SignInScreen(navController: NavController, viewModel: AuthViewModel) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(modifier = Modifier.height(40.dp))
-            Text(text = stringResource(R.string.signin_title), fontSize = 28.sp, fontWeight = FontWeight.Bold, color = NavyBlue)
+            Text(
+                text = stringResource(R.string.signin_title),
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Bold,
+                color = NavyBlue
+            )
             
             Spacer(modifier = Modifier.height(32.dp))
             
@@ -67,7 +71,11 @@ fun SignInScreen(navController: NavController, viewModel: AuthViewModel) {
                 elevation = CardDefaults.cardElevation(2.dp)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text(text = stringResource(R.string.phone_number_label), fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    Text(
+                        text = stringResource(R.string.phone_number_label),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp
+                    )
                     Spacer(modifier = Modifier.height(8.dp))
                     OutlinedTextField(
                         value = phone,
@@ -77,7 +85,6 @@ fun SignInScreen(navController: NavController, viewModel: AuthViewModel) {
                             }
                         },
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
                         placeholder = { Text(stringResource(R.string.phone_number_placeholder), color = Color.Gray.copy(alpha = 0.5f)) },
                         leadingIcon = { 
                             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 8.dp)) {
@@ -90,29 +97,31 @@ fun SignInScreen(navController: NavController, viewModel: AuthViewModel) {
                             unfocusedBorderColor = DividerColor,
                             focusedBorderColor = NavyBlue,
                             unfocusedContainerColor = BackgroundGray,
-                            focusedContainerColor = BackgroundGray,
-                            unfocusedPlaceholderColor = Color.Gray.copy(alpha = 0.5f),
-                            focusedPlaceholderColor = Color.Gray.copy(alpha = 0.5f)
+                            focusedContainerColor = BackgroundGray
                         ),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                        singleLine = true
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp)
                     )
                     
                     Spacer(modifier = Modifier.height(16.dp))
                     
-                    Text(text = stringResource(R.string.password_label), fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    Text(
+                        text = stringResource(R.string.password_label),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp
+                    )
                     Spacer(modifier = Modifier.height(8.dp))
                     OutlinedTextField(
                         value = password,
                         onValueChange = { password = it },
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
                         placeholder = { Text(stringResource(R.string.password_label), color = Color.Gray.copy(alpha = 0.5f)) },
                         leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
                         trailingIcon = {
                             IconButton(onClick = { passwordVisible = !passwordVisible }) {
                                 Icon(
-                                    if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                    imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
                                     contentDescription = null
                                 )
                             }
@@ -122,19 +131,22 @@ fun SignInScreen(navController: NavController, viewModel: AuthViewModel) {
                             unfocusedBorderColor = DividerColor,
                             focusedBorderColor = NavyBlue,
                             unfocusedContainerColor = BackgroundGray,
-                            focusedContainerColor = BackgroundGray,
-                            unfocusedPlaceholderColor = Color.Gray.copy(alpha = 0.5f),
-                            focusedPlaceholderColor = Color.Gray.copy(alpha = 0.5f)
+                            focusedContainerColor = BackgroundGray
                         ),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                        singleLine = true
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp)
                     )
                     
                     TextButton(
                         onClick = { navController.navigate(Routes.FORGOT_PASSWORD) },
                         modifier = Modifier.align(Alignment.End)
                     ) {
-                        Text(stringResource(R.string.forgot_password_link), color = BlueLink, fontSize = 13.sp)
+                        Text(
+                            text = stringResource(R.string.forgot_password_link),
+                            color = BlueLink,
+                            fontSize = 13.sp
+                        )
                     }
                     
                     Spacer(modifier = Modifier.height(16.dp))
@@ -145,7 +157,7 @@ fun SignInScreen(navController: NavController, viewModel: AuthViewModel) {
                                 viewModel.login(phone, password)
                             }
                         },
-                        enabled = phone.length == 10 && password.isNotEmpty(),
+                        enabled = phone.length == 10 && password.isNotEmpty() && !uiState.isLoading,
                         modifier = Modifier.fillMaxWidth().height(52.dp),
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(
@@ -156,7 +168,12 @@ fun SignInScreen(navController: NavController, viewModel: AuthViewModel) {
                         if (uiState.isLoading) {
                             CircularProgressIndicator(color = White, modifier = Modifier.size(24.dp))
                         } else {
-                            Text(stringResource(R.string.signin_title), color = White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                            Text(
+                                text = stringResource(R.string.signin_title),
+                                color = White,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold
+                            )
                         }
                     }
                     
@@ -175,9 +192,18 @@ fun SignInScreen(navController: NavController, viewModel: AuthViewModel) {
             Spacer(modifier = Modifier.height(24.dp))
             
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(stringResource(R.string.no_account_text), fontSize = 14.sp, color = TextSecondary)
+                Text(
+                    text = stringResource(R.string.no_account_text),
+                    fontSize = 14.sp,
+                    color = TextSecondary
+                )
                 TextButton(onClick = { navController.navigate(Routes.CREATE_ACCOUNT) }) {
-                    Text(stringResource(R.string.signup_link), color = NavyBlue, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    Text(
+                        text = stringResource(R.string.signup_link),
+                        color = NavyBlue,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp
+                    )
                 }
             }
         }
