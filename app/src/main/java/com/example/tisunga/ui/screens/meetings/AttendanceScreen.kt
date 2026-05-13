@@ -35,29 +35,21 @@ fun AttendanceScreen(
     val attendanceEntries = remember { mutableStateMapOf<String, String>() }
 
     LaunchedEffect(groupId, meetingId) {
-        viewModel.resetState()
         viewModel.getMeetingAttendance(groupId, meetingId)
     }
 
+    // Populate the map when attendance data arrives
     LaunchedEffect(uiState.attendance) {
-        uiState.attendance.forEach {
-            if (!attendanceEntries.containsKey(it.userId)) {
+        if (uiState.attendance.isNotEmpty() && attendanceEntries.isEmpty()) {
+            uiState.attendance.forEach {
                 attendanceEntries[it.userId] = it.status.uppercase()
             }
-        }
-    }
-
-    // Refresh Local Map if it's empty and we have data
-    if (attendanceEntries.isEmpty() && uiState.attendance.isNotEmpty()) {
-        uiState.attendance.forEach {
-            attendanceEntries[it.userId] = it.status.uppercase()
         }
     }
 
     LaunchedEffect(uiState.isSuccess) {
         if (uiState.isSuccess) {
             navController.popBackStack()
-            viewModel.resetState()
         }
     }
 
@@ -195,12 +187,13 @@ fun AttendanceMarkRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                listOf("PRESENT", "ABSENT", "EXCUSED").forEach { status ->
+                listOf("PRESENT", "ABSENT", "EXCUSED", "LATE").forEach { status ->
                     val isSelected = currentStatus.uppercase() == status
                     val color = when (status) {
                         "PRESENT" -> GreenAccent
                         "ABSENT" -> RedAccent
                         "EXCUSED" -> OrangeTag
+                        "LATE" -> Color(0xFFFFB300)
                         else -> TextSecondary
                     }
                     
@@ -208,6 +201,7 @@ fun AttendanceMarkRow(
                         "PRESENT" -> stringResource(R.string.status_present)
                         "ABSENT" -> stringResource(R.string.status_absent)
                         "EXCUSED" -> stringResource(R.string.status_excused)
+                        "LATE" -> "LATE"
                         else -> status
                     }
 

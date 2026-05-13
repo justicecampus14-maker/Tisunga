@@ -17,5 +17,5 @@ object Constants {
     const val USER_NAME_KEY = "user_name"
     const val USER_PHONE_KEY = "user_phone"
     const val CURRENCY = "MK"
-    const val DEFAULT_INTEREST_RATE = 5.0
+    const val DEFAULT_INTEREST_RATE = 15.0
 }

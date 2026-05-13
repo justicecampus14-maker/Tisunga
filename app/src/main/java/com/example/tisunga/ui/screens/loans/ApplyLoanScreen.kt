@@ -61,14 +61,13 @@ fun ApplyLoanScreen(
 
     var amount by remember { mutableStateOf("") }
     var durationValue by remember { mutableIntStateOf(1) }
-    var isWeeks by remember { mutableStateOf(false) }
     var purpose by remember { mutableStateOf("") }
     var showSuccessDialog by remember { mutableStateOf(false) }
 
     // Automatically synchronize calculations whenever inputs change
-    LaunchedEffect(amount, durationValue, isWeeks) {
+    LaunchedEffect(amount, durationValue) {
         val amt = amount.toDoubleOrNull() ?: 0.0
-        viewModel.calculateInterest(amt, durationValue, isWeeks)
+        viewModel.calculateInterest(amt, durationValue)
     }
 
     LaunchedEffect(uiState.isSuccess) {
@@ -154,7 +153,7 @@ fun ApplyLoanScreen(
                         Icon(Icons.Default.Info, null, tint = NavyBlue)
                         Spacer(modifier = Modifier.width(12.dp))
                         Text(
-                            "Interest rate varies by duration (2% to 55%)",
+                            stringResource(R.string.loan_interest_notice),
                             fontSize = 13.sp, color = NavyBlue, fontWeight = FontWeight.Medium
                         )
                     }
@@ -217,12 +216,12 @@ fun ApplyLoanScreen(
                             ) {
                                 InfoBox(
                                     label = "Rate",
-                                    value = "${String.format("%.1f", uiState.calculatedInterestRate)}%",
+                                    value = "${String.format("%.1f", uiState.calcRate)}%",
                                     modifier = Modifier.weight(1f)
                                 )
                                 InfoBox(
                                     label = "Total Interest",
-                                    value = FormatUtils.formatMoney(uiState.calculatedInterest),
+                                    value = FormatUtils.formatMoney(uiState.calcInterest),
                                     modifier = Modifier.weight(1f)
                                 )
                             }
@@ -231,13 +230,13 @@ fun ApplyLoanScreen(
                                 horizontalArrangement = Arrangement.spacedBy(10.dp)
                             ) {
                                 InfoBox(
-                                    label = if (isWeeks) "Per Week" else "Per Month",
-                                    value = FormatUtils.formatMoney(uiState.calculatedPeriodicRepayment),
+                                    label = "Per Month",
+                                    value = FormatUtils.formatMoney(uiState.calcMonthly),
                                     modifier = Modifier.weight(1f)
                                 )
                                 InfoBox(
                                     label = "Repayable",
-                                    value = FormatUtils.formatMoney(uiState.calculatedRepayable),
+                                    value = FormatUtils.formatMoney(uiState.calcRepayable),
                                     modifier = Modifier.weight(1f)
                                 )
                             }
@@ -246,40 +245,13 @@ fun ApplyLoanScreen(
 
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    // Unit Selection Toggle
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        FilterChip(
-                            selected = isWeeks,
-                            onClick = { 
-                                isWeeks = true
-                                durationValue = 1 
-                            },
-                            label = { Text("Weeks") }
-                        )
-                        Spacer(Modifier.width(16.dp))
-                        FilterChip(
-                            selected = !isWeeks,
-                            onClick = { 
-                                isWeeks = false
-                                durationValue = 1
-                            },
-                            label = { Text("Months") }
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Text("Duration (${if (isWeeks) "Weeks" else "Months"})", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = TextPrimary)
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(stringResource(R.string.duration_months_label), fontWeight = FontWeight.Bold, fontSize = 14.sp, color = TextPrimary)
+                    Spacer(modifier = Modifier.height(12.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        val options = if (isWeeks) listOf(1, 2, 3, 4) else listOf(1, 2, 3, 6, 12)
+                        val options = listOf(1, 2, 3, 4)
                         options.forEach { value ->
                             val isSelected = durationValue == value
                             Surface(
@@ -335,7 +307,7 @@ fun ApplyLoanScreen(
                     Button(
                         onClick = {
                             if (amtVal > 0 && !isInsufficient) {
-                                viewModel.applyForLoan(groupId, amtVal, durationValue, isWeeks, purpose)
+                                viewModel.applyForLoan(groupId, amtVal, durationValue, purpose)
                             }
                         },
                         modifier = Modifier.fillMaxWidth().height(56.dp),
