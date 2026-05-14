@@ -1,5 +1,6 @@
 package com.example.tisunga.ui.screens.notifications
 
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -14,12 +15,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.compose.ui.res.stringResource
 import com.example.tisunga.R
 import com.example.tisunga.data.model.AppNotification
 import com.example.tisunga.ui.theme.*
@@ -36,6 +37,7 @@ fun NotificationsScreen(
     vm: NotificationViewModel
 ) {
     val state by vm.uiState.collectAsState()
+    var expandedNotifId by remember { mutableStateOf<String?>(null) }
 
     Scaffold(
         topBar = {
@@ -93,7 +95,9 @@ fun NotificationsScreen(
                     items(state.notifications, key = { it.id }) { notif ->
                         NotificationCard(
                             notification = notif,
+                            isExpanded = expandedNotifId == notif.id,
                             onClick = {
+                                expandedNotifId = if (expandedNotifId == notif.id) null else notif.id
                                 if (!notif.isRead) vm.markOneRead(notif.id)
                             }
                         )
@@ -107,13 +111,17 @@ fun NotificationsScreen(
 @Composable
 fun NotificationCard(
     notification: AppNotification,
+    isExpanded: Boolean,
     onClick: () -> Unit
 ) {
     val isRead = notification.isRead
+    val context = LocalContext.current
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick),
+            .clickable(onClick = onClick)
+            .animateContentSize(),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (isRead) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f)
@@ -122,7 +130,7 @@ fun NotificationCard(
     ) {
         Row(
             modifier = Modifier.padding(14.dp),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = if (isExpanded) Alignment.Top else Alignment.CenterVertically
         ) {
             Surface(
                 modifier = Modifier.size(48.dp),
@@ -152,13 +160,15 @@ fun NotificationCard(
                         fontWeight = FontWeight.Bold,
                         fontSize = 14.sp,
                         color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        maxLines = if (isExpanded) Int.MAX_VALUE else 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f)
                     )
                     Text(
-                        text = formatTimestamp(notification.createdAt, LocalContext.current),
+                        text = formatTimestamp(notification.createdAt, context, isExpanded),
                         fontSize = 11.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(start = 8.dp)
                     )
                 }
 
@@ -168,35 +178,71 @@ fun NotificationCard(
                     text = notification.body,
                     fontSize = 13.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
+                    maxLines = if (isExpanded) Int.MAX_VALUE else 2,
+                    overflow = TextOverflow.Ellipsis,
+                    lineHeight = 18.sp
                 )
+
+                if (isExpanded) {
+                    Spacer(Modifier.height(12.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        if (notification.type.isNotEmpty() && notification.type != "GENERAL") {
+                            Surface(
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                                shape = RoundedCornerShape(6.dp)
+                            ) {
+                                Text(
+                                    text = notification.type,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+                        
+                        // Action link (if we had specific deep links, we'd put them here)
+                        // For now just showing a "Show less" hint or similar isn't needed as tap toggles it.
+                    }
+                }
             }
 
-            if (!notification.isRead) {
+            if (!notification.isRead && !isExpanded) {
                 Spacer(Modifier.width(8.dp))
                 Box(
                     modifier = Modifier
                         .size(10.dp)
                         .background(MaterialTheme.colorScheme.primary, CircleShape)
+                        .align(Alignment.CenterVertically)
                 )
             }
         }
     }
 }
 
-fun formatTimestamp(iso: String, context: android.content.Context): String = try {
+fun formatTimestamp(iso: String, context: android.content.Context, full: Boolean = false): String = try {
     val instant = Instant.parse(iso)
-    val now = Instant.now()
-    val diffSeconds = now.epochSecond - instant.epochSecond
-    when {
-        diffSeconds < 60            -> context.getString(R.string.just_now_label)
-        diffSeconds < 3600          -> context.getString(R.string.minutes_ago_label, (diffSeconds / 60).toInt())
-        diffSeconds < 86400         -> context.getString(R.string.hours_ago_label, (diffSeconds / 3600).toInt())
-        diffSeconds < 604800        -> context.getString(R.string.days_ago_label, (diffSeconds / 86400).toInt())
-        else -> DateTimeFormatter
-            .ofPattern("MMM d")
+    if (full) {
+        DateTimeFormatter
+            .ofPattern("MMM d, yyyy HH:mm")
             .withZone(ZoneId.systemDefault())
             .format(instant)
+    } else {
+        val now = Instant.now()
+        val diffSeconds = now.epochSecond - instant.epochSecond
+        when {
+            diffSeconds < 60            -> context.getString(R.string.just_now_label)
+            diffSeconds < 3600          -> context.getString(R.string.minutes_ago_label, (diffSeconds / 60).toInt())
+            diffSeconds < 86400         -> context.getString(R.string.hours_ago_label, (diffSeconds / 3600).toInt())
+            diffSeconds < 604800        -> context.getString(R.string.days_ago_label, (diffSeconds / 86400).toInt())
+            else -> DateTimeFormatter
+                .ofPattern("MMM d")
+                .withZone(ZoneId.systemDefault())
+                .format(instant)
+        }
     }
 } catch (e: Exception) { "" }
