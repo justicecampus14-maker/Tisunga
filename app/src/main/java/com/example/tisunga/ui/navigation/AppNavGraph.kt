@@ -18,6 +18,7 @@ import com.example.tisunga.ui.screens.home.HomeScreen
 import com.example.tisunga.ui.screens.home.SettingsScreen
 import com.example.tisunga.ui.screens.loans.*
 import com.example.tisunga.ui.screens.notifications.NotificationsScreen
+import com.example.tisunga.ui.screens.notifications.NotificationDetailScreen
 import com.example.tisunga.ui.screens.onboarding.WelcomeScreen
 import com.example.tisunga.ui.screens.savings.*
 import com.example.tisunga.ui.screens.transactions.TransactionsScreen
@@ -60,6 +61,7 @@ object Routes {
     const val EVENT_DETAIL          = "event_detail/{eventId}"
     const val TRANSACTIONS          = "transactions/{groupId}"
     const val NOTIFICATIONS         = "notifications"
+    const val NOTIFICATION_DETAIL   = "notification_detail/{id}"
     const val PROFILE               = "profile"
     const val THEME                 = "theme"
     const val MEETINGS              = "meetings"
@@ -341,6 +343,14 @@ fun AppNavGraph(
         // ── Misc ──────────────────────────────────────────────────────────
         composable(Routes.NOTIFICATIONS) {
             NotificationsScreen(navController, notificationViewModel)
+        }
+
+        composable(
+            Routes.NOTIFICATION_DETAIL,
+            arguments = listOf(navArgument("id") { type = NavType.StringType })
+        ) { back ->
+            val id = back.arguments?.getString("id") ?: ""
+            NotificationDetailScreen(navController, id, notificationViewModel)
         }
 
         composable(Routes.PROFILE) {
