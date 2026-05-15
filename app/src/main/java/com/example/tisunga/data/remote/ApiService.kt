@@ -189,10 +189,7 @@ interface ApiService {
     // ── LOANS ─────────────────────────────────────────────────────────────
 
     @POST("loans/apply")
-    suspend fun applyForLoan(@Body body: Map<String, @JvmSuppressWildcards Any>): Loan
-
-    @POST("loans/request")
-    suspend fun applyForLoanTyped(@Body request: ApplyLoanRequest): Loan
+    suspend fun applyForLoan(@Body request: ApplyLoanRequest): Loan
 
     @POST("loans/model")
     suspend fun applyForLoanModel(@Body loan: Loan): Loan
@@ -211,6 +208,12 @@ interface ApiService {
 
     @POST("loans/{loanId}/repay")
     suspend fun repayLoanTyped(@Path("loanId") id: String, @Body request: RepayLoanRequest): Loan
+
+    @GET("loans/calculate")
+    suspend fun calculateLoanPreview(
+        @Query("amount") amount: Double,
+        @Query("durationMonths") duration: Int
+    ): LoanCalculationResponse
 
     // ── EVENTS ────────────────────────────────────────────────────────────
 
@@ -244,21 +247,28 @@ interface ApiService {
         @Body body: Map<String, @JvmSuppressWildcards Any>
     ): Meeting
 
-    @PATCH("groups/{groupId}/meetings/{meetingId}")
+    @PATCH("groups/{groupId}/meetings/{meetingId}/status")
     suspend fun updateMeetingStatus(
         @Path("groupId") groupId: String,
         @Path("meetingId") meetingId: String,
         @Body body: Map<String, String>
     ): Meeting
 
-    @POST("groups/{groupId}/meetings/{meetingId}/attendance")
+    @PATCH("groups/{groupId}/meetings/{meetingId}")
+    suspend fun updateMeeting(
+        @Path("groupId") groupId: String,
+        @Path("meetingId") meetingId: String,
+        @Body body: Map<String, @JvmSuppressWildcards Any>
+    ): Meeting
+
+    @PATCH("groups/{groupId}/meetings/{meetingId}/attendance")
     suspend fun markAttendance(
         @Path("groupId") groupId: String,
         @Path("meetingId") meetingId: String,
         @Body body: Map<String, @JvmSuppressWildcards Any>
     ): MeetingAttendance
 
-    @POST("groups/{groupId}/meetings/{meetingId}/attendance/bulk")
+    @PATCH("groups/{groupId}/meetings/{meetingId}/attendance")
     suspend fun submitBulkAttendance(
         @Path("groupId") groupId: String,
         @Path("meetingId") meetingId: String,

@@ -9,10 +9,12 @@ import com.example.tisunga.data.remote.dto.RepayLoanRequest
 class LoanRepository(private val apiService: ApiService) {
     suspend fun getMyLoans() = apiService.getMyLoans()
     
+    suspend fun getUserLoans(userId: String) = apiService.getUserLoans(userId)
+
     suspend fun getGroupLoans(groupId: String) = apiService.getGroupLoans(groupId)
     
     suspend fun applyForLoan(groupId: String, amount: Double, durationMonths: Int, purpose: String?) = 
-        apiService.applyForLoanTyped(
+        apiService.applyForLoan(
             ApplyLoanRequest(
                 groupId = groupId,
                 amount = amount,
@@ -28,4 +30,7 @@ class LoanRepository(private val apiService: ApiService) {
     
     suspend fun repayLoan(loanId: String, amount: Double, phone: String) = 
         apiService.repayLoanTyped(loanId, RepayLoanRequest(amount, phone))
+
+    suspend fun calculateLoanPreview(amount: Double, durationMonths: Int) =
+        apiService.calculateLoanPreview(amount, durationMonths)
 }

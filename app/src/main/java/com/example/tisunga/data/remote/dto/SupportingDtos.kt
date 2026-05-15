@@ -128,6 +128,13 @@ data class MemberLoansResponse(
     @SerializedName("loans")        val loans: List<Loan>
 )
 
+data class LoanCalculationResponse(
+    @SerializedName("interestRate")     val interestRate: Double,
+    @SerializedName("interestAmount")   val interestAmount: Double,
+    @SerializedName("totalRepayable")   val totalRepayable: Double,
+    @SerializedName("monthlyRepayment") val monthlyRepayment: Double
+)
+
 data class ApproveLoanResponse(
     @SerializedName("id")            val id: String,
     @SerializedName("status")        val status: String,

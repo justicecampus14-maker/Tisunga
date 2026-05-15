@@ -284,7 +284,7 @@ fun FullGroupLoanCard(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    val initials = loan.borrowerName.split(" ")
+                    val initials = (loan.borrowerName ?: "").split(" ")
                         .filter { it.isNotEmpty() }.take(2)
                         .joinToString("") { it.first().uppercase() }
                     Box(
@@ -296,7 +296,7 @@ fun FullGroupLoanCard(
                             color = NavyBlue, fontSize = 13.sp)
                     }
                     Column {
-                        Text(loan.borrowerName, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        Text(loan.borrowerName ?: "", fontWeight = FontWeight.Bold, fontSize = 14.sp)
                         Text(loan.purpose?.ifBlank { stringResource(R.string.personal_loan_default) } ?: stringResource(R.string.personal_loan_default),
                             fontSize = 11.sp, color = TextSecondary)
                     }
@@ -314,9 +314,8 @@ fun FullGroupLoanCard(
             HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = BackgroundGray)
 
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                LoanDetailItem(stringResource(R.string.duration_label), "${loan.durationMonths} ${stringResource(id = if (loan.durationMonths == 1) R.string.period_1_month else R.string.duration_months_label).lowercase()}")
-                LoanDetailItem(stringResource(R.string.interest_label),
-                    "MK ${String.format(Locale.US, "%,.0f", loan.totalRepayable - loan.principalAmount)}")
+                LoanDetailItem(stringResource(R.string.duration_label), "${loan.durationMonths} mo.")
+                LoanDetailItem(stringResource(R.string.interest_label), loan.interestRateLabel ?: "${loan.interestRate.toInt()}%")
                 LoanDetailItem(stringResource(R.string.total_label), "MK ${String.format(Locale.US, "%,.0f", loan.totalRepayable)}")
                 LoanDetailItem(stringResource(R.string.applied_label), loan.createdAt.take(10))
             }

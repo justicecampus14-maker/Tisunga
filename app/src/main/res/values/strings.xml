@@ -54,8 +54,9 @@
     <string name="banner_desc_0">Save Together. Grow Together.</string>
     <string name="banner_desc_1">Your future is built today.</string>
     <string name="banner_desc_2">Loans at low interest rates.</string>
-    <string name="banner_savings_static">My Savings: MK 12,500.00</string>
-    <string name="banner_join_groups">Join 100+ Groups</string>
+    <string name="banner_savings_label">Track Your Progress</string>
+    <string name="banner_contributions_label">Secure Group Savings</string>
+    <string name="banner_loans_label">Apply for Instant Loans</string>
     <string name="quick_action_title">Quick Action</string>
     <string name="create_group_label">Create Group</string>
     <string name="save_label">Save</string>
