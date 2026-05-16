@@ -93,6 +93,9 @@ interface ApiService {
     @GET("groups/{groupId}")
     suspend fun getGroupById(@Path("groupId") id: String): Group
 
+    @PATCH("groups/{groupId}")
+    suspend fun updateGroup(@Path("groupId") id: String, @Body body: Map<String, @JvmSuppressWildcards Any>): Group
+
     @GET("groups/{groupId}/dashboard")
     suspend fun getGroupDashboard(@Path("groupId") id: String): GroupDashboardResponse
 
