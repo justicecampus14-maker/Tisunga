@@ -138,7 +138,7 @@ fun DiscoverGroupItemCard(group: Group, onJoinClick: () -> Unit) {
                     shape = RoundedCornerShape(20.dp),
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp)
                 ) {
-                    Text("View and Join", color = Color.White, fontSize = 12.sp)
+                    Text("View and Join", color = White, fontSize = 12.sp)
                 }
             }
         }

@@ -9,9 +9,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Description
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -144,15 +142,9 @@ fun MeetingDetailScreen(
                     MeetingHeaderCard(meeting.title, meeting.status, meeting.scheduledAt, meeting.location)
                 }
 
-                if (!meeting.agenda.isNullOrBlank() || isChair) {
+                if (!meeting.agenda.isNullOrBlank()) {
                     item {
-                        MeetingAgendaCard(
-                            agenda = meeting.agenda ?: "",
-                            isEditable = isChair && (meeting.status.uppercase() == "SCHEDULED" || meeting.status.uppercase() == "ONGOING"),
-                            onSave = { newAgenda ->
-                                viewModel.updateMeetingAgenda(groupId, meetingId, newAgenda)
-                            }
-                        )
+                        MeetingAgendaCard(meeting.agenda)
                     }
                 }
 
@@ -231,64 +223,20 @@ fun MeetingHeaderCard(title: String, status: String, scheduledAt: String, locati
 }
 
 @Composable
-fun MeetingAgendaCard(
-    agenda: String,
-    isEditable: Boolean = false,
-    onSave: (String) -> Unit = {}
-) {
-    var isEditing by remember { mutableStateOf(false) }
-    var editedAgenda by remember { mutableStateOf(agenda) }
-
-    LaunchedEffect(agenda) {
-        editedAgenda = agenda
-    }
-
+fun MeetingAgendaCard(agenda: String) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Description, contentDescription = null, modifier = Modifier.size(20.dp), tint = GreenAccent)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(stringResource(R.string.agenda_label), fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                }
-
-                if (isEditable) {
-                    IconButton(onClick = {
-                        if (isEditing) {
-                            onSave(editedAgenda)
-                        }
-                        isEditing = !isEditing
-                    }) {
-                        Icon(
-                            imageVector = if (isEditing) Icons.Default.Save else Icons.Default.Edit,
-                            contentDescription = if (isEditing) "Save" else "Edit",
-                            tint = GreenAccent
-                        )
-                    }
-                }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.Description, contentDescription = null, modifier = Modifier.size(20.dp), tint = GreenAccent)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(stringResource(R.string.agenda_label), fontWeight = FontWeight.Bold, fontSize = 16.sp)
             }
             Spacer(modifier = Modifier.height(8.dp))
-            if (isEditing) {
-                OutlinedTextField(
-                    value = editedAgenda,
-                    onValueChange = { editedAgenda = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = GreenAccent,
-                        cursorColor = GreenAccent
-                    )
-                )
-            } else {
-                Text(agenda.ifBlank { "No agenda specified." }, color = TextPrimary)
-            }
+            Text(agenda, color = TextPrimary)
         }
     }
 }
@@ -406,7 +354,6 @@ fun AttendanceMemberItem(attendance: MeetingAttendance) {
                 "PRESENT" -> GreenAccent to stringResource(R.string.status_present)
                 "ABSENT" -> RedAccent to stringResource(R.string.status_absent)
                 "EXCUSED" -> OrangeTag to stringResource(R.string.status_excused)
-                "LATE" -> Color(0xFFFFB300) to "LATE"
                 else -> TextSecondary to status
             }
             
