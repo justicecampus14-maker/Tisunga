@@ -64,12 +64,16 @@ data class AddMemberResponse(
 /** Returned by GET /groups/{groupId}/dashboard */
 data class GroupDashboardResponse(
     @SerializedName("group")              val group: GroupSummary? = null,
+    @SerializedName("totalSavings")       val totalSavings: Double = 0.0,
     @SerializedName("mySavings")          val mySavings: Double = 0.0,
     @SerializedName("myRole")             val myRole: String? = null,
+    @SerializedName("memberCount")        val memberCount: Int = 0,
     @SerializedName("recentTransactions") val recentTransactions: List<Transaction> = emptyList(),
     @SerializedName("activeLoans")        val activeLoans: Int = 0,
     @SerializedName("upcomingMeetings")   val upcomingMeetings: List<Any> = emptyList(),
-    @SerializedName("upcomingEvents")     val upcomingEvents: List<Event> = emptyList()
+    @SerializedName("upcomingEvents")     val upcomingEvents: List<Event> = emptyList(),
+    @SerializedName("totalBorrowed")      val totalBorrowed: Double = 0.0,
+    @SerializedName("availableBalance")    val availableBalance: Double = 0.0
 )
 
 data class GroupSummary(

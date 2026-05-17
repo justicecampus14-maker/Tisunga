@@ -1,5 +1,6 @@
 package com.example.tisunga.ui.screens.home
 
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
@@ -21,12 +22,14 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.tisunga.R
 import com.example.tisunga.data.model.Group
 import com.example.tisunga.data.model.Transaction
+import com.example.tisunga.data.model.TransactionType
 import com.example.tisunga.ui.components.BottomNavBar
 import com.example.tisunga.ui.navigation.Routes
 import com.example.tisunga.ui.theme.*
@@ -34,6 +37,7 @@ import com.example.tisunga.viewmodel.HomeViewModel
 import com.example.tisunga.viewmodel.NotificationViewModel
 import com.example.tisunga.ui.screens.group.GroupDetailScreen
 import com.example.tisunga.viewmodel.GroupViewModel
+import com.example.tisunga.utils.FormatUtils
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.Locale
@@ -267,16 +271,19 @@ fun QuickActionsNoGroup(navController: NavController) {
 
 @Composable
 fun GroupInfoCard(group: com.example.tisunga.data.model.Group) {
+    var isGroupSavingsVisible by remember { mutableStateOf(false) }
+    var isMySavingsVisible by remember { mutableStateOf(false) }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp)
-            .height(200.dp),
+            .wrapContentHeight(),
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary),
         elevation = CardDefaults.cardElevation(12.dp)
     ) {
-        Box(modifier = Modifier.fillMaxSize()) {
+        Box(modifier = Modifier.fillMaxWidth()) {
             Box(
                 modifier = Modifier
                     .size(220.dp)
@@ -292,7 +299,7 @@ fun GroupInfoCard(group: com.example.tisunga.data.model.Group) {
 
             Column(
                 modifier = Modifier
-                    .fillMaxSize()
+                    .fillMaxWidth()
                     .padding(24.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
@@ -331,13 +338,31 @@ fun GroupInfoCard(group: com.example.tisunga.data.model.Group) {
                         fontWeight = FontWeight.Medium
                     )
                     Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        text = String.format(Locale.US, "MK %,.0f", group.totalSavings),
-                        color = Color.White,
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 1
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = if (isGroupSavingsVisible) com.example.tisunga.utils.FormatUtils.formatMoney(group.totalSavings) else "MWK XXXXXX",
+                            color = Color.White,
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            modifier = Modifier.weight(1f)
+                        )
+                        IconButton(
+                            onClick = { isGroupSavingsVisible = !isGroupSavingsVisible },
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(
+                                imageVector = if (isGroupSavingsVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                contentDescription = "Toggle Visibility",
+                                tint = Color.White.copy(alpha = 0.7f),
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
                 }
 
                 Column {
@@ -348,13 +373,31 @@ fun GroupInfoCard(group: com.example.tisunga.data.model.Group) {
                         fontWeight = FontWeight.Medium
                     )
                     Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        text = String.format(Locale.US, "MK %,.0f", group.mySavings),
-                        color = Color.White,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 1
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = if (isMySavingsVisible) com.example.tisunga.utils.FormatUtils.formatMoney(group.mySavings) else "MWK XXXXXX",
+                            color = Color.White,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            modifier = Modifier.weight(1f)
+                        )
+                        IconButton(
+                            onClick = { isMySavingsVisible = !isMySavingsVisible },
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(
+                                imageVector = if (isMySavingsVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                contentDescription = "Toggle Visibility",
+                                tint = Color.White.copy(alpha = 0.7f),
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -672,13 +715,13 @@ fun RecentTransactionsSection(transactions: List<Transaction>, hasGroup: Boolean
         }
         Spacer(modifier = Modifier.height(12.dp))
 
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            elevation = CardDefaults.cardElevation(2.dp)
-        ) {
-            if (!hasGroup) {
+        if (!hasGroup) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                elevation = CardDefaults.cardElevation(2.dp)
+            ) {
                 Box(
                     modifier = Modifier.fillMaxWidth().height(100.dp),
                     contentAlignment = Alignment.Center
@@ -689,7 +732,14 @@ fun RecentTransactionsSection(transactions: List<Transaction>, hasGroup: Boolean
                         fontSize = 14.sp
                     )
                 }
-            } else if (transactions.isEmpty()) {
+            }
+        } else if (transactions.isEmpty()) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                elevation = CardDefaults.cardElevation(2.dp)
+            ) {
                 Box(
                     modifier = Modifier.fillMaxWidth().height(100.dp),
                     contentAlignment = Alignment.Center
@@ -700,18 +750,11 @@ fun RecentTransactionsSection(transactions: List<Transaction>, hasGroup: Boolean
                         fontSize = 14.sp
                     )
                 }
-            } else {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    transactions.take(5).forEachIndexed { index, transaction ->
-                        TransactionRow(transaction)
-                        if (index < transactions.take(5).size - 1) {
-                            HorizontalDivider(
-                                modifier = Modifier.padding(vertical = 12.dp),
-                                thickness = 0.5.dp,
-                                color = MaterialTheme.colorScheme.outlineVariant
-                            )
-                        }
-                    }
+            }
+        } else {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                transactions.take(5).forEach { transaction ->
+                    TransactionRow(transaction)
                 }
             }
         }
@@ -720,52 +763,77 @@ fun RecentTransactionsSection(transactions: List<Transaction>, hasGroup: Boolean
 
 @Composable
 fun TransactionRow(transaction: Transaction) {
-    Row(
+    val isCredit = transaction.type in listOf(
+        TransactionType.SAVINGS,
+        TransactionType.LOAN_IN,
+        TransactionType.SOCIAL_FUND,
+        TransactionType.SHARE_PURCHASE,
+        TransactionType.JOIN_FEE,
+        TransactionType.INTEREST,
+        TransactionType.SYSTEM
+    )
+    val color = if (isCredit) GreenAccent else Color(0xFF333333)
+    val icon = if (isCredit) Icons.Default.ArrowDownward else Icons.Default.ArrowUpward
+
+    Card(
         modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = White),
+        elevation = CardDefaults.cardElevation(2.dp)
     ) {
-        val (icon, color) = when (transaction.type) {
-            com.example.tisunga.data.model.TransactionType.SAVINGS,
-            com.example.tisunga.data.model.TransactionType.LOAN_IN,
-            com.example.tisunga.data.model.TransactionType.SHARE_PURCHASE -> Icons.Default.AddCircle to Color(0xFF4CAF50)
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = color.copy(alpha = 0.1f),
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(icon, null, tint = color, modifier = Modifier.size(18.dp))
+                        }
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column {
+                        Text(
+                            text = transaction.type?.name?.replace("_", " ") ?: "Transaction",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
 
-            com.example.tisunga.data.model.TransactionType.LOAN_OUT,
-            com.example.tisunga.data.model.TransactionType.EXPENSE -> Icons.Default.RemoveCircle to Color(0xFFF44336)
-
-            else -> Icons.Default.SwapHoriz to Color(0xFF757575)
-        }
-
-        Box(
-            modifier = Modifier
-                .size(40.dp)
-                .background(color.copy(alpha = 0.1f), CircleShape),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(icon, null, modifier = Modifier.size(24.dp), tint = color)
-        }
-
-        Spacer(modifier = Modifier.width(12.dp))
-
-        Column(modifier = Modifier.weight(1f)) {
+                Column(horizontalAlignment = Alignment.End) {
+                    val amountText = FormatUtils.formatMoney(kotlin.math.abs(transaction.amount))
+                    Text(
+                        text = (if (isCredit) "+" else "") + amountText,
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 16.sp,
+                        color = color,
+                        textAlign = TextAlign.End
+                    )
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(4.dp))
+            val dateStr = try { transaction.createdAt.take(16).replace("T", " ") } catch (e: Exception) { "" }
+            val baseDesc = if (transaction.description.isNotBlank() && transaction.description != "null") transaction.description else transaction.type?.name?.replace("_", " ") ?: ""
+            
             Text(
-                text = transaction.type?.name?.replace("_", " ") ?: "Transaction",
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                color = color
-            )
-            Text(
-                text = transaction.description,
+                text = "$baseDesc ($dateStr)",
+                modifier = Modifier.fillMaxWidth(),
                 fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1
+                color = TextSecondary,
+                lineHeight = 16.sp
             )
         }
-
-        Text(
-            text = String.format(Locale.US, "MK %,.0f", transaction.amount),
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurface
-        )
     }
 }
+

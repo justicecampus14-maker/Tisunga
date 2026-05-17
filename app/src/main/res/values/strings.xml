@@ -54,7 +54,7 @@
     <string name="banner_desc_0">Save Together. Grow Together.</string>
     <string name="banner_desc_1">Your future is built today.</string>
     <string name="banner_desc_2">Loans at low interest rates.</string>
-    <string name="banner_savings_static">My Savings: MK 12,500.00</string>
+    <string name="banner_savings_static">My Savings: MWK 12,500.00</string>
     <string name="banner_join_groups">Join 100+ Groups</string>
     <string name="quick_action_title">Quick Action</string>
     <string name="create_group_label">Create Group</string>
@@ -64,11 +64,11 @@
     <string name="view_loans_label">Loans</string>
     <string name="my_groups_title">My Groups</string>
     <string name="no_groups_msg">You don\'t belong to any group yet</string>
-    <string name="group_total_savings">Group savings : MK %1$s</string>
-    <string name="group_my_savings">My Savings: MK %1$s</string>
+    <string name="group_total_savings">Group savings : MWK %1$s</string>
+    <string name="group_my_savings">My Savings: MWK %1$s</string>
     <string name="save_now_link">Save Now</string>
     <string name="recent_transactions_title">Transactions</string>
-    <string name="amount_mk">MK %1$s</string>
+    <string name="amount_mk">MWK %1$s</string>
 
     <!-- Group Screens -->
     <string name="discover_title">Discover</string>
@@ -88,7 +88,7 @@
     <string name="description_hint">Mphatso group is a group that saves a minimum of k2000 each week .......</string>
     <string name="location_label">Location</string>
     <string name="location_hint">e.g Zomba, Chikanda</string>
-    <string name="min_contribution_label">Minimun Contribtuion (MK 2,000)</string>
+    <string name="min_contribution_label">Minimun Contribtuion (MWK 2,000)</string>
     <string name="saving_period_label">Saving Period (Months)</string>
     <string name="max_members_label">Max Members</string>
     <string name="visibility_label">Vissibility</string>
@@ -200,6 +200,7 @@
     <string name="filter_cancelled">Cancelled</string>
     <string name="filter_pending">Pending</string>
     <string name="filter_history">History</string>
+    <string name="all_loans_link">All loans</string>
     <string name="filter_requested">Requested</string>
     <string name="filter_rejected">Rejected</string>
     <string name="filter_failed">Failed</string>
@@ -216,8 +217,8 @@
     <string name="event_created_success">Event created successfully!</string>
     <string name="meeting_scheduled_success">Meeting scheduled successfully!</string>
     <string name="no_events_found">No events found</string>
-    <string name="target_amount_label">Target: MK %1$s</string>
-    <string name="collected_amount_label">Collected: MK %1$s</string>
+    <string name="target_amount_label">Target: MWK %1$s</string>
+    <string name="collected_amount_label">Collected: MWK %1$s</string>
     <string name="invalid_datetime_format">Invalid format. Use YYYY-MM-DD HH:MM</string>
     <string name="invalid_date_format">Invalid format. Use YYYY-MM-DD</string>
     <string name="event_target_amount_label">Target Amount</string>
@@ -238,7 +239,7 @@
     <string name="amount_type_label">Amount Type</string>
     <string name="amount_type_fixed">Fixed</string>
     <string name="amount_type_flexible">Flexible</string>
-    <string name="amount_mk_label">Amount (MK)</string>
+    <string name="amount_mk_label">Amount (MWK)</string>
     <string name="cancel_button">Cancel</string>
 
     <!-- Loans Screen -->
@@ -252,9 +253,10 @@
     <string name="loan_status_active">active</string>
     <string name="loan_approved_by">Approved by %1$s\n%2$s. %3$s</string>
     <string name="loan_approved_by_simple">Approved by %1$s</string>
+    <string name="loan_rejected_by_simple">Rejected by %1$s</string>
     <string name="not_available">N/A</string>
     <string name="loan_repaid_percent">%1$d%% repaid</string>
-    <string name="loan_remaining_amount">Remaining: MK %1$s</string>
+    <string name="loan_remaining_amount">Remaining: MWK %1$s</string>
     <string name="loan_due_date">Due %1$s</string>
     <string name="placeholder_group_name">Doman Group</string>
 
@@ -262,24 +264,33 @@
     <string name="apply_for_loan_title">Apply for Loan</string>
     <string name="application_sent_title">Application Sent</string>
     <string name="application_sent_msg">Your loan request has been submitted and is awaiting approval from the group officials.</string>
+    <string name="total_rendered_label">Total Rendered</string>
+    <string name="actual_available_label">Actual Available Balance</string>
+    <string name="group_balance_overview_title">Group Balance Overview</string>
     <string name="back_to_loans_button">Back to Loans</string>
     <string name="retry_button">Retry</string>
+<<<<<<< HEAD
+    <string name="loan_interest_notice">Interest: 1mo (15%), 2mo (25%), 3mo (35%), 4mo (45%). The CHAIR or SECRETARY will review your request.</string>
+    <string name="group_balance_label">Group Balance: MWK %1$s</string>
+    <string name="loan_amount_mk_label">Loan Amount (MWK)</string>
+=======
     <string name="loan_interest_notice">Interest is 5% flat. The CHAIR or SECRETARY will review your request.</string>
     <string name="group_balance_label">Group Balance: MK %1$s</string>
     <string name="loan_amount_mk_label">Loan Amount (MK)</string>
+>>>>>>> 37e8b804868ff74a2f43b72ea3dfbfdb34251134
     <string name="loan_amount_hint">e.g. 50000</string>
     <string name="interest_percent_label">Interest (5%)</string>
     <string name="duration_months_label">Duration (Months)</string>
     <string name="loan_purpose_hint">What is this loan for?</string>
     <string name="insufficient_balance_button">Insufficient Group Balance</string>
     <string name="submit_application_button">Submit Application</string>
-    <string name="insufficient_balance_error">The total repayable amount (MK %1$s) exceeds the available group balance (MK %2$s).</string>
-    <string name="insufficient_personal_balance_error">The total repayable amount (MK %1$s) exceeds your personal savings (MK %2$s).</string>
+    <string name="insufficient_balance_error">The total repayable amount (MWK %1$s) exceeds the available group balance (MWK %2$s).</string>
+    <string name="insufficient_personal_balance_error">The total repayable amount (MWK %1$s) exceeds your personal savings (MWK %2$s).</string>
     <string name="insufficient_personal_balance_button">Insufficient Personal Savings</string>
     <string name="apply_loan_title">Apply Loan</string>
     <string name="loan_notice">The requested loan will be repayed with an interest of 5%.\nAnd the interest will increase by 5% if not paid on time.</string>
     <string name="loan_amount_label">Loan Amount</string>
-    <string name="loan_amount_placeholder">Mk 20,000</string>
+    <string name="loan_amount_placeholder">MWK 20,000</string>
     <string name="interest_label">Interest</string>
     <string name="total_repayable_label">Total Repayable</string>
     <string name="loan_period_label">Loan Period</string>
@@ -296,7 +307,7 @@
     <string name="repay_loan_title">Repay Loan</string>
     <string name="remaining_balance_label">Remaining Balance</string>
     <string name="status_active_caps">ACTIVE</string>
-    <string name="total_amount_label">Total: MK %1$s</string>
+    <string name="total_amount_label">Total: MWK %1$s</string>
     <string name="amount_to_repay_label">Amount to Repay</string>
     <string name="enter_amount_hint">Enter amount</string>
     <string name="full_payment_button">Full Payment</string>
@@ -327,8 +338,8 @@
     <string name="request_disbursement_button">Request Disbursement</string>
     <string name="approve_disbursement_button">Approve Disbursement</string>
     <string name="reject_button">Reject</string>
-    <string name="request_disbursement_confirm_msg">Request disbursement of MK %1$s to %2$d members? Treasurer must approve before funds are sent.</string>
-    <string name="approve_disbursement_confirm_msg">Send MK %1$s to all %2$d members mobile wallets? This cannot be undone.</string>
+    <string name="request_disbursement_confirm_msg">Request disbursement of MWK %1$s to %2$d members? Treasurer must approve before funds are sent.</string>
+    <string name="approve_disbursement_confirm_msg">Send MWK %1$s to all %2$d members mobile wallets? This cannot be undone.</string>
     <string name="disbursement_label">Disbursement</string>
     <string name="reject_request_title">Reject Request</string>
     <string name="waiting_chairperson_disbursement">Waiting for Chairperson to initiate disbursement.</string>
@@ -347,10 +358,10 @@
     <string name="contribution_type_save">Save</string>
     <string name="contribution_type_special">Special</string>
     <string name="contribution_type_event">Event Contribution</string>
-    <string name="amount_mk_input_label">Amount (MK)</string>
+    <string name="amount_mk_input_label">Amount (MWK)</string>
     <string name="receive_pin_msg">You will receive a massage to enter your pin on your phone</string>
     <string name="payment_initiated_title">Payment Initiated</string>
-    <string name="payment_initiated_msg">Please check your phone (%1$s) for a PIN prompt to authorize the payment of MK%2$s.</string>
+    <string name="payment_initiated_msg">Please check your phone (%1$s) for a PIN prompt to authorize the payment of MWK%2$s.</string>
     <string name="new_contribution_label">New Contribution</string>
     <string name="regular_contribution_label">Regular Contribution</string>
     <string name="social_welfare_label">Social Welfare</string>
@@ -374,7 +385,7 @@
     <string name="group_loans_title">Group Loans</string>
     <string name="requests_link">Requests</string>
     <string name="loan_approved_by_full">Approved by %1$s\n%2$s. %3$s</string>
-    <string name="total_borrowed_label">Total borrowed: MK %1$s</string>
+    <string name="total_borrowed_label">Total borrowed: MWK %1$s</string>
     <string name="repay_now_label">Repay Now</string>
 
     <!-- Notifications Screen -->
@@ -447,7 +458,7 @@
     <string name="total_label">Total</string>
     <string name="applied_label">Applied</string>
     <string name="loan_repaid_percent_alt">%1$d%% repaid</string>
-    <string name="amount_left_label">MK %1$s left</string>
+    <string name="amount_left_label">MWK %1$s left</string>
     <string name="purpose_display_label">Purpose: %1$s</string>
     <string name="approved_by_label">Approved by %1$s</string>
     <string name="decline_button">Decline</string>
@@ -457,13 +468,13 @@
     <string name="success_title">Success</string>
     <string name="no_loans_category_msg">No loans found for this category.</string>
     <string name="remaining_label">Remaining: %1$s</string>
-    <string name="due_label">Due: %1$s</string>
+    <string name="due_label">Due date: %1$s</string>
     <string name="clear_button">Clear</string>
     <string name="clear_loan_balance_title">Clear Loan Balance</string>
     <string name="amount_to_clear_label">Amount to clear:</string>
     <string name="pay_now_button">Pay Now</string>
     <string name="pending_approvals_title">Pending Approvals</string>
-    <string name="group_loan_activity_title">Group Loan Activity</string>
+    <string name="group_loan_activity_title">Group Loans</string>
     <string name="all_link">All</string>
     <string name="more_loans_link">+%1$d more loans</string>
     <string name="personal_loan_default">Personal loan</string>

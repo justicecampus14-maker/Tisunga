@@ -48,6 +48,12 @@ data class Group(
     @JsonAdapter(StringToDouble::class)
     @SerializedName("totalSavings") val totalSavings: Double = 0.0,
 
+    @JsonAdapter(StringToDouble::class)
+    @SerializedName("totalBorrowed") val totalBorrowed: Double = 0.0,
+
+    @JsonAdapter(StringToDouble::class)
+    @SerializedName("availableBalance") val availableBalance: Double = 0.0,
+
     @SerializedName("isActive") val isActive: Boolean = true,
 
     @JsonAdapter(StringToDouble::class)

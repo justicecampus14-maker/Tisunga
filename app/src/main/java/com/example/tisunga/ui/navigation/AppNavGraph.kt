@@ -89,7 +89,7 @@ fun AppNavGraph(
     userProfileViewModel: UserProfileViewModel,
     onThemeChange: (Boolean) -> Unit
 ) {
-    val startDestination = if (sessionManager.isLoggedIn()) Routes.HOME else Routes.WELCOME
+    val startDestination = if (sessionManager.isLoggedIn()) Routes.HOME else Routes.SIGN_IN
 
     NavHost(
         navController = navController,

@@ -123,9 +123,9 @@ data class RejectLoanRequest(
 )
 
 data class MemberLoansResponse(
-    @SerializedName("borrowerName") val borrowerName: String,
-    @SerializedName("title")        val title: String,
-    @SerializedName("loans")        val loans: List<Loan>
+    @SerializedName("borrowerName") val borrowerName: String? = null,
+    @SerializedName("title")        val title: String? = null,
+    @SerializedName("loans")        val loans: List<Loan> = emptyList()
 )
 
 data class ApproveLoanResponse(

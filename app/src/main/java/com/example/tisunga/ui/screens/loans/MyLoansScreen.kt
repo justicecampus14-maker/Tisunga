@@ -18,6 +18,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.animation.animateContentSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -168,23 +170,6 @@ fun MyLoansScreen(
 
     Scaffold(
         containerColor = BackgroundGray,
-        floatingActionButton = {
-            if (userId.isNullOrBlank()) {
-                FloatingActionButton(
-                    onClick = { navController.navigate(Routes.APPLY_LOAN.replace("{groupId}", groupId)) },
-                    containerColor = NavyBlue,
-                    contentColor = White,
-                    shape = CircleShape,
-                    elevation = FloatingActionButtonDefaults.elevation(8.dp)
-                ) {
-                    Icon(
-                        Icons.Default.Add,
-                        contentDescription = stringResource(R.string.apply_loan_button),
-                        modifier = Modifier.size(28.dp)
-                    )
-                }
-            }
-        }
     ) { padding ->
         Column(
             modifier = Modifier
@@ -300,19 +285,7 @@ fun MyLoansScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(filteredLoans, key = { it.id }) { loan ->
-                        FullGroupLoanCard(
-                            loan        = loan,
-                            canApprove  = canApprove && loan.status == "PENDING",
-                            isApproving = uiState.isApproving == loan.id,
-                            isRejecting = uiState.isRejecting == loan.id,
-                            onApprove   = { viewModel.approveLoan(loan.id, groupId) },
-                            onReject    = { rejectingLoanId = loan.id },
-                            onRepay     = {
-                                selectedLoanForRepay = loan
-                                showRepayDialog = true
-                            },
-                            isOwner     = loan.borrowerName == homeUiState.userName
-                        )
+                        GroupLoanCard(loan = loan)
                     }
                     item { Spacer(modifier = Modifier.height(100.dp)) }
                 }
@@ -418,7 +391,8 @@ fun FullGroupLoanCard(
     onRepay: () -> Unit,
     isOwner: Boolean
 ) {
-    val statusColor = when (loan.status) {
+    var expanded by remember { mutableStateOf(false) }
+    val statusColor = when (loan.status.uppercase()) {
         "ACTIVE"    -> GreenAccent
         "PENDING"   -> NavyBlue
         "COMPLETED" -> NavyBlue
@@ -428,7 +402,10 @@ fun FullGroupLoanCard(
     val statusBg = statusColor.copy(alpha = 0.1f)
 
     Card(
-        modifier  = Modifier.fillMaxWidth(),
+        modifier  = Modifier
+            .fillMaxWidth()
+            .animateContentSize()
+            .clickable { expanded = !expanded },
         shape     = RoundedCornerShape(16.dp),
         colors    = CardDefaults.cardColors(containerColor = White),
         elevation = CardDefaults.cardElevation(2.dp)
@@ -437,14 +414,26 @@ fun FullGroupLoanCard(
             // Header row
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(
+                    modifier = Modifier.weight(1f),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
+<<<<<<< HEAD
+                    val cleanedBorrowerName = remember(loan.borrower, loan.borrowerName) {
+                        val first = loan.borrower?.firstName?.replace("null", "", true)?.trim() ?: ""
+                        val last = loan.borrower?.lastName?.replace("null", "", true)?.trim() ?: ""
+                        val fullName = "$first $last".trim()
+
+                        if (fullName.isNotEmpty()) fullName
+                        else loan.borrowerName?.replace("null", "", true)?.trim()?.ifEmpty { "Member" } ?: "Member"
+                    }
+                    val initials = cleanedBorrowerName.split(" ")
+=======
                     val initials = loan.borrowerName.split(" ")
+>>>>>>> 37e8b804868ff74a2f43b72ea3dfbfdb34251134
                         .filter { it.isNotEmpty() }.take(2)
                         .joinToString("") { it.first().uppercase() }
                     Box(
@@ -456,12 +445,31 @@ fun FullGroupLoanCard(
                             color = NavyBlue, fontSize = 13.sp)
                     }
                     Column {
+<<<<<<< HEAD
+                        Text(
+                            cleanedBorrowerName, 
+                            fontWeight = FontWeight.Bold, 
+                            fontSize = 14.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            loan.purpose?.ifBlank { "Personal loan" } ?: "Personal loan",
+                            fontSize = 11.sp, color = TextSecondary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+=======
                         Text(loan.borrowerName, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                         Text(loan.purpose?.ifBlank { "Personal loan" } ?: "Personal loan",
                             fontSize = 11.sp, color = TextSecondary)
+>>>>>>> 37e8b804868ff74a2f43b72ea3dfbfdb34251134
                     }
                 }
-                Column(horizontalAlignment = Alignment.End) {
+                Column(
+                    modifier = Modifier.weight(1f),
+                    horizontalAlignment = Alignment.End
+                ) {
                     Text("MK ${String.format(Locale.US, "%,.0f", loan.principalAmount)}",
                         fontWeight = FontWeight.ExtraBold, fontSize = 16.sp, color = NavyBlue)
                     Surface(shape = RoundedCornerShape(6.dp), color = statusBg) {
@@ -471,18 +479,54 @@ fun FullGroupLoanCard(
                 }
             }
 
+            if (expanded) {
+                Spacer(Modifier.height(12.dp))
+                Surface(
+                    color = BackgroundGray,
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Text(
+                            text = stringResource(R.string.purpose_display_label, loan.purpose ?: "Personal loan"),
+                            fontSize = 13.sp,
+                            color = TextPrimary
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                            Column {
+                                Text(stringResource(R.string.applied_label), fontSize = 10.sp, color = TextSecondary)
+                                Text(loan.createdAt, fontSize = 11.sp, fontWeight = FontWeight.Medium)
+                            }
+                            Column {
+                                Text("ID", fontSize = 10.sp, color = TextSecondary)
+                                Text(loan.id.take(8).uppercase(), fontSize = 11.sp, fontWeight = FontWeight.Medium)
+                            }
+                        }
+                    }
+                }
+            }
+
             HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = BackgroundGray)
 
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+<<<<<<< HEAD
+                Column {
+                    LoanInfo("Month:", "${loan.durationMonths}")
+                    Spacer(Modifier.height(4.dp))
+                    LoanInfo("Interest:", loan.interestRateLabel ?: "${loan.interestRate.toInt()}%")
+                }
+=======
                 LoanInfo(stringResource(R.string.duration_label), "${loan.durationMonths} mo.")
                 LoanInfo(stringResource(R.string.interest_label),
                     "MK ${String.format(Locale.US, "%,.0f", loan.totalRepayable - loan.principalAmount)}")
+>>>>>>> 37e8b804868ff74a2f43b72ea3dfbfdb34251134
                 LoanInfo(stringResource(R.string.total_label), "MK ${String.format(Locale.US, "%,.0f", loan.totalRepayable)}")
                 LoanInfo(stringResource(R.string.applied_label), loan.createdAt.take(10))
             }
 
             // Progress (ACTIVE loans)
-            if (loan.status == "ACTIVE") {
+            if (loan.status.uppercase() == "ACTIVE") {
                 Spacer(Modifier.height(12.dp))
                 val pct = ((loan.totalRepayable - loan.remainingBalance) / loan.totalRepayable)
                     .toFloat().coerceIn(0f, 1f)
@@ -510,14 +554,31 @@ fun FullGroupLoanCard(
                 }
             }
 
-            // Approver (ACTIVE/COMPLETED)
-            if (!loan.approverName.isNullOrBlank() && loan.status != "PENDING") {
+            // Approver (ACTIVE/COMPLETED/REJECTED)
+            if (loan.status.uppercase() != "PENDING") {
+                val cleanedApprover = remember(loan.approver, loan.approverName) {
+                    val first = loan.approver?.firstName?.replace("null", "", true)?.trim() ?: ""
+                    val last = loan.approver?.lastName?.replace("null", "", true)?.trim() ?: ""
+                    val fullName = "$first $last".trim()
+
+                    if (fullName.isNotEmpty()) fullName
+                    else loan.approverName?.replace("null", "", true)?.trim()?.ifEmpty { "System" } ?: "System"
+                }
                 Spacer(Modifier.height(6.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.VerifiedUser, null,
-                        tint = GreenAccent, modifier = Modifier.size(12.dp))
+                    Icon(
+                        imageVector = if (loan.status.uppercase() == "REJECTED") Icons.Default.Close else Icons.Default.VerifiedUser,
+                        contentDescription = null,
+                        tint = if (loan.status.uppercase() == "REJECTED") RedAccent else GreenAccent,
+                        modifier = Modifier.size(12.dp)
+                    )
                     Spacer(Modifier.width(4.dp))
-                    Text(stringResource(R.string.approved_by_label, loan.approverName), fontSize = 11.sp, color = TextSecondary)
+                    val actionText = if (loan.status.uppercase() == "REJECTED") {
+                        stringResource(R.string.loan_rejected_by_simple, cleanedApprover)
+                    } else {
+                        stringResource(R.string.loan_approved_by_simple, cleanedApprover)
+                    }
+                    Text(actionText, fontSize = 11.sp, color = TextSecondary)
                     if (!loan.approvedAt.isNullOrBlank())
                         Text("  ${loan.approvedAt.take(10)}", fontSize = 10.sp, color = TextSecondary)
                 }
@@ -562,7 +623,7 @@ fun FullGroupLoanCard(
                         }
                     }
                 }
-            } else if (isOwner && loan.status == "ACTIVE") {
+            } else if (isOwner && loan.status.uppercase() == "ACTIVE") {
                 Spacer(Modifier.height(14.dp))
                 Button(
                     onClick = onRepay,
