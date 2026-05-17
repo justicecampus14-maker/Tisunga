@@ -12,7 +12,6 @@ data class Loan(
     @SerializedName("borrowerName")     val borrowerName: String? = null,
     @SerializedName("principalAmount")  val principalAmount: Double,
     @SerializedName("interestRate")     val interestRate: Double,
-    @SerializedName("interestRateLabel") val interestRateLabel: String? = null,
     @SerializedName("totalRepayable")   val totalRepayable: Double,
     @SerializedName("remainingBalance") val remainingBalance: Double,
     @SerializedName("durationMonths")   val durationMonths: Int,

@@ -157,6 +157,30 @@ class GroupViewModel(
         }
     }
 
+    fun updateGroup(groupId: String, name: String, description: String) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = "")
+            try {
+                val body = mutableMapOf<String, Any>(
+                    "name" to name,
+                    "description" to description
+                )
+                val updatedGroup = apiService.updateGroup(groupId, body)
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    isSuccess = true,
+                    successMessage = "Group updated successfully",
+                    selectedGroup = updatedGroup
+                )
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    errorMessage = e.message ?: "Failed to update group"
+                )
+            }
+        }
+    }
+
     fun joinGroup(code: String) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
@@ -203,7 +227,7 @@ class GroupViewModel(
 
                 // Backend POST /groups/{id}/members returns AddMemberResponse, not List<User>
                 apiService.addMember(groupId, body)
-                
+
                 // Re-fetch the updated member list
                 getGroupMembers(groupId)
                 
