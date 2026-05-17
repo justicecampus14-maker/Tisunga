@@ -15,14 +15,13 @@ import androidx.compose.material3.*
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-<<<<<<< HEAD
+
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.ArrowDropDown
-=======
+
 import androidx.compose.material.icons.filled.Warning
->>>>>>> 37e8b804868ff74a2f43b72ea3dfbfdb34251134
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import java.time.LocalDate
 import java.time.LocalDateTime
