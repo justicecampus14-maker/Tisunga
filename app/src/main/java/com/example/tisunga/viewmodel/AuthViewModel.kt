@@ -149,6 +149,7 @@ class AuthViewModel(private val sessionManager: SessionManager) : ViewModel() {
                     userName  = response.userName,
                     userPhone = response.userPhone
                 )
+                ApiClient.reset() // Ensure client uses new token
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading    = false,
@@ -181,6 +182,7 @@ class AuthViewModel(private val sessionManager: SessionManager) : ViewModel() {
                     userName  = response.userName,
                     userPhone = response.userPhone
                 )
+                ApiClient.reset() // Ensure client uses new token
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading    = false,

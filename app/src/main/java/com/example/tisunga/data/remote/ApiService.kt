@@ -61,11 +61,14 @@ interface ApiService {
     @PATCH("users/me/fcm-token")
     suspend fun updateFcmToken(@Body body: Map<String, String>): MessageResponse
 
-    @GET("users/me/contributions")
-    suspend fun getMyContributions(@Query("page") page: Int? = null): List<Contribution>
+    @GET("users/{userId}/contributions")
+    suspend fun getMyContributions(
+        @Path("userId") userId: String,
+        @Query("page") page: Int? = null
+    ): List<Contribution>
 
-    @GET("users/me/loans")
-    suspend fun getMyLoans(): List<Loan>
+    @GET("users/{userId}/loans")
+    suspend fun getMyLoans(@Path("userId") userId: String): List<Loan>
 
     @GET("loans/user/{userId}")
     suspend fun getUserLoans(@Path("userId") userId: String): MemberLoansResponse
@@ -135,8 +138,8 @@ interface ApiService {
         @Query("page") page: Int? = null
     ): List<Contribution>
 
-    @GET("loans/group/{groupId}")
-    suspend fun getGroupLoans(@Path("groupId") id: String): List<Loan>
+    @GET("groups/{groupId}/loans")
+    suspend fun getGroupLoans(@Path("groupId") groupId: String): List<Loan>
 
     @GET("groups/{groupId}/events")
     suspend fun getGroupEvents(@Path("groupId") id: String): List<Event>

@@ -6,8 +6,15 @@ import com.example.tisunga.data.remote.dto.ApplyLoanRequest
 import com.example.tisunga.data.remote.dto.RejectLoanRequest
 import com.example.tisunga.data.remote.dto.RepayLoanRequest
 
-class LoanRepository(private val apiService: ApiService) {
-    suspend fun getMyLoans() = apiService.getMyLoans()
+class LoanRepository(
+    private val apiService: ApiService,
+    private val sessionManager: com.example.tisunga.utils.SessionManager
+) {
+    suspend fun getMyLoans(): List<Loan> {
+        val userId = sessionManager.getUserId()
+        if (userId.isEmpty()) return emptyList()
+        return apiService.getMyLoans(userId)
+    }
     
     suspend fun getUserLoans(userId: String) = apiService.getUserLoans(userId)
 

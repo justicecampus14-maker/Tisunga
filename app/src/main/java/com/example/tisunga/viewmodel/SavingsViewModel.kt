@@ -55,6 +55,8 @@ class SavingsViewModel(
     private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
+    private val savingsRepository = com.example.tisunga.data.repository.SavingsRepository(ApiClient.getClient(), sessionManager)
+
     private val _uiState = MutableStateFlow(SavingsUiState())
     val uiState: StateFlow<SavingsUiState> = _uiState.asStateFlow()
 
@@ -139,7 +141,7 @@ class SavingsViewModel(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
             try {
-                val contributions = apiService.getMyContributions()
+                val contributions = savingsRepository.getMyContributions()
                 _uiState.value = _uiState.value.copy(isLoading = false, contributions = contributions)
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(isLoading = false)
@@ -151,7 +153,7 @@ class SavingsViewModel(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = "")
             try {
-                val contributions = apiService.getMyContributions()
+                val contributions = savingsRepository.getMyContributions()
                 _uiState.value = _uiState.value.copy(isLoading = false, myHistory = contributions)
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
@@ -193,6 +195,9 @@ class SavingsViewModel(
                     isSuccess      = true,
                     successMessage = "Contribution request sent. You will receive an SMS to confirm."
                 )
+                getMyHistory()
+                getGroupHistory(contribution.groupId)
+                loadSavingsData(contribution.groupId)
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading    = false,
@@ -244,6 +249,7 @@ class SavingsViewModel(
                     successMessage      = "Disbursement approved! Funds are being sent to members.",
                     currentDisbursement = _uiState.value.currentDisbursement?.copy(status = "APPROVED")
                 )
+                loadSavingsData(groupId)
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading    = false,
