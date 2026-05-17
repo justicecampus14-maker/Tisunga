@@ -27,7 +27,7 @@ class ContributionViewModel(
     private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
-    private val repository = ContributionRepository(ApiClient.getClient())
+    private val repository = ContributionRepository(ApiClient.getClient(), sessionManager)
 
     private val _uiState = MutableStateFlow(ContributionUiState())
     val uiState: StateFlow<ContributionUiState> = _uiState.asStateFlow()
@@ -42,6 +42,8 @@ class ContributionViewModel(
                     initResponse = response,
                     showPendingDialog = true
                 )
+                getMyHistory()
+                getGroupHistory(groupId)
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,

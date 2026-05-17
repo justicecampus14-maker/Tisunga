@@ -42,7 +42,8 @@ class LoanViewModel(
     private val _uiState = MutableStateFlow(LoanUiState())
     val uiState: StateFlow<LoanUiState> = _uiState.asStateFlow()
 
-    private val api = ApiClient.getClient()
+    // Keep an instance of the apiService for direct calls if repository is too high-level
+    private val apiService = ApiClient.getClient()
 
     // ── Load my loans ─────────────────────────────────────────────────────────
 
@@ -132,6 +133,8 @@ class LoanViewModel(
                     isSuccess      = true,
                     successMessage = "Loan application submitted. The group will be notified."
                 )
+                getMyLoans()
+                getGroupLoans(groupId)
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading    = false,
@@ -200,6 +203,7 @@ class LoanViewModel(
                     isSuccess      = true,
                     successMessage = "Repayment initiated. You will receive an STK push on your phone to enter your PIN."
                 )
+                getMyLoans()
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isRepaying   = false,
