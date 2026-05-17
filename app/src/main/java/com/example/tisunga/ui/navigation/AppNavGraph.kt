@@ -10,6 +10,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.tisunga.ui.screens.auth.*
 import com.example.tisunga.ui.screens.events.ActivitiesScreen
@@ -69,6 +70,7 @@ object Routes {
     const val ATTENDANCE            = "attendance/{groupId}/{meetingId}"
     const val SETTINGS              = "settings"
     const val CHANGE_PASSWORD       = "change_password"
+    const val EDIT_GROUP            = "edit_group/{groupId}"
 }
 
 @Composable
@@ -181,6 +183,14 @@ fun AppNavGraph(
             AddMembersScreen(navController, groupId, groupViewModel, homeViewModel)
         }
 
+        composable(
+            Routes.EDIT_GROUP,
+            arguments = listOf(navArgument("groupId") { type = NavType.StringType })
+        ) { back ->
+            val groupId = back.arguments?.getString("groupId") ?: ""
+            EditGroupScreen(navController, groupId, groupViewModel)
+        }
+
         // ── Savings ───────────────────────────────────────────────────────
         composable(Routes.GROUP_SAVINGS) {
             GroupSavingsScreen(navController, savingsViewModel, homeViewModel, notificationViewModel)
@@ -251,11 +261,10 @@ fun AppNavGraph(
             arguments = listOf(navArgument("groupId") { type = NavType.StringType })
         ) { back ->
             val groupId = back.arguments?.getString("groupId") ?: ""
-            MyLoansScreen(
+            GroupLoansScreen(
                 navController = navController,
                 groupId       = groupId,
                 viewModel     = loanViewModel,
-                homeViewModel = homeViewModel,
                 groupViewModel = groupViewModel
             )
         }
@@ -366,7 +375,7 @@ fun AppNavGraph(
             SettingsScreen(
                 navController = navController,
                 sessionManager = sessionManager,
-                authViewModel = authViewModel
+                homeViewModel = homeViewModel
             )
         }
 
@@ -381,6 +390,7 @@ private fun ComingSoonScreen(name: String) {
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
+        @Suppress("DEPRECATION")
         Text("$name — Coming Soon")
     }
 }

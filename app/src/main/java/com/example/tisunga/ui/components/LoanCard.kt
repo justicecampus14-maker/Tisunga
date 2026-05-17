@@ -22,7 +22,6 @@ fun LoanCard(
     approvedBy: String,
     totalBorrowed: Double,
     interestRate: Double,
-    interestRateLabel: String? = null,
     repayableAmount: Double,
     remaining: Double,
     percentRepaid: Float,
@@ -55,7 +54,7 @@ fun LoanCard(
                 fontSize = 14.sp
             )
             Text(
-                "Interest rate : ${interestRateLabel ?: "${interestRate}%"}",
+                "Interest rate : ${interestRate}%",
                 fontWeight = SemiBold,
                 fontSize = 14.sp
             )

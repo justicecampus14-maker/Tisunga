@@ -13,22 +13,32 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.tisunga.ui.navigation.Routes
 import com.example.tisunga.utils.SessionManager
-import com.example.tisunga.viewmodel.AuthViewModel
+import com.example.tisunga.viewmodel.HomeViewModel
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     navController: NavController,
     sessionManager: SessionManager,
-    authViewModel: AuthViewModel
+    homeViewModel: HomeViewModel
 ) {
-    var biometricEnabled by remember { mutableStateOf(sessionManager.isBiometricEnabled()) }
+    val homeUiState by homeViewModel.uiState.collectAsState()
+    val isGroupAdmin = homeUiState.myRole?.uppercase()?.let {
+        it == "CHAIR" || it == "CHAIRPERSON" || it == "SECRETARY"
+    } ?: false
+    val currentGroup = homeUiState.myGroups.firstOrNull()
+
+    var notificationsEnabled by remember { mutableStateOf(sessionManager.isNotificationsEnabled()) }
+    var checkingForUpdates by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Settings", fontWeight = FontWeight.Bold) },
@@ -47,6 +57,33 @@ fun SettingsScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
+            // Section: Group Settings (Admins only)
+            if (isGroupAdmin && currentGroup != null) {
+                Text(
+                    "Group Settings",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
+                ElevatedCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Column {
+                        ListItem(
+                            headlineContent = { Text("Edit Group Info") },
+                            supportingContent = { Text("Change name and description") },
+                            leadingContent = { Icon(Icons.Default.Groups, null) },
+                            trailingContent = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null) },
+                            modifier = Modifier.clickable {
+                                navController.navigate(Routes.EDIT_GROUP.replace("{groupId}", currentGroup.id))
+                            }
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(24.dp))
+            }
+
             // Section: Security
             Text(
                 "Security",
@@ -60,26 +97,42 @@ fun SettingsScreen(
             ) {
                 Column {
                     ListItem(
-                        headlineContent = { Text("Biometric Lock") },
-                        supportingContent = { Text("Fingerprint or Face ID") },
-                        leadingContent = { Icon(Icons.Default.Fingerprint, null) },
-                        trailingContent = {
-                            Switch(
-                                checked = biometricEnabled,
-                                onCheckedChange = {
-                                    biometricEnabled = it
-                                    sessionManager.setBiometricEnabled(it)
-                                }
-                            )
-                        }
-                    )
-                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
-                    ListItem(
                         headlineContent = { Text("Change Password") },
                         supportingContent = { Text("Update security credentials") },
                         leadingContent = { Icon(Icons.Default.Lock, null) },
                         trailingContent = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null) },
                         modifier = Modifier.clickable { navController.navigate(Routes.CHANGE_PASSWORD) }
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Section: Preferences
+            Text(
+                "Preferences",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
+            ElevatedCard(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Column {
+                    ListItem(
+                        headlineContent = { Text("Push Notifications") },
+                        supportingContent = { Text("Receive updates and alerts") },
+                        leadingContent = { Icon(Icons.Default.Notifications, null) },
+                        trailingContent = {
+                            Switch(
+                                checked = notificationsEnabled,
+                                onCheckedChange = {
+                                    notificationsEnabled = it
+                                    sessionManager.setNotificationsEnabled(it)
+                                }
+                            )
+                        }
                     )
                 }
             }
@@ -113,32 +166,30 @@ fun SettingsScreen(
                     )
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                     ListItem(
+                        headlineContent = { Text("Check for Updates") },
+                        leadingContent = {
+                            if (checkingForUpdates) {
+                                CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                            } else {
+                                Icon(Icons.Default.SystemUpdate, null)
+                            }
+                        },
+                        modifier = Modifier.clickable(enabled = !checkingForUpdates) {
+                            scope.launch {
+                                checkingForUpdates = true
+                                kotlinx.coroutines.delay(2000)
+                                checkingForUpdates = false
+                                snackbarHostState.showSnackbar("Your app is up to date!")
+                            }
+                        }
+                    )
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                    ListItem(
                         headlineContent = { Text("Version") },
                         supportingContent = { Text("1.0.0") },
                         leadingContent = { Icon(Icons.Default.Info, null) }
                     )
                 }
-            }
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            Button(
-                onClick = {
-                    authViewModel.logout()
-                    navController.navigate(Routes.SIGN_IN) {
-                        popUpTo(0) { inclusive = true }
-                    }
-                },
-                modifier = Modifier.fillMaxWidth().height(56.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.errorContainer,
-                    contentColor = MaterialTheme.colorScheme.error
-                ),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Icon(Icons.AutoMirrored.Filled.Logout, null)
-                Spacer(Modifier.width(8.dp))
-                Text("Logout", fontWeight = FontWeight.Bold, fontSize = 16.sp)
             }
         }
     }

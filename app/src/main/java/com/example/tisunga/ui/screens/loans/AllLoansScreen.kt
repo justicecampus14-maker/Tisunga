@@ -156,7 +156,19 @@ fun AllLoansScreen(
                 )
             },
             bottomBar = { BottomNavBar(navController) },
-            snackbarHost = { SnackbarHost(snackbarHost) }
+            snackbarHost = { SnackbarHost(snackbarHost) },
+            floatingActionButton = {
+                if (groupId.isNotEmpty() && activeMyLoan == null && pendingMyLoan == null) {
+                    ExtendedFloatingActionButton(
+                        onClick = { navController.navigate("apply_loan/$groupId") },
+                        icon    = { Icon(Icons.Default.Add, null) },
+                        text    = { Text(stringResource(R.string.apply_loan_button)) },
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor   = MaterialTheme.colorScheme.onPrimary,
+                        shape = RoundedCornerShape(16.dp)
+                    )
+                }
+            }
         ) { padding ->
             Column(
                 modifier = Modifier
@@ -362,7 +374,7 @@ private fun SectionHeader(
     }
 }
 
-// Pending Approval Card (for CHAIR / SECRETARY)
+// ─── Pending Approval Card (for CHAIR / SECRETARY) ────────────────────────────
 
 @Composable
 private fun PendingApprovalCard(
@@ -404,7 +416,11 @@ private fun PendingApprovalCard(
                         else loan.borrowerName?.replace("null", "", true)?.trim()?.ifEmpty { "Member" } ?: "Member"
                     }
                     // Initials avatar
+<<<<<<< HEAD
                     val initials = cleanedBorrowerName.split(" ")
+=======
+                    val initials = loan.borrowerName.split(" ")
+>>>>>>> 37e8b804868ff74a2f43b72ea3dfbfdb34251134
                         .filter { it.isNotEmpty() }
                         .take(2)
                         .joinToString("") { it.first().uppercase() }
@@ -418,6 +434,7 @@ private fun PendingApprovalCard(
                             color = MaterialTheme.colorScheme.primary, fontSize = 14.sp)
                     }
                     Column {
+<<<<<<< HEAD
                         Text(
                             cleanedBorrowerName,
                             fontWeight = FontWeight.Bold,
@@ -426,6 +443,9 @@ private fun PendingApprovalCard(
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
+=======
+                        Text(loan.borrowerName, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurface)
+>>>>>>> 37e8b804868ff74a2f43b72ea3dfbfdb34251134
                         Text(
                             loan.purpose?.ifBlank { stringResource(R.string.personal_loan_default) } ?: stringResource(R.string.personal_loan_default),
                             fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -479,6 +499,7 @@ private fun PendingApprovalCard(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
+<<<<<<< HEAD
                 Column {
                     Text(
                         "Month: ${loan.durationMonths}",
@@ -491,6 +512,11 @@ private fun PendingApprovalCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
+=======
+                LoanDetail(stringResource(R.string.duration_label), "${loan.durationMonths} mo.")
+                LoanDetail(stringResource(R.string.interest_label), stringResource(R.string.amount_mk, String.format(Locale.US, "%,.0f",
+                    loan.totalRepayable - loan.principalAmount)))
+>>>>>>> 37e8b804868ff74a2f43b72ea3dfbfdb34251134
                 LoanDetail(stringResource(R.string.total_repay_label), stringResource(R.string.amount_mk, String.format(Locale.US, "%,.0f",
                     loan.totalRepayable)))
                 LoanDetail(stringResource(R.string.applied_label), loan.createdAt.take(10))
@@ -539,7 +565,7 @@ private fun PendingApprovalCard(
     }
 }
 
-// Active Loan Card (borrower's own active loan
+// ─── Active Loan Card (borrower's own active loan) ────────────────────────────
 
 @Composable
 private fun ActiveLoanCard(loan: Loan, onRepayClick: () -> Unit) {
@@ -566,6 +592,7 @@ private fun ActiveLoanCard(loan: Loan, onRepayClick: () -> Unit) {
                         stringResource(R.string.amount_mk, String.format(Locale.US, "%,.0f", loan.remainingBalance)),
                         color = MaterialTheme.colorScheme.onPrimary, fontSize = 26.sp, fontWeight = FontWeight.ExtraBold
                     )
+<<<<<<< HEAD
                     Column {
                         Text(
                             "Month: ${loan.durationMonths}",
@@ -580,6 +607,8 @@ private fun ActiveLoanCard(loan: Loan, onRepayClick: () -> Unit) {
                             fontWeight = FontWeight.Medium
                         )
                     }
+=======
+>>>>>>> 37e8b804868ff74a2f43b72ea3dfbfdb34251134
                 }
                 Surface(shape = RoundedCornerShape(8.dp), color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f)) {
                     Text(stringResource(R.string.status_active_caps), modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
@@ -637,7 +666,7 @@ private fun ActiveLoanCard(loan: Loan, onRepayClick: () -> Unit) {
     }
 }
 
-//Pending Own Loan Card
+// ─── Pending Own Loan Card ────────────────────────────────────────────────────
 
 @Composable
 private fun PendingOwnLoanCard(loan: Loan) {
@@ -669,7 +698,7 @@ private fun PendingOwnLoanCard(loan: Loan) {
     }
 }
 
-//No Loan Card
+// ─── No Loan Card ─────────────────────────────────────────────────────────────
 
 @Composable
 private fun NoLoanCard(hasGroup: Boolean, onApply: () -> Unit) {
@@ -710,8 +739,8 @@ private fun NoLoanCard(hasGroup: Boolean, onApply: () -> Unit) {
 }
 
 
-//Group Loan Summary Card (read-only, used in AllLoansScreen overview)
-
+// ─── Group Loan Summary Card (read-only, used in AllLoansScreen overview) ─────
+// Full card with approve/reject is in GroupLoansScreen → FullGroupLoanCard
 
 @Composable
 fun GroupLoanCard(loan: Loan) {
@@ -744,6 +773,7 @@ fun GroupLoanCard(loan: Loan) {
                 verticalAlignment = Alignment.Top,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
+<<<<<<< HEAD
                 Column(modifier = Modifier.weight(1f)) {
                     val defaultName = stringResource(R.string.member_default_name)
                     val cleanedBorrowerName = remember(loan.borrower, loan.borrowerName) {
@@ -819,6 +849,18 @@ fun GroupLoanCard(loan: Loan) {
                 Surface(
                     shape = RoundedCornerShape(5.dp),
                     color = statusColor.copy(alpha = 0.1f)
+=======
+                Text(
+                    loan.borrowerName.ifBlank { stringResource(R.string.member_default_name) },
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize   = 14.sp,
+                    modifier   = Modifier.weight(1f),
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+>>>>>>> 37e8b804868ff74a2f43b72ea3dfbfdb34251134
                 ) {
                     Text(
                         loan.status,
@@ -895,7 +937,7 @@ fun GroupLoanCard(loan: Loan) {
     }
 }
 
-// Reusable helpers (also used by GroupLoansScreen)
+// ─── Reusable helpers (also used by GroupLoansScreen) ─────────────────────────
 
 @Composable
 fun LoanDetail(label: String, value: String) {

@@ -5,7 +5,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tisunga.data.model.Loan
 import com.example.tisunga.data.remote.ApiClient
-import com.example.tisunga.data.repository.LoanRepository
 import com.example.tisunga.data.remote.dto.RejectLoanRequest
 import com.example.tisunga.data.remote.dto.RepayLoanRequest
 import com.example.tisunga.utils.SessionManager
@@ -19,6 +18,10 @@ data class LoanUiState(
     val isLoading: Boolean        = false,
     val myLoans: List<Loan>       = emptyList(),
     val groupLoans: List<Loan>    = emptyList(),
+    val calculatedInterest: Double   = 0.0,
+    val calculatedRepayable: Double  = 0.0,
+    val calculatedInterestRate: Double = 0.0,
+    val calculatedPeriodicRepayment: Double = 0.0,
     // Separate success/error so the UI can react precisely
     val isSuccess: Boolean        = false,
     val successMessage: String    = "",
@@ -28,17 +31,10 @@ data class LoanUiState(
     // Action-specific loading flags (avoid blocking the whole screen)
     val isApproving: String?      = null,   // loanId being approved
     val isRejecting: String?      = null,   // loanId being rejected
-    val isRepaying: Boolean       = false,
-    // Calculator
-    val calcInterest: Double      = 0.0,
-    val calcRepayable: Double     = 0.0,
-    val calcRate: Double          = 0.0,
-    val calcMonthly: Double       = 0.0,
-    val isCalculating: Boolean    = false
+    val isRepaying: Boolean       = false
 )
 
 class LoanViewModel(
-    private val loanRepository: LoanRepository,
     private val sessionManager: SessionManager,
     private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
@@ -55,7 +51,7 @@ class LoanViewModel(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = "")
             try {
-                val loans = loanRepository.getMyLoans()
+                val loans = api.getMyLoans()
                 _uiState.value = _uiState.value.copy(isLoading = false, myLoans = loans)
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
@@ -70,7 +66,7 @@ class LoanViewModel(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = "")
             try {
-                val response = loanRepository.getUserLoans(userId)
+                val response = api.getUserLoans(userId)
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     myLoans = response.loans,
@@ -92,7 +88,7 @@ class LoanViewModel(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = "")
             try {
-                val loans = loanRepository.getGroupLoans(groupId)
+                val loans = api.getGroupLoans(groupId)
                 _uiState.value = _uiState.value.copy(isLoading = false, groupLoans = loans)
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
@@ -105,7 +101,7 @@ class LoanViewModel(
 
     // ── Apply for loan ────────────────────────────────────────────────────────
 
-    fun applyForLoan(groupId: String, amount: Double, durationMonths: Int, purpose: String) {
+    fun applyForLoan(groupId: String, amount: Double, durationValue: Int, isWeeks: Boolean, purpose: String) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(
                 isLoading    = true,
@@ -113,12 +109,25 @@ class LoanViewModel(
                 isSuccess    = false
             )
             try {
-                loanRepository.applyForLoan(
-                    groupId = groupId,
-                    amount = amount,
-                    durationMonths = durationMonths,
-                    purpose = purpose.ifBlank { null }
+                // Backend expects durationMonths (Integer)
+                // If weeks, we approximate to months (minimum 1 month for backend consistency)
+                val durationMonths = if (isWeeks) {
+                    ceil(durationValue / 4.0).toInt().coerceAtLeast(1)
+                } else {
+                    durationValue
+                }
+                
+                // Track original requested period in purpose if weeks
+                val finalPurpose = if (isWeeks) "[$durationValue Weeks] $purpose" else purpose
+
+                val body = mutableMapOf<String, Any>(
+                    "groupId"        to groupId,
+                    "amount"         to amount,
+                    "durationMonths" to durationMonths
                 )
+                if (finalPurpose.isNotBlank()) body["purpose"] = finalPurpose
+
+                api.applyForLoan(body)
                 _uiState.value = _uiState.value.copy(
                     isLoading      = false,
                     isSuccess      = true,
@@ -142,7 +151,7 @@ class LoanViewModel(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isApproving = loanId, errorMessage = "")
             try {
-                loanRepository.approveLoan(loanId)
+                api.approveLoan(loanId)
                 _uiState.value = _uiState.value.copy(
                     isApproving    = null,
                     isSuccess      = true,
@@ -166,7 +175,7 @@ class LoanViewModel(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isRejecting = loanId, errorMessage = "")
             try {
-                loanRepository.rejectLoan(loanId, reason)
+                api.rejectLoan(loanId, RejectLoanRequest(reason))
                 _uiState.value = _uiState.value.copy(
                     isRejecting    = null,
                     isSuccess      = true,
@@ -188,7 +197,7 @@ class LoanViewModel(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isRepaying = true, errorMessage = "")
             try {
-                loanRepository.repayLoan(loanId, amount, phone)
+                api.repayLoanTyped(loanId, RepayLoanRequest(amount, phone))
                 _uiState.value = _uiState.value.copy(
                     isRepaying     = false,
                     isSuccess      = true,
@@ -204,31 +213,28 @@ class LoanViewModel(
         }
     }
 
-    // ── Interest calculator (Server-driven) ──────────────────────────────────
+    // ── Interest calculator (local — no API call) ─────────────────────────────
 
-    fun calculateInterest(amount: Double, durationMonths: Int) {
-        if (amount <= 0) {
-            _uiState.value = _uiState.value.copy(
-                calcInterest = 0.0, calcRepayable = 0.0, calcRate = 0.0, calcMonthly = 0.0
-            )
-            return
+    fun calculateInterest(amount: Double, durationValue: Int, isWeeks: Boolean) {
+        // Scaling interest rate logic based on the period
+        // Base rate is 5% for 1 month. 
+        // We'll scale it: 5% per month. 
+        // For weeks, it's (5 / 4)% per week = 1.25% per week.
+        val monthlyRate = 0.05
+        val rate = if (isWeeks) {
+            (monthlyRate / 4.0) * durationValue
+        } else {
+            monthlyRate * durationValue
         }
-
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isCalculating = true)
-            try {
-                val res = loanRepository.calculateLoanPreview(amount, durationMonths)
-                _uiState.value = _uiState.value.copy(
-                    isCalculating = false,
-                    calcInterest  = res.interestAmount,
-                    calcRepayable = res.totalRepayable,
-                    calcRate      = res.interestRate,
-                    calcMonthly   = res.monthlyRepayment
-                )
-            } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(isCalculating = false)
-            }
-        }
+        
+        val interest    = amount * rate
+        val totalRepay  = amount + interest
+        _uiState.value = _uiState.value.copy(
+            calculatedInterest  = interest,
+            calculatedRepayable = totalRepay,
+            calculatedInterestRate = rate * 100,
+            calculatedPeriodicRepayment = if (durationValue > 0) totalRepay / durationValue else totalRepay
+        )
     }
 
     fun resetState() {

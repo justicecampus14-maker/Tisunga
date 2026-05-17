@@ -14,12 +14,10 @@ class LoanRepository(
         return apiService.getMyLoansApi()
     }
     
-    suspend fun getUserLoans(userId: String) = apiService.getUserLoans(userId)
-
     suspend fun getGroupLoans(groupId: String) = apiService.getGroupLoans(groupId)
     
     suspend fun applyForLoan(groupId: String, amount: Double, durationMonths: Int, purpose: String?) = 
-        apiService.applyForLoan(
+        apiService.applyForLoanTyped(
             ApplyLoanRequest(
                 groupId = groupId,
                 amount = amount,
@@ -35,7 +33,4 @@ class LoanRepository(
     
     suspend fun repayLoan(loanId: String, amount: Double, phone: String) = 
         apiService.repayLoanTyped(loanId, RepayLoanRequest(amount, phone))
-
-    suspend fun calculateLoanPreview(amount: Double, durationMonths: Int) =
-        apiService.calculateLoanPreview(amount, durationMonths)
 }
