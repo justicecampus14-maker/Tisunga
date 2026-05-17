@@ -85,10 +85,18 @@ class HomeViewModel(
                     val dashboard = apiService.getGroupDashboard(group.id)
                     _uiState.value = _uiState.value.copy(
                         myRole             = dashboard.myRole ?: role,
-                        recentTransactions = dashboard.recentTransactions
+                        recentTransactions = dashboard.recentTransactions,
+                        myGroups = _uiState.value.myGroups.map {
+                            it.copy(
+                                totalSavings = if (dashboard.totalSavings > 0) dashboard.totalSavings else it.totalSavings,
+                                totalBorrowed = dashboard.totalBorrowed,
+                                availableBalance = dashboard.availableBalance
+                            )
+                        }
                     )
                     Log.d(TAG, "Dashboard loaded: role=${dashboard.myRole}, " +
-                            "transactions=${dashboard.recentTransactions.size}")
+                            "transactions=${dashboard.recentTransactions.size}, " +
+                            "totalBorrowed=${dashboard.totalBorrowed}")
                 } catch (e: Exception) {
                     Log.w(TAG, "Dashboard fetch failed (non-fatal): ${e.message}")
                     // Group card is already shown — this is non-fatal

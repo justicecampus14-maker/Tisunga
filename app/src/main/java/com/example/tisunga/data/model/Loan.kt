@@ -26,7 +26,20 @@ data class Loan(
     @SerializedName("updatedAt")        val updatedAt: String? = null,
     
     @SerializedName("group")
-    val group: LoanGroupInfo? = null
+    val group: LoanGroupInfo? = null,
+
+    @SerializedName("borrower")
+    val borrower: UserBrief? = null,
+
+    @SerializedName("approver")
+    val approver: UserBrief? = null
+) : Parcelable
+
+@Parcelize
+data class UserBrief(
+    @SerializedName("firstName") val firstName: String? = null,
+    @SerializedName("lastName")  val lastName: String? = null,
+    @SerializedName("phone")     val phone: String? = null
 ) : Parcelable
 
 @Parcelize

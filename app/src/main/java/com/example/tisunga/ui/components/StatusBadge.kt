@@ -14,7 +14,7 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun StatusBadge(status: String) {
     val color = when (status.uppercase()) {
-        "OPEN", "ACTIVE", "ONGOING", "COMPLETED", "PRESENT" -> Color(0xFF4CAF50)
+        "ACTIVE", "COMPLETED", "PRESENT" -> Color(0xFF4CAF50)
         "SCHEDULED", "PENDING" -> Color(0xFF2196F3)
         "CANCELLED", "ABSENT", "CLOSED" -> Color(0xFFF44336)
         "REMINDER", "EXCUSED" -> Color(0xFFFFA000)

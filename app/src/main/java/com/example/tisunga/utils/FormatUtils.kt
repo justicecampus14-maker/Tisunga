@@ -12,7 +12,7 @@ object FormatUtils {
 
     fun formatMoney(amount: Double?): String {
         if (amount == null) return "Flexible"
-        return "MK ${formatNumber(amount)}"
+        return "MWK ${formatNumber(amount)}"
     }
 
     fun calculateRepayable(principal: Double, rate: Double): Double {

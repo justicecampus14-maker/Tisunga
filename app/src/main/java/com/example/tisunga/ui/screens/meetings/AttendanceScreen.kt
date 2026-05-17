@@ -109,7 +109,9 @@ fun AttendanceScreen(
                 }
             }
 
-            val presentCount = attendanceEntries.values.count { it.uppercase() == "PRESENT" }
+            val presentCount = attendanceEntries.values.count { 
+                it.uppercase() == "PRESENT" || it.uppercase() == "LATE" 
+            }
             val totalCount = uiState.attendance.size
             
             AttendanceSummaryBanner(presentCount, totalCount)

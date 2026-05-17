@@ -202,7 +202,7 @@ object MockDataProvider {
             targetAmount=600.0,
             currentAmount=12000.0,
             endDate="sep 09, 2045",
-            status="OPEN",
+            status="ACTIVE",
             createdAt="2026-01-01T00:00:00Z"
         ),
         Event(
@@ -212,7 +212,7 @@ object MockDataProvider {
             targetAmount=0.0,
             currentAmount=5000.0,
             endDate="jun 08, 2008",
-            status="OPEN",
+            status="ACTIVE",
             createdAt="2026-01-01T00:00:00Z"
         ),
         Event(

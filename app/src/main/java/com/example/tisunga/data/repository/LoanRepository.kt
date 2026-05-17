@@ -11,9 +11,7 @@ class LoanRepository(
     private val sessionManager: com.example.tisunga.utils.SessionManager
 ) {
     suspend fun getMyLoans(): List<Loan> {
-        val userId = sessionManager.getUserId()
-        if (userId.isEmpty()) return emptyList()
-        return apiService.getMyLoans(userId)
+        return apiService.getMyLoansApi()
     }
     
     suspend fun getUserLoans(userId: String) = apiService.getUserLoans(userId)

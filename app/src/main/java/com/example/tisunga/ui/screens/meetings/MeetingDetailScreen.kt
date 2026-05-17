@@ -141,19 +141,17 @@ fun MeetingDetailScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 item {
-                    MeetingHeaderCard(meeting.title, meeting.status, meeting.scheduledAt, meeting.location)
-                }
-
-                if (!meeting.agenda.isNullOrBlank() || isChair) {
-                    item {
-                        MeetingAgendaCard(
-                            agenda = meeting.agenda ?: "",
-                            isEditable = isChair && (meeting.status.uppercase() == "SCHEDULED" || meeting.status.uppercase() == "ONGOING"),
-                            onSave = { newAgenda ->
-                                viewModel.updateMeetingAgenda(groupId, meetingId, newAgenda)
-                            }
-                        )
-                    }
+                    MeetingHeaderCard(
+                        title = meeting.title,
+                        status = meeting.status,
+                        scheduledAt = meeting.scheduledAt,
+                        location = meeting.location,
+                        agenda = meeting.agenda ?: "",
+                        isEditable = isChair && (meeting.status.uppercase() == "SCHEDULED" || meeting.status.uppercase() == "ONGOING"),
+                        onSaveAgenda = { newAgenda ->
+                            viewModel.updateMeetingAgenda(groupId, meetingId, newAgenda)
+                        }
+                    )
                 }
 
                 if (!meeting.notes.isNullOrBlank()) {
@@ -198,43 +196,14 @@ fun MeetingDetailScreen(
 }
 
 @Composable
-fun MeetingHeaderCard(title: String, status: String, scheduledAt: String, location: String?) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(title, fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                StatusBadge(status)
-            }
-            Spacer(modifier = Modifier.height(12.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.CalendarToday, contentDescription = null, modifier = Modifier.size(16.dp), tint = TextSecondary)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(formatDate(scheduledAt), color = TextSecondary)
-            }
-            if (!location.isNullOrBlank()) {
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.LocationOn, contentDescription = null, modifier = Modifier.size(16.dp), tint = TextSecondary)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(location, color = TextSecondary)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun MeetingAgendaCard(
+fun MeetingHeaderCard(
+    title: String,
+    status: String,
+    scheduledAt: String,
+    location: String?,
     agenda: String,
     isEditable: Boolean = false,
-    onSave: (String) -> Unit = {}
+    onSaveAgenda: (String) -> Unit = {}
 ) {
     var isEditing by remember { mutableStateOf(false) }
     var editedAgenda by remember { mutableStateOf(agenda) }
@@ -251,43 +220,78 @@ fun MeetingAgendaCard(
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
+            ) {
+                Text(title, fontSize = 20.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                StatusBadge(status)
+            }
+            
+            // Description (Agenda)
+            Spacer(modifier = Modifier.height(12.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Description, contentDescription = null, modifier = Modifier.size(20.dp), tint = GreenAccent)
+                    Icon(Icons.Default.Description, contentDescription = null, modifier = Modifier.size(18.dp), tint = GreenAccent)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text(stringResource(R.string.agenda_label), fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text(stringResource(R.string.agenda_label), fontWeight = FontWeight.Bold, fontSize = 15.sp, color = GreenAccent)
                 }
 
                 if (isEditable) {
                     IconButton(onClick = {
                         if (isEditing) {
-                            onSave(editedAgenda)
+                            onSaveAgenda(editedAgenda)
                         }
                         isEditing = !isEditing
-                    }) {
+                    }, modifier = Modifier.size(32.dp)) {
                         Icon(
                             imageVector = if (isEditing) Icons.Default.Save else Icons.Default.Edit,
-                            contentDescription = if (isEditing) "Save" else "Edit",
-                            tint = GreenAccent
+                            contentDescription = null,
+                            tint = GreenAccent,
+                            modifier = Modifier.size(18.dp)
                         )
                     }
                 }
             }
-            Spacer(modifier = Modifier.height(8.dp))
+            
             if (isEditing) {
                 OutlinedTextField(
                     value = editedAgenda,
                     onValueChange = { editedAgenda = it },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = GreenAccent,
                         cursorColor = GreenAccent
                     )
                 )
             } else {
-                Text(agenda.ifBlank { "No agenda specified." }, color = TextPrimary)
+                Text(
+                    text = agenda.ifBlank { "No agenda specified." },
+                    color = TextPrimary,
+                    modifier = Modifier.padding(top = 4.dp),
+                    fontSize = 14.sp
+                )
+            }
+
+            // Location
+            if (!location.isNullOrBlank()) {
+                Spacer(modifier = Modifier.height(16.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.LocationOn, contentDescription = null, modifier = Modifier.size(16.dp), tint = TextSecondary)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(location, color = TextSecondary, fontSize = 14.sp)
+                }
+            }
+
+            // Date
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.CalendarToday, contentDescription = null, modifier = Modifier.size(16.dp), tint = TextSecondary)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(formatDate(scheduledAt), color = TextSecondary, fontSize = 14.sp)
             }
         }
     }

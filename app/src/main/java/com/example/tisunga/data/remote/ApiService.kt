@@ -67,6 +67,9 @@ interface ApiService {
         @Query("page") page: Int? = null
     ): List<Contribution>
 
+    @GET("loans/my")
+    suspend fun getMyLoansApi(): List<Loan>
+
     @GET("users/{userId}/loans")
     suspend fun getMyLoans(@Path("userId") userId: String): List<Loan>
 

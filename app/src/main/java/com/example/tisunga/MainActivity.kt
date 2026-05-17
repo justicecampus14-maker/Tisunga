@@ -90,7 +90,10 @@ class ViewModelFactory(
             modelClass.isAssignableFrom(AuthViewModel::class.java)    -> AuthViewModel(sessionManager) as T
             modelClass.isAssignableFrom(GroupViewModel::class.java)   -> GroupViewModel(sessionManager, handle) as T
             modelClass.isAssignableFrom(LoanViewModel::class.java)    -> {
-                val repository = com.example.tisunga.data.repository.LoanRepository(com.example.tisunga.data.remote.ApiClient.getClient())
+                val repository = com.example.tisunga.data.repository.LoanRepository(
+                    com.example.tisunga.data.remote.ApiClient.getClient(),
+                    sessionManager
+                )
                 LoanViewModel(repository, sessionManager, handle) as T
             }
             modelClass.isAssignableFrom(SavingsViewModel::class.java) -> SavingsViewModel(sessionManager, handle) as T
