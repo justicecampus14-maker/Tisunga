@@ -33,6 +33,7 @@ import com.example.tisunga.ui.theme.*
 import com.example.tisunga.viewmodel.HomeViewModel
 import com.example.tisunga.viewmodel.LoanViewModel
 import com.example.tisunga.viewmodel.NotificationViewModel
+import com.example.tisunga.utils.FormatUtils
 import kotlinx.coroutines.launch
 import java.util.Locale
 import java.util.Locale.filter
@@ -401,10 +402,10 @@ private fun PendingApprovalCard(
             // Borrower + amount row
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(
+                    modifier = Modifier.weight(1.1f),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
@@ -431,7 +432,7 @@ private fun PendingApprovalCard(
                         Text(initials.ifEmpty { "?" }, fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary, fontSize = 14.sp)
                     }
-                    Column {
+                    Column(modifier = Modifier.weight(1f)) {
 
                         Text(
                             cleanedBorrowerName,
@@ -451,10 +452,9 @@ private fun PendingApprovalCard(
                     }
                 }
 
-                Spacer(modifier = Modifier.width(12.dp))
-
                 Text(
-                    stringResource(R.string.amount_mk, String.format(Locale.US, "%,.0f", loan.principalAmount)),
+                    FormatUtils.formatMoney(loan.principalAmount),
+                    modifier = Modifier.weight(0.9f),
                     fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = MaterialTheme.colorScheme.primary,
                     textAlign = TextAlign.End
                 )
@@ -469,20 +469,18 @@ private fun PendingApprovalCard(
                 ) {
                     Column(modifier = Modifier.padding(12.dp)) {
                         Text(
-                            text = stringResource(R.string.purpose_display_label, loan.purpose ?: stringResource(R.string.personal_loan_default)),
-                            fontSize = 13.sp,
+                            text = stringResource(R.string.applied_on_label, FormatUtils.formatDateTime(loan.createdAt)),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium,
                             color = MaterialTheme.colorScheme.onSurface
                         )
-                        Spacer(Modifier.height(8.dp))
-                        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                            Column {
-                                Text(stringResource(R.string.applied_label), fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                Text(loan.createdAt, fontSize = 11.sp, fontWeight = FontWeight.Medium)
-                            }
-                            Column {
-                                Text("ID", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                Text(loan.id.take(8).uppercase(), fontSize = 11.sp, fontWeight = FontWeight.Medium)
-                            }
+                        if (!loan.purpose.isNullOrBlank()) {
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                text = loan.purpose,
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
                     }
                 }
@@ -495,24 +493,10 @@ private fun PendingApprovalCard(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Column {
-                    Text(
-                        "Month: ${loan.durationMonths}",
-                        fontSize = 11.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        "Interest: ${loan.interestRate.toInt()}%",
-                        fontSize = 11.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
                 LoanDetail(stringResource(R.string.duration_label), "${loan.durationMonths} mo.")
-                LoanDetail(stringResource(R.string.interest_label), stringResource(R.string.amount_mk, String.format(Locale.US, "%,.0f",
-                    loan.totalRepayable - loan.principalAmount)))
-                LoanDetail(stringResource(R.string.total_repay_label), stringResource(R.string.amount_mk, String.format(Locale.US, "%,.0f",
-                    loan.totalRepayable)))
-                LoanDetail(stringResource(R.string.applied_label), loan.createdAt.take(10))
+                LoanDetail(stringResource(R.string.interest_label), FormatUtils.formatMoney(loan.totalRepayable - loan.principalAmount))
+                LoanDetail(stringResource(R.string.total_repay_label), FormatUtils.formatMoney(loan.totalRepayable))
+                LoanDetail(stringResource(R.string.applied_label), FormatUtils.formatDate(loan.createdAt))
             }
 
             Spacer(Modifier.height(14.dp))
@@ -582,7 +566,7 @@ private fun ActiveLoanCard(loan: Loan, onRepayClick: () -> Unit) {
                 Column {
                     Text(stringResource(R.string.outstanding_balance_label), color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f), fontSize = 12.sp)
                     Text(
-                        stringResource(R.string.amount_mk, String.format(Locale.US, "%,.0f", loan.remainingBalance)),
+                        FormatUtils.formatMoney(loan.principalAmount),
                         color = MaterialTheme.colorScheme.onPrimary, fontSize = 26.sp, fontWeight = FontWeight.ExtraBold
                     )
                     Column {
@@ -621,7 +605,7 @@ private fun ActiveLoanCard(loan: Loan, onRepayClick: () -> Unit) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text(stringResource(R.string.loan_repaid_percent_alt, (pct * 100).toInt()), color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f), fontSize = 11.sp)
                 if (!loan.dueDate.isNullOrBlank())
-                    Text(stringResource(R.string.due_label, loan.dueDate.take(10)), color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.due_label, FormatUtils.formatDate(loan.dueDate)), color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
             }
 
             Spacer(Modifier.height(16.dp))
@@ -630,11 +614,12 @@ private fun ActiveLoanCard(loan: Loan, onRepayClick: () -> Unit) {
             val cleanedApprover = remember(loan.approverName) {
                 loan.approverName?.replace("null", "", true)?.trim()
             }
-            if (!cleanedApprover.isNullOrBlank()) {
+            if (!loan.approvedAt.isNullOrBlank()) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.VerifiedUser, null, tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(14.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text(stringResource(R.string.approved_by_label, cleanedApprover), color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f), fontSize = 11.sp)
+                    Text(stringResource(R.string.approved_by_label, cleanedApprover ?: "System"), color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f), fontSize = 11.sp)
+                    Text("  ${FormatUtils.formatDate(loan.approvedAt)}", color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f), fontSize = 11.sp)
                 }
                 Spacer(Modifier.height(12.dp))
             }
@@ -677,7 +662,7 @@ private fun PendingOwnLoanCard(loan: Loan) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(stringResource(R.string.pending_review_title), fontWeight = FontWeight.Bold, fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurface)
                 Text(
-                    stringResource(R.string.awaiting_approval_msg, stringResource(R.string.amount_mk, String.format(Locale.US, "%,.0f", loan.principalAmount))),
+                    stringResource(R.string.awaiting_approval_msg, FormatUtils.formatMoney(loan.principalAmount)),
                     fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, lineHeight = 16.sp
                 )
                 loan.purpose?.let {
@@ -850,34 +835,28 @@ fun GroupLoanCard(loan: Loan) {
 
             if (expanded) {
                 Spacer(Modifier.height(10.dp))
-                Surface(
-                    color = BackgroundGray,
-                    shape = RoundedCornerShape(8.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(modifier = Modifier.padding(10.dp)) {
-                        if (!loan.purpose.isNullOrBlank()) {
-                            Text(
-                                text = stringResource(R.string.purpose_display_label, loan.purpose),
-                                fontSize = 12.sp,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Spacer(Modifier.height(6.dp))
-                        }
-                        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                            Column {
-                                Text(stringResource(R.string.applied_label), fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                Text(loan.createdAt.take(10), fontSize = 11.sp, fontWeight = FontWeight.Medium)
-                            }
-                            if (!loan.dueDate.isNullOrBlank()) {
-                                Column {
-                                    Text(stringResource(R.string.due_label, ""), fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    Text(loan.dueDate.take(10), fontSize = 11.sp, fontWeight = FontWeight.Medium)
+                        Surface(
+                            color = BackgroundGray,
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(modifier = Modifier.padding(10.dp)) {
+                                Text(
+                                    text = stringResource(R.string.applied_on_label, FormatUtils.formatDateTime(loan.createdAt)),
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                if (!loan.purpose.isNullOrBlank()) {
+                                    Spacer(Modifier.height(4.dp))
+                                    Text(
+                                        text = loan.purpose,
+                                        fontSize = 12.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
                                 }
                             }
                         }
-                    }
-                }
             }
 
             Spacer(Modifier.height(8.dp))
@@ -886,7 +865,7 @@ fun GroupLoanCard(loan: Loan) {
                 horizontalArrangement = Arrangement.End
             ) {
                 Text(
-                    stringResource(R.string.amount_mk, String.format(Locale.US, "%,.0f", loan.principalAmount)),
+                    FormatUtils.formatMoney(loan.principalAmount),
                     fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.primary
                 )
             }
@@ -906,7 +885,7 @@ fun GroupLoanCard(loan: Loan) {
                 ) {
                     Text(stringResource(R.string.loan_repaid_percent_alt, (pct * 100).toInt()), fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(
-                        stringResource(R.string.amount_left_label, String.format(Locale.US, "%,.0f", loan.remainingBalance)),
+                        stringResource(R.string.amount_left_label, FormatUtils.formatMoney(loan.remainingBalance)),
                         fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }

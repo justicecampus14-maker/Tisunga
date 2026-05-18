@@ -34,6 +34,7 @@ import com.example.tisunga.ui.theme.*
 import com.example.tisunga.viewmodel.GroupViewModel
 import com.example.tisunga.viewmodel.HomeViewModel
 import com.example.tisunga.viewmodel.NotificationViewModel
+import com.example.tisunga.utils.FormatUtils
 import kotlinx.coroutines.launch
 
 @Composable
@@ -101,10 +102,12 @@ fun GroupDetailScreen(
                     contentPadding = PaddingValues(bottom = 16.dp)
                 ) {
                     item {
+                        val lastUpdated = FormatUtils.formatDateTime(uiState.transactions.firstOrNull()?.createdAt)
                         GroupSummaryCard(
                             groupName = groupName,
                             totalSavings = uiState.selectedGroup?.totalSavings ?: 0.0,
-                            mySavings = uiState.selectedGroup?.mySavings ?: 0.0
+                            mySavings = uiState.selectedGroup?.mySavings ?: 0.0,
+                            lastUpdated = lastUpdated
                         )
                         Spacer(modifier = Modifier.height(20.dp))
                     }
@@ -132,7 +135,7 @@ fun GroupDetailScreen(
 }
 
 @Composable
-fun GroupSummaryCard(groupName: String, totalSavings: Double, mySavings: Double) {
+fun GroupSummaryCard(groupName: String, totalSavings: Double, mySavings: Double, lastUpdated: String? = null) {
     var isGroupSavingsVisible by remember { mutableStateOf(false) }
     var isMySavingsVisible by remember { mutableStateOf(false) }
 
@@ -196,6 +199,15 @@ fun GroupSummaryCard(groupName: String, totalSavings: Double, mySavings: Double)
                         modifier = Modifier.size(20.dp)
                     )
                 }
+            }
+
+            if (!lastUpdated.isNullOrBlank()) {
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = "Last updated: $lastUpdated",
+                    fontSize = 11.sp,
+                    color = Color.White.copy(alpha = 0.7f)
+                )
             }
         }
     }
@@ -370,14 +382,31 @@ fun TransactionSummaryCard(transaction: Transaction) {
             }
 
             Spacer(modifier = Modifier.height(4.dp))
-            val dateStr = try { transaction.createdAt.take(16).replace("T", " ") } catch (e: Exception) { "" }
-            Text(
-                text = "${if (displayDescription.isNotBlank()) "$displayDescription\n" else ""}$dateStr",
-                modifier = Modifier.fillMaxWidth(0.5f),
-                fontSize = 12.sp,
-                color = TextSecondary,
-                lineHeight = 16.sp
-            )
+            val dateStr = FormatUtils.formatDateTime(transaction.createdAt)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
+            ) {
+                Text(
+                    text = displayDescription,
+                    modifier = Modifier.weight(1f),
+                    fontSize = 12.sp,
+                    color = TextSecondary,
+                    lineHeight = 16.sp,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = dateStr,
+                    modifier = Modifier.weight(1f),
+                    fontSize = 12.sp,
+                    color = TextSecondary,
+                    lineHeight = 16.sp,
+                    textAlign = TextAlign.End
+                )
+            }
         }
     }
 }
