@@ -269,15 +269,9 @@
     <string name="group_balance_overview_title">Group Balance Overview</string>
     <string name="back_to_loans_button">Back to Loans</string>
     <string name="retry_button">Retry</string>
-<<<<<<< HEAD
     <string name="loan_interest_notice">Interest: 1mo (15%), 2mo (25%), 3mo (35%), 4mo (45%). The CHAIR or SECRETARY will review your request.</string>
     <string name="group_balance_label">Group Balance: MWK %1$s</string>
     <string name="loan_amount_mk_label">Loan Amount (MWK)</string>
-=======
-    <string name="loan_interest_notice">Interest is 5% flat. The CHAIR or SECRETARY will review your request.</string>
-    <string name="group_balance_label">Group Balance: MK %1$s</string>
-    <string name="loan_amount_mk_label">Loan Amount (MK)</string>
->>>>>>> 37e8b804868ff74a2f43b72ea3dfbfdb34251134
     <string name="loan_amount_hint">e.g. 50000</string>
     <string name="interest_percent_label">Interest (5%)</string>
     <string name="duration_months_label">Duration (Months)</string>

@@ -150,6 +150,30 @@ class MeetingViewModel(
         }
     }
 
+    fun updateMeetingAgenda(groupId: String, meetingId: String, agenda: String) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = "")
+            try {
+                val body = mapOf("agenda" to agenda)
+                api.updateMeetingStatus(groupId, meetingId, body)
+                
+                // Refresh
+                val updatedMeeting = api.getMeeting(groupId, meetingId)
+                _uiState.value = _uiState.value.copy(
+                    isLoading       = false,
+                    isSuccess       = true,
+                    selectedMeeting = updatedMeeting,
+                    successMessage  = "Agenda updated successfully"
+                )
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading    = false,
+                    errorMessage = e.message ?: "Failed to update agenda"
+                )
+            }
+        }
+    }
+
     fun markSingleAttendance(
         groupId: String,
         meetingId: String,

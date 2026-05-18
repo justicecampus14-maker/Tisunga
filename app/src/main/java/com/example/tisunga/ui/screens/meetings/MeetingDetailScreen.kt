@@ -7,9 +7,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.CalendarToday
-import androidx.compose.material.icons.filled.Description
-import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -139,7 +137,6 @@ fun MeetingDetailScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 item {
-<<<<<<< HEAD
                     MeetingHeaderCard(
                         title = meeting.title,
                         status = meeting.status,
@@ -151,15 +148,6 @@ fun MeetingDetailScreen(
                             viewModel.updateMeetingAgenda(groupId, meetingId, newAgenda)
                         }
                     )
-=======
-                    MeetingHeaderCard(meeting.title, meeting.status, meeting.scheduledAt, meeting.location)
-                }
-
-                if (!meeting.agenda.isNullOrBlank()) {
-                    item {
-                        MeetingAgendaCard(meeting.agenda)
-                    }
->>>>>>> 37e8b804868ff74a2f43b72ea3dfbfdb34251134
                 }
 
                 if (!meeting.notes.isNullOrBlank()) {
@@ -204,7 +192,6 @@ fun MeetingDetailScreen(
 }
 
 @Composable
-<<<<<<< HEAD
 fun MeetingHeaderCard(
     title: String,
     status: String,
@@ -221,49 +208,12 @@ fun MeetingHeaderCard(
         editedAgenda = agenda
     }
 
-=======
-fun MeetingHeaderCard(title: String, status: String, scheduledAt: String, location: String?) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(title, fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                StatusBadge(status)
-            }
-            Spacer(modifier = Modifier.height(12.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.CalendarToday, contentDescription = null, modifier = Modifier.size(16.dp), tint = TextSecondary)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(formatDate(scheduledAt), color = TextSecondary)
-            }
-            if (!location.isNullOrBlank()) {
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.LocationOn, contentDescription = null, modifier = Modifier.size(16.dp), tint = TextSecondary)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(location, color = TextSecondary)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun MeetingAgendaCard(agenda: String) {
->>>>>>> 37e8b804868ff74a2f43b72ea3dfbfdb34251134
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-<<<<<<< HEAD
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -339,15 +289,6 @@ fun MeetingAgendaCard(agenda: String) {
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(formatDate(scheduledAt), color = TextSecondary, fontSize = 14.sp)
             }
-=======
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.Description, contentDescription = null, modifier = Modifier.size(20.dp), tint = GreenAccent)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(stringResource(R.string.agenda_label), fontWeight = FontWeight.Bold, fontSize = 16.sp)
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(agenda, color = TextPrimary)
->>>>>>> 37e8b804868ff74a2f43b72ea3dfbfdb34251134
         }
     }
 }
