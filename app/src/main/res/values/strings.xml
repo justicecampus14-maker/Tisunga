@@ -457,6 +457,7 @@
     <string name="approved_by_label">Approved by %1$s</string>
     <string name="decline_button">Decline</string>
     <string name="approve_button">Approve</string>
+    <string name="applied_on_label">Applied on: %1$s</string>
 
     <!-- My Loans & All Loans Extras -->
     <string name="success_title">Success</string>

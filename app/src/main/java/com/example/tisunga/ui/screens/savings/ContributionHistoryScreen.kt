@@ -168,54 +168,71 @@ fun ContributionCard(contribution: Contribution, isMyHistory: Boolean) {
 
             Spacer(modifier = Modifier.height(4.dp))
             
+            val name = remember(contribution) {
+                val enriched = contribution.memberName?.replace("null", "", true)?.trim()
+                if (!enriched.isNullOrEmpty()) {
+                    enriched
+                } else {
+                    val first = contribution.user?.firstName?.replace("null", "", true)?.trim() ?: ""
+                    val last = contribution.user?.lastName?.replace("null", "", true)?.trim() ?: ""
+                    val combined = "$first $last".trim()
+                    combined.ifEmpty { "A member" }
+                }
+            }
+
+            val subText = if (isMyHistory) {
+                val gName = contribution.group?.name?.replace("null", "", true)?.trim()
+                val groupPart = if (gName.isNullOrEmpty()) "the group" else gName
+                if (contribution.type == "LOAN_REPAYMENT") "Loan repayment to $groupPart"
+                else "Contributed to $groupPart"
+            } else {
+                if (contribution.type == "LOAN_REPAYMENT") "$name repayment"
+                else "$name contribution"
+            }
+            
+            val dateStr = FormatUtils.formatDateTime(contribution.createdAt)
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Bottom
+                verticalAlignment = Alignment.Top
             ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    val name = remember(contribution) {
-                        val enriched = contribution.memberName?.replace("null", "", true)?.trim()
-                        if (!enriched.isNullOrEmpty()) {
-                            enriched
-                        } else {
-                            val first = contribution.user?.firstName?.replace("null", "", true)?.trim() ?: ""
-                            val last = contribution.user?.lastName?.replace("null", "", true)?.trim() ?: ""
-                            val combined = "$first $last".trim()
-                            combined.ifEmpty { "A member" }
-                        }
-                    }
-
-                    val subText = if (isMyHistory) {
-                        val gName = contribution.group?.name?.replace("null", "", true)?.trim()
-                        val groupPart = if (gName.isNullOrEmpty()) "the group" else gName
-                        if (contribution.type == "LOAN_REPAYMENT") "Loan repayment to $groupPart"
-                        else "Contributed to $groupPart"
-                    } else {
-                        if (contribution.type == "LOAN_REPAYMENT") "$name repayment"
-                        else "$name contribution"
-                    }
-                    
-                    val dateStr = contribution.createdAt.take(16).replace("T", " ")
-                    Text(
-                        text = "$subText\n$dateStr",
-                        fontSize = 12.sp,
-                        color = TextSecondary,
-                        lineHeight = 16.sp
-                    )
-                }
-
-                Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = statusColor.copy(alpha = 0.1f)
+                Text(
+                    text = subText,
+                    modifier = Modifier.weight(1f),
+                    fontSize = 12.sp,
+                    color = TextSecondary,
+                    lineHeight = 16.sp,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                
+                Spacer(modifier = Modifier.width(8.dp))
+                
+                Column(
+                    modifier = Modifier.weight(1f),
+                    horizontalAlignment = Alignment.End
                 ) {
                     Text(
-                        text = contribution.status,
-                        color = statusColor,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold
+                        text = dateStr,
+                        fontSize = 12.sp,
+                        color = TextSecondary,
+                        lineHeight = 16.sp,
+                        textAlign = TextAlign.End
                     )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = statusColor.copy(alpha = 0.1f)
+                    ) {
+                        Text(
+                            text = contribution.status,
+                            color = statusColor,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
 

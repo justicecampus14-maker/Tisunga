@@ -202,7 +202,8 @@ fun HomeScreen(
                         .verticalScroll(rememberScrollState())
                 ) {
                     if (myGroup != null) {
-                        GroupInfoCard(myGroup)
+                        val lastUpdated = FormatUtils.formatDateTime(uiState.recentTransactions.firstOrNull()?.createdAt)
+                        GroupInfoCard(myGroup, lastUpdated)
                     } else {
                         BannerSection()
                     }
@@ -270,7 +271,7 @@ fun QuickActionsNoGroup(navController: NavController) {
 }
 
 @Composable
-fun GroupInfoCard(group: com.example.tisunga.data.model.Group) {
+fun GroupInfoCard(group: com.example.tisunga.data.model.Group, lastUpdated: String? = null) {
     var isGroupSavingsVisible by remember { mutableStateOf(false) }
     var isMySavingsVisible by remember { mutableStateOf(false) }
 
@@ -398,6 +399,15 @@ fun GroupInfoCard(group: com.example.tisunga.data.model.Group) {
                             )
                         }
                     }
+                }
+
+                if (!lastUpdated.isNullOrBlank()) {
+                    Text(
+                        text = "Last updated: $lastUpdated",
+                        color = Color.White.copy(alpha = 0.7f),
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Normal
+                    )
                 }
             }
         }
@@ -823,16 +833,33 @@ fun TransactionRow(transaction: Transaction) {
             }
             
             Spacer(modifier = Modifier.height(4.dp))
-            val dateStr = try { transaction.createdAt.take(16).replace("T", " ") } catch (e: Exception) { "" }
+            val dateStr = FormatUtils.formatDateTime(transaction.createdAt)
             val baseDesc = if (transaction.description.isNotBlank() && transaction.description != "null") transaction.description else transaction.type?.name?.replace("_", " ") ?: ""
             
-            Text(
-                text = "$baseDesc ($dateStr)",
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                fontSize = 12.sp,
-                color = TextSecondary,
-                lineHeight = 16.sp
-            )
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
+            ) {
+                Text(
+                    text = baseDesc,
+                    modifier = Modifier.weight(1f),
+                    fontSize = 12.sp,
+                    color = TextSecondary,
+                    lineHeight = 16.sp,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = dateStr,
+                    modifier = Modifier.weight(1f),
+                    fontSize = 12.sp,
+                    color = TextSecondary,
+                    lineHeight = 16.sp,
+                    textAlign = TextAlign.End
+                )
+            }
         }
     }
 }

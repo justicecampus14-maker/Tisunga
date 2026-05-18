@@ -51,14 +51,30 @@ fun TransactionItem(transaction: Transaction) {
             }
 
             Spacer(modifier = Modifier.height(4.dp))
-            val dateStr = try { transaction.createdAt.take(16).replace("T", " ") } catch (e: Exception) { "" }
+            val dateStr = com.example.tisunga.utils.FormatUtils.formatDateTime(transaction.createdAt)
             val baseDesc = if (!transaction.description.isNullOrBlank()) transaction.description else transaction.type?.name?.replace("_", " ") ?: ""
-            Text(
-                text = "$baseDesc ($dateStr)",
-                fontSize = 12.sp,
-                color = TextSecondary,
-                lineHeight = 16.sp
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
+            ) {
+                Text(
+                    text = baseDesc,
+                    modifier = Modifier.weight(1f),
+                    fontSize = 12.sp,
+                    color = TextSecondary,
+                    lineHeight = 16.sp
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = dateStr,
+                    modifier = Modifier.weight(1f),
+                    fontSize = 12.sp,
+                    color = TextSecondary,
+                    lineHeight = 16.sp,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.End
+                )
+            }
         }
     }
 }

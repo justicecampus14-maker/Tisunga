@@ -29,6 +29,7 @@ import com.example.tisunga.data.model.Loan
 import com.example.tisunga.ui.theme.*
 import com.example.tisunga.viewmodel.GroupViewModel
 import com.example.tisunga.viewmodel.LoanViewModel
+import com.example.tisunga.utils.FormatUtils
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -287,7 +288,7 @@ fun FullGroupLoanCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.weight(1.1f),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
@@ -310,7 +311,7 @@ fun FullGroupLoanCard(
                         Text(initials.ifEmpty { "?" }, fontWeight = FontWeight.Bold,
                             color = NavyBlue, fontSize = 13.sp)
                     }
-                    Column {
+                    Column(modifier = Modifier.weight(1f)) {
                         Text(
                             cleanedBorrowerName, 
                             fontWeight = FontWeight.Bold, 
@@ -327,10 +328,10 @@ fun FullGroupLoanCard(
                     }
                 }
                 Column(
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.weight(0.9f),
                     horizontalAlignment = Alignment.End
                 ) {
-                    Text("MK ${String.format(Locale.US, "%,.0f", loan.principalAmount)}",
+                    Text(FormatUtils.formatMoney(loan.principalAmount),
                         fontWeight = FontWeight.ExtraBold, fontSize = 16.sp, color = NavyBlue)
                     Surface(shape = RoundedCornerShape(6.dp), color = statusBg) {
                         Text(loan.status, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
@@ -348,20 +349,18 @@ fun FullGroupLoanCard(
                 ) {
                     Column(modifier = Modifier.padding(12.dp)) {
                         Text(
-                            text = stringResource(R.string.purpose_display_label, loan.purpose ?: stringResource(R.string.personal_loan_default)),
-                            fontSize = 13.sp,
+                            text = stringResource(R.string.applied_on_label, FormatUtils.formatDateTime(loan.createdAt)),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium,
                             color = TextPrimary
                         )
-                        Spacer(Modifier.height(8.dp))
-                        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                            Column {
-                                Text(stringResource(R.string.applied_label), fontSize = 10.sp, color = TextSecondary)
-                                Text(loan.createdAt, fontSize = 11.sp, fontWeight = FontWeight.Medium)
-                            }
-                            Column {
-                                Text("ID", fontSize = 10.sp, color = TextSecondary)
-                                Text(loan.id.take(8).uppercase(), fontSize = 11.sp, fontWeight = FontWeight.Medium)
-                            }
+                        if (!loan.purpose.isNullOrBlank()) {
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                text = loan.purpose,
+                                fontSize = 12.sp,
+                                color = TextSecondary
+                            )
                         }
                     }
                 }
@@ -372,9 +371,9 @@ fun FullGroupLoanCard(
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 LoanDetailItem(stringResource(R.string.duration_label), "${loan.durationMonths} ${stringResource(id = if (loan.durationMonths == 1) R.string.period_1_month else R.string.duration_months_label).lowercase()}")
                 LoanDetailItem(stringResource(R.string.interest_label),
-                    "MK ${String.format(Locale.US, "%,.0f", loan.totalRepayable - loan.principalAmount)}")
-                LoanDetailItem(stringResource(R.string.total_label), "MK ${String.format(Locale.US, "%,.0f", loan.totalRepayable)}")
-                LoanDetailItem(stringResource(R.string.applied_label), loan.createdAt.take(10))
+                    FormatUtils.formatMoney(loan.totalRepayable - loan.principalAmount))
+                LoanDetailItem(stringResource(R.string.total_label), FormatUtils.formatMoney(loan.totalRepayable))
+                LoanDetailItem(stringResource(R.string.applied_label), FormatUtils.formatDate(loan.createdAt))
             }
 
             // Progress (ACTIVE loans)
@@ -432,7 +431,7 @@ fun FullGroupLoanCard(
                     }
                     Text(actionText, fontSize = 11.sp, color = TextSecondary)
                     if (!loan.approvedAt.isNullOrBlank())
-                        Text("  ${loan.approvedAt.take(10)}", fontSize = 10.sp, color = TextSecondary)
+                        Text("  ${FormatUtils.formatDate(loan.approvedAt)}", fontSize = 10.sp, color = TextSecondary)
                 }
             }
 
