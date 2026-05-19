@@ -157,14 +157,18 @@ class GroupViewModel(
         }
     }
 
-    fun updateGroup(groupId: String, name: String, description: String) {
+    fun updateGroup(groupId: String, name: String, description: String, location: String, meetingTime: String, meetingDay: String? = null) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = "")
             try {
                 val body = mutableMapOf<String, Any>(
                     "name" to name,
-                    "description" to description
+                    "description" to description,
+                    "location" to location,
+                    "meetingTime" to meetingTime
                 )
+                meetingDay?.let { body["meetingDay"] = it }
+
                 val updatedGroup = apiService.updateGroup(groupId, body)
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
@@ -280,8 +284,8 @@ class GroupViewModel(
                         Group(
                             id = g.id,
                             name = g.name,
-                            description = null,
-                            location = null,
+                            description = g.description,
+                            location = g.location,
                             groupCode = g.groupCode ?: "",
                             minContribution = 0.0,
                             savingPeriod = 0,
