@@ -51,8 +51,7 @@ class LoanViewModel(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = "")
             try {
-                val userId = sessionManager.getUserId()
-                val loans = apiService.getMyLoans(userId)
+                val loans = apiService.getMyLoansApi()
                 _uiState.value = _uiState.value.copy(isLoading = false, myLoans = loans)
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(

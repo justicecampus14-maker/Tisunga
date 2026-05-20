@@ -12,7 +12,7 @@ object FormatUtils {
 
     fun formatMoney(amount: Double?): String {
         if (amount == null) return "Flexible"
-        return "MK ${formatNumber(amount)}"
+        return "MWK ${formatNumber(amount)}"
     }
 
     fun calculateRepayable(principal: Double, rate: Double): Double {
@@ -22,22 +22,38 @@ object FormatUtils {
     fun formatDate(dateStr: String?): String {
         if (dateStr.isNullOrBlank()) return "N/A"
         return try {
-            // Try ISO format first
             val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
             inputFormat.timeZone = TimeZone.getTimeZone("UTC")
             val date = inputFormat.parse(dateStr)
-            val outputFormat = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
+            val outputFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
             outputFormat.format(date!!)
         } catch (e: Exception) {
             try {
-                // Try simple YYYY-MM-DD
                 val inputFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
                 val date = inputFormat.parse(dateStr)
-                val outputFormat = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
+                val outputFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
                 outputFormat.format(date!!)
             } catch (e2: Exception) {
                 dateStr
             }
+        }
+    }
+
+    fun formatDateTime(dateStr: String?): String {
+        if (dateStr.isNullOrBlank()) return "N/A"
+        return try {
+            val inputFormat = if (dateStr.contains("T")) {
+                SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US).apply {
+                    timeZone = TimeZone.getTimeZone("UTC")
+                }
+            } else {
+                SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US)
+            }
+            val date = inputFormat.parse(dateStr.take(19))
+            val outputFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
+            outputFormat.format(date!!)
+        } catch (e: Exception) {
+            dateStr
         }
     }
 }

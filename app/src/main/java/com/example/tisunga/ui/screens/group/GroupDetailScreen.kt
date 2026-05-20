@@ -1,5 +1,6 @@
 package com.example.tisunga.ui.screens.group
 
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -16,12 +17,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.compose.ui.res.stringResource
 import com.example.tisunga.R
 import com.example.tisunga.data.model.Transaction
+import com.example.tisunga.data.model.TransactionType
 import com.example.tisunga.ui.components.BottomNavBar
 import com.example.tisunga.ui.navigation.Routes
 import com.example.tisunga.ui.screens.home.AppDrawerContent
@@ -30,6 +34,7 @@ import com.example.tisunga.ui.theme.*
 import com.example.tisunga.viewmodel.GroupViewModel
 import com.example.tisunga.viewmodel.HomeViewModel
 import com.example.tisunga.viewmodel.NotificationViewModel
+import com.example.tisunga.utils.FormatUtils
 import kotlinx.coroutines.launch
 
 @Composable
@@ -97,7 +102,13 @@ fun GroupDetailScreen(
                     contentPadding = PaddingValues(bottom = 16.dp)
                 ) {
                     item {
-                        GroupSummaryCard(groupName)
+                        val lastUpdated = FormatUtils.formatDateTime(uiState.transactions.firstOrNull()?.createdAt)
+                        GroupSummaryCard(
+                            groupName = groupName,
+                            totalSavings = uiState.selectedGroup?.totalSavings ?: 0.0,
+                            mySavings = uiState.selectedGroup?.mySavings ?: 0.0,
+                            lastUpdated = lastUpdated
+                        )
                         Spacer(modifier = Modifier.height(20.dp))
                     }
                     
@@ -124,7 +135,10 @@ fun GroupDetailScreen(
 }
 
 @Composable
-fun GroupSummaryCard(groupName: String) {
+fun GroupSummaryCard(groupName: String, totalSavings: Double, mySavings: Double, lastUpdated: String? = null) {
+    var isGroupSavingsVisible by remember { mutableStateOf(false) }
+    var isMySavingsVisible by remember { mutableStateOf(false) }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(bottomStart = 20.dp, bottomEnd = 20.dp),
@@ -136,22 +150,65 @@ fun GroupSummaryCard(groupName: String) {
             Spacer(modifier = Modifier.height(16.dp))
             
             Text(stringResource(R.string.group_saving_label), fontSize = 14.sp, color = Color.White.copy(alpha = 0.8f))
-            Box(
-                modifier = Modifier
-                    .height(8.dp)
-                    .width(180.dp)
-                    .background(Color.White.copy(alpha = 0.2f), RoundedCornerShape(4.dp))
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = if (isGroupSavingsVisible) com.example.tisunga.utils.FormatUtils.formatMoney(totalSavings) else "MWK XXXXXX",
+                    color = Color.White,
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                IconButton(
+                    onClick = { isGroupSavingsVisible = !isGroupSavingsVisible },
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(
+                        imageVector = if (isGroupSavingsVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                        contentDescription = "Toggle Visibility",
+                        tint = Color.White.copy(alpha = 0.7f),
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
 
             Spacer(modifier = Modifier.height(12.dp))
 
             Text(stringResource(R.string.my_savings_label), fontSize = 14.sp, color = Color.White.copy(alpha = 0.8f))
-            Box(
-                modifier = Modifier
-                    .height(8.dp)
-                    .width(140.dp)
-                    .background(Color.White.copy(alpha = 0.2f), RoundedCornerShape(4.dp))
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = if (isMySavingsVisible) com.example.tisunga.utils.FormatUtils.formatMoney(mySavings) else "MWK XXXXXX",
+                    color = Color.White,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                IconButton(
+                    onClick = { isMySavingsVisible = !isMySavingsVisible },
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(
+                        imageVector = if (isMySavingsVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                        contentDescription = "Toggle Visibility",
+                        tint = Color.White.copy(alpha = 0.7f),
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+
+            if (!lastUpdated.isNullOrBlank()) {
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = "Last updated: $lastUpdated",
+                    fontSize = 11.sp,
+                    color = Color.White.copy(alpha = 0.7f)
+                )
+            }
         }
     }
 }
@@ -251,15 +308,105 @@ fun TransactionsHeader(navController: NavController, groupId: String) {
 
 @Composable
 fun TransactionSummaryCard(transaction: Transaction) {
+    val isCredit = transaction.type in listOf(
+        TransactionType.SAVINGS,
+        TransactionType.LOAN_IN,
+        TransactionType.SOCIAL_FUND,
+        TransactionType.SHARE_PURCHASE,
+        TransactionType.JOIN_FEE,
+        TransactionType.INTEREST,
+        TransactionType.SYSTEM
+    )
+    val color = if (isCredit) GreenAccent else Color(0xFF333333)
+    val icon = if (isCredit) Icons.Default.ArrowDownward else Icons.Default.ArrowUpward
+
     Card(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = White)
+        colors = CardDefaults.cardColors(containerColor = White),
+        elevation = CardDefaults.cardElevation(2.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(transaction.memberName ?: "Member", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-            Text("Ref: ${transaction.tisuRef} | ${transaction.type}", fontSize = 13.sp, color = TextSecondary)
-            Text(transaction.createdAt, fontSize = 12.sp, color = TextSecondary)
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = color.copy(alpha = 0.1f),
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(icon, null, tint = color, modifier = Modifier.size(18.dp))
+                        }
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column {
+                        Text(
+                            text = transaction.type?.name?.replace("_", " ") ?: "Transaction",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp
+                        )
+                    }
+                }
+                Column(horizontalAlignment = Alignment.End) {
+                    val amountText = com.example.tisunga.utils.FormatUtils.formatMoney(kotlin.math.abs(transaction.amount))
+                    Text(
+                        text = (if (isCredit) "+" else "") + amountText,
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 16.sp,
+                        color = color
+                    )
+                }
+            }
+
+            val displayDescription = remember(transaction) {
+                val raw = transaction.description.replace("null", "", true).trim()
+                if (raw.isEmpty() || raw == "null null") {
+                    when (transaction.type) {
+                        TransactionType.SAVINGS, TransactionType.SOCIAL_FUND, TransactionType.SHARE_PURCHASE -> 
+                            "Contribution to the group"
+                        TransactionType.JOIN_FEE -> 
+                            "Joining fee payment"
+                        TransactionType.LOAN_IN -> 
+                            "Loan repayment"
+                        else -> "Transaction completed"
+                    }
+                } else {
+                    transaction.description
+                }
+            }
+
+            Spacer(modifier = Modifier.height(4.dp))
+            val dateStr = FormatUtils.formatDateTime(transaction.createdAt)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
+            ) {
+                Text(
+                    text = displayDescription,
+                    modifier = Modifier.weight(1f),
+                    fontSize = 12.sp,
+                    color = TextSecondary,
+                    lineHeight = 16.sp,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = dateStr,
+                    modifier = Modifier.weight(1f),
+                    fontSize = 12.sp,
+                    color = TextSecondary,
+                    lineHeight = 16.sp,
+                    textAlign = TextAlign.End
+                )
+            }
         }
     }
 }

@@ -1,9 +1,9 @@
 package com.example.tisunga.ui.screens.transactions
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -75,26 +75,31 @@ fun TransactionsScreen(
                 .padding(padding)
         ) {
             // Filter Chips
-            ScrollableTabRow(
-                selectedTabIndex = if (selectedType == null) 0 else 1,
-                containerColor = White,
-                edgePadding = 16.dp,
-                divider = {},
-                indicator = {}
-            ) {
-                FilterChip(
-                    selected = selectedType == null,
-                    onClick = { selectedType = null },
-                    label = { Text("All") },
-                    modifier = Modifier.padding(horizontal = 4.dp)
-                )
-                listOf("SAVINGS", "LOAN_OUT", "LOAN_IN", "SOCIAL_FUND", "EXPENSE").forEach { type ->
-                    FilterChip(
-                        selected = selectedType == type,
-                        onClick = { selectedType = type },
-                        label = { Text(type.replace("_", " ")) },
-                        modifier = Modifier.padding(horizontal = 4.dp)
-                    )
+            Surface(color = White, shadowElevation = 1.dp) {
+                LazyRow(
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    item {
+                        FilterChip(
+                            selected = selectedType == null,
+                            onClick = { selectedType = null },
+                            label = { Text("All") },
+                            shape = RoundedCornerShape(20.dp)
+                        )
+                    }
+                    items(listOf(
+                        "SAVINGS", "LOAN_OUT", "LOAN_IN", "SOCIAL_FUND",
+                        "SHARE_PURCHASE", "EXPENSE", "INTEREST", "JOIN_FEE"
+                    )) { type ->
+                        FilterChip(
+                            selected = selectedType == type,
+                            onClick = { selectedType = type },
+                            label = { Text(type.replace("_", " ").lowercase().replaceFirstChar { it.uppercase() }) },
+                            shape = RoundedCornerShape(20.dp)
+                        )
+                    }
                 }
             }
 
@@ -112,7 +117,7 @@ fun TransactionsScreen(
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    itemsIndexed(uiState.transactions, key = { _, item -> item.id }) { index, transaction ->
+                    items(uiState.transactions, key = { it.id }) { transaction ->
                         TransactionItem(transaction)
                     }
 
@@ -131,17 +136,25 @@ fun TransactionsScreen(
 
 @Composable
 fun TransactionItem(transaction: Transaction) {
-    val isCredit = transaction.type in listOf(TransactionType.SAVINGS, TransactionType.LOAN_IN, TransactionType.SOCIAL_FUND, TransactionType.SHARE_PURCHASE, TransactionType.JOIN_FEE, TransactionType.INTEREST)
-    val color = if (isCredit) GreenAccent else Color.Red
+    val isCredit = transaction.type in listOf(
+        TransactionType.SAVINGS,
+        TransactionType.LOAN_IN,
+        TransactionType.SOCIAL_FUND,
+        TransactionType.SHARE_PURCHASE,
+        TransactionType.JOIN_FEE,
+        TransactionType.INTEREST,
+        TransactionType.SYSTEM
+    )
+    val color = if (isCredit) GreenAccent else Color(0xFF333333)
     val icon = if (isCredit) Icons.Default.ArrowDownward else Icons.Default.ArrowUpward
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = White),
         elevation = CardDefaults.cardElevation(2.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(12.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -151,10 +164,10 @@ fun TransactionItem(transaction: Transaction) {
                     Surface(
                         shape = RoundedCornerShape(8.dp),
                         color = color.copy(alpha = 0.1f),
-                        modifier = Modifier.size(40.dp)
+                        modifier = Modifier.size(36.dp)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
-                            Icon(icon, null, tint = color, modifier = Modifier.size(20.dp))
+                            Icon(icon, null, tint = color, modifier = Modifier.size(18.dp))
                         }
                     }
                     Spacer(modifier = Modifier.width(12.dp))
@@ -162,52 +175,44 @@ fun TransactionItem(transaction: Transaction) {
                         Text(
                             text = transaction.type?.name?.replace("_", " ") ?: "Transaction",
                             fontWeight = FontWeight.Bold,
-                            fontSize = 15.sp
-                        )
-                        Text(
-                            text = transaction.memberName ?: "System",
-                            fontSize = 12.sp,
-                            color = Color.Gray
+                            fontSize = 14.sp
                         )
                     }
                 }
                 Column(horizontalAlignment = Alignment.End) {
+                    val amountText = FormatUtils.formatMoney(kotlin.math.abs(transaction.amount))
                     Text(
-                        text = (if (isCredit) "+" else "-") + FormatUtils.formatMoney(transaction.amount),
+                        text = (if (isCredit) "+" else "") + amountText,
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 16.sp,
                         color = color
                     )
-                    Text(
-                        text = "Bal: ${FormatUtils.formatMoney(transaction.balanceAfter)}",
-                        fontSize = 11.sp,
-                        color = Color.Gray
-                    )
                 }
             }
-            
-            Spacer(modifier = Modifier.height(12.dp))
-            Text(
-                text = transaction.description,
-                fontSize = 13.sp,
-                color = TextSecondary,
-                lineHeight = 18.sp
-            )
-            
-            Spacer(modifier = Modifier.height(12.dp))
+
+            Spacer(modifier = Modifier.height(4.dp))
+            val dateStr = FormatUtils.formatDateTime(transaction.createdAt)
+            val baseDesc = if (!transaction.description.isNullOrBlank()) transaction.description else transaction.type?.name?.replace("_", " ") ?: ""
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
             ) {
                 Text(
-                    text = "Ref: ${transaction.tisuRef}",
-                    fontSize = 10.sp,
-                    color = Color.LightGray
+                    text = baseDesc,
+                    modifier = Modifier.weight(1f),
+                    fontSize = 12.sp,
+                    color = TextSecondary,
+                    lineHeight = 16.sp
                 )
+                Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = transaction.createdAt.take(16).replace("T", " "),
-                    fontSize = 10.sp,
-                    color = Color.Gray
+                    text = dateStr,
+                    modifier = Modifier.weight(1f),
+                    fontSize = 12.sp,
+                    color = TextSecondary,
+                    lineHeight = 16.sp,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.End
                 )
             }
         }

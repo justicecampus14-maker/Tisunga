@@ -22,7 +22,10 @@ data class Contribution(
     
     // Nested user object often returned in "group" history
     @SerializedName("User")
-    val user: ContributionUser? = null
+    val user: ContributionUser? = null,
+
+    // Enriched field
+    val memberName: String? = null
 )
 
 data class ContributionGroup(

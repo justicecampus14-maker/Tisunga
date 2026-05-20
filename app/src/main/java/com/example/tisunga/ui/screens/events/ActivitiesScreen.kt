@@ -6,29 +6,25 @@ import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import java.util.Calendar
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Warning
+
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.Event
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
-import java.time.format.DateTimeParseException
-import java.time.format.ResolverStyle
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.*
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -52,145 +48,140 @@ fun ActivitiesScreen(
     viewModel: ActivitiesViewModel
 ) {
     val context = LocalContext.current
-    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val navBackStackEntryState = navController.currentBackStackEntryAsState()
+    val navBackStackEntry = navBackStackEntryState.value
 
-    LaunchedEffect(groupId, navBackStackEntry) {
-        val isCurrent = navBackStackEntry?.destination?.route?.startsWith("activities") == true || 
-                       navBackStackEntry?.destination?.route?.startsWith("events") == true
-        if (isCurrent) {
-            viewModel.load(groupId, forceRefresh = true)
-        }
-    }
+    val selectedTabState = remember { mutableIntStateOf(0) }
+    val selectedTab = selectedTabState.intValue
+    
+    val meetingsState = viewModel.meetings.collectAsState()
+    val meetings = meetingsState.value
+    
+    val eventsState = viewModel.events.collectAsState()
+    val events = eventsState.value
+    
+    val isLoadingState = viewModel.isLoading.collectAsState()
+    val isLoading = isLoadingState.value
+    
+    val errorState = viewModel.error.collectAsState()
+    val error = errorState.value
 
-    LaunchedEffect(viewModel.error) {
-        viewModel.error?.let {
-            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
-            viewModel.clearError()
-        }
-    }
+    val meetingFilterState = viewModel.meetingFilter.collectAsState()
+    val meetingFilter = meetingFilterState.value
+    
+    val eventFilterState = viewModel.eventFilter.collectAsState()
+    val eventFilter = eventFilterState.value
 
-    var tab by remember { mutableIntStateOf(0) }
-    var meetingFilter by remember { mutableStateOf("ALL") }
-    var eventFilter by remember { mutableStateOf("ALL") }
-    var showCreateEventDialog by remember { mutableStateOf(false) }
     var showCreateMeetingDialog by remember { mutableStateOf(false) }
+    var showCreateEventDialog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(groupId) {
+        viewModel.loadData(groupId)
+    }
 
     Scaffold(
         topBar = {
-            TopBar(navController)
-        },
-        floatingActionButton = {
-            if (tab == 0) {
-                ExtendedFloatingActionButton(
-                    onClick = { showCreateMeetingDialog = true },
+            Column(modifier = Modifier.background(NavyBlue)) {
+                CenterAlignedTopAppBar(
+                    title = { Text(stringResource(R.string.events_title), color = Color.White, fontWeight = FontWeight.Bold) },
+                    navigationIcon = {
+                        IconButton(onClick = { navController.popBackStack() }) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
+                        }
+                    },
+                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = NavyBlue)
+                )
+                TabRow(
+                    selectedTabIndex = selectedTab,
                     containerColor = NavyBlue,
                     contentColor = Color.White,
-                    icon = { Icon(Icons.Default.Add, contentDescription = null) },
-                    text = { Text(stringResource(R.string.add_button)) }
-                )
-            } else if (tab == 1) { // Only show for Events tab
-                ExtendedFloatingActionButton(
-                    onClick = { showCreateEventDialog = true },
-                    containerColor = NavyBlue,
-                    contentColor = Color.White,
-                    icon = { Icon(Icons.Default.Add, contentDescription = null) },
-                    text = { Text(stringResource(R.string.add_event_button)) }
-                )
-            }
-        },
-        floatingActionButtonPosition = FabPosition.End,
-        containerColor = BackgroundGray
-    ) { padding ->
-        if (showCreateEventDialog) {
-            CreateEventDialog(
-                onDismiss = { showCreateEventDialog = false },
-                onConfirm = { type, title, date, amountType, amount, desc ->
-                    viewModel.createEvent(groupId, type, title, date, amountType, amount, desc) {
-                        showCreateEventDialog = false
-                        Toast.makeText(context, context.getString(R.string.event_created_success), Toast.LENGTH_SHORT).show()
-                    }
-                }
-            )
-        }
-        if (showCreateMeetingDialog) {
-            CreateMeetingDialog(
-                onDismiss = { showCreateMeetingDialog = false },
-                onConfirm = { title, date, location, desc ->
-                    viewModel.createMeeting(groupId, title, date, location, desc) {
-                        showCreateMeetingDialog = false
-                        Toast.makeText(context, context.getString(R.string.meeting_scheduled_success), Toast.LENGTH_SHORT).show()
-                    }
-                }
-            )
-        }
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-        ) {
-            TabRow(
-                selectedTabIndex = tab,
-                containerColor = MaterialTheme.colorScheme.surface,
-                contentColor = MaterialTheme.colorScheme.primary,
-                indicator = { tabPositions ->
-                    TabRowDefaults.SecondaryIndicator(
-                        Modifier.tabIndicatorOffset(tabPositions[tab]),
-                        color = MaterialTheme.colorScheme.primary
+                    indicator = { tabPositions ->
+                        TabRowDefaults.SecondaryIndicator(
+                            Modifier.tabIndicatorOffset(tabPositions[selectedTab]),
+                            color = Color.White
+                        )
+                    },
+                    divider = {}
+                ) {
+                    Tab(
+                        selected = selectedTab == 0,
+                        onClick = { selectedTabState.intValue = 0 },
+                        text = { Text(stringResource(R.string.tab_meetings), fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Normal) }
+                    )
+                    Tab(
+                        selected = selectedTab == 1,
+                        onClick = { selectedTabState.intValue = 1 },
+                        text = { Text(stringResource(R.string.tab_other_events), fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Normal) }
                     )
                 }
-            ) {
-                Tab(
-                    selected = tab == 0,
-                    onClick = { tab = 0 },
-                    text = { Text(stringResource(R.string.tab_meetings), color = if (tab == 0) MaterialTheme.colorScheme.primary else TextSecondary) }
-                )
-                Tab(
-                    selected = tab == 1,
-                    onClick = { tab = 1 },
-                    text = { Text(stringResource(R.string.tab_other_events), color = if (tab == 1) MaterialTheme.colorScheme.primary else TextSecondary) }
-                )
             }
-
-            if (viewModel.loading) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = NavyBlue)
-                }
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = {
+                    if (selectedTab == 0) showCreateMeetingDialog = true
+                    else showCreateEventDialog = true
+                },
+                containerColor = NavyBlue,
+                contentColor = Color.White,
+                shape = CircleShape
+            ) {
+                Icon(Icons.Default.Add, contentDescription = "Add")
+            }
+        }
+    ) { padding ->
+        Box(modifier = Modifier.padding(padding).fillMaxSize()) {
+            if (isLoading) {
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center), color = NavyBlue)
+            } else if (error != null) {
+                Text(
+                    text = error ?: "Unknown Error",
+                    modifier = Modifier.align(Alignment.Center).padding(16.dp),
+                    color = Color.Red
+                )
             } else {
-                if (tab == 0) {
-                    MeetingsContent(viewModel.meetings, meetingFilter, { meetingFilter = it }) { m ->
-                        navController.navigate("meeting_detail/$groupId/${m.id}")
-                    }
+                if (selectedTab == 0) {
+                    MeetingsContent(
+                        meetings = meetings,
+                        filter = meetingFilter,
+                        onFilterChange = { viewModel.setMeetingFilter(it) },
+                        onMeetingClick = { m ->
+                            navController.navigate("meeting_detail/${m.id}")
+                        }
+                    )
                 } else {
-                    EventsContent(viewModel.events, eventFilter) {
-                        eventFilter = it
-                    }
+                    EventsContent(
+                        events = events,
+                        filter = eventFilter,
+                        onFilterChange = { viewModel.setEventFilter(it) }
+                    )
                 }
             }
         }
     }
-}
 
-/*  TOP BAR */
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun TopBar(navController: NavController) {
-    CenterAlignedTopAppBar(
-        title = { Text(stringResource(R.string.events_title), fontSize = 18.sp, fontWeight = FontWeight.Bold) },
-        navigationIcon = {
-            IconButton(onClick = { navController.popBackStack() }) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back_desc))
+    if (showCreateMeetingDialog) {
+        CreateMeetingDialog(
+            onDismiss = { showCreateMeetingDialog = false },
+            onCreate = { title, agenda, scheduledAt, location ->
+                viewModel.createMeeting(groupId, title, agenda, scheduledAt, location)
+                showCreateMeetingDialog = false
             }
-        },
-        colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-            containerColor = Color.White,
-            titleContentColor = MaterialTheme.colorScheme.onSurface,
-            navigationIconContentColor = MaterialTheme.colorScheme.onSurface
         )
-    )
+    }
+
+    if (showCreateEventDialog) {
+        CreateEventDialog(
+            onDismiss = { showCreateEventDialog = false },
+            onCreate = { title, desc, type, date ->
+                viewModel.createEvent(groupId, title, desc, type, date)
+                showCreateEventDialog = false
+            }
+        )
+    }
 }
 
-//MEETINGS 
+// MEETINGS
 
 @Composable
 fun MeetingsContent(
@@ -202,16 +193,15 @@ fun MeetingsContent(
     Column {
         Row(
             modifier = Modifier
+                .fillMaxWidth()
                 .horizontalScroll(rememberScrollState())
                 .padding(8.dp)
         ) {
-            listOf("ALL", "SCHEDULED", "ONGOING", "COMPLETED", "CANCELLED").forEach {
+            listOf("ALL", "UPCOMING", "CLOSED").forEach {
                 val labelId = when(it) {
                     "ALL" -> R.string.filter_all_caps
-                    "SCHEDULED" -> R.string.filter_scheduled
-                    "ONGOING" -> R.string.filter_ongoing
-                    "COMPLETED" -> R.string.filter_completed
-                    "CANCELLED" -> R.string.filter_cancelled
+                    "UPCOMING" -> R.string.filter_upcoming
+                    "CLOSED" -> R.string.filter_closed
                     else -> R.string.filter_all_caps
                 }
                 FilterChip(
@@ -227,18 +217,18 @@ fun MeetingsContent(
             }
         }
 
-        if (meetings.isEmpty()) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text(stringResource(R.string.no_meetings_msg), color = Color.Gray)
-            }
-        } else {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                val filteredMeetings = if (filter == "ALL") meetings else meetings.filter { it.status == filter }
-                items(filteredMeetings, key = { it.id }) { m ->
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(12.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            items(meetings) { m ->
+                val show = when (filter) {
+                    "UPCOMING" -> m.status.uppercase() == "UPCOMING" || m.status.uppercase() == "OPEN"
+                    "CLOSED" -> m.status.uppercase() == "CLOSED" || m.status.uppercase() == "COMPLETED"
+                    else -> true
+                }
+                if (show) {
                     MeetingCard(m, onClick = { onMeetingClick(m) })
                 }
             }
@@ -261,25 +251,64 @@ fun MeetingCard(m: Meeting, onClick: () -> Unit) {
                 verticalAlignment = Alignment.Top
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(m.title, fontWeight = FontWeight.Bold, color = NavyBlue)
-                    val creator = m.creatorName ?: stringResource(R.string.member_default_name)
-                    Text(stringResource(R.string.by_user_placeholder, creator), fontSize = 12.sp, color = Color.Gray)
-                }
-                com.example.tisunga.ui.components.StatusBadge(m.status)
-            }
+                    Text(
+                        text = m.title,
+                        fontWeight = FontWeight.Bold,
+                        color = NavyBlue,
+                        fontSize = 15.sp
+                    )
+                    
+                    if (!m.agenda.isNullOrBlank()) {
+                        Text(
+                            text = m.agenda,
+                            fontSize = 13.sp,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.padding(top = 2.dp)
+                        )
+                    }
 
-            Spacer(Modifier.height(8.dp))
+                    if (!m.location.isNullOrBlank()) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(top = 4.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.LocationOn,
+                                contentDescription = null,
+                                modifier = Modifier.size(12.dp),
+                                tint = Color.Gray
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text(
+                                text = m.location,
+                                fontSize = 12.sp,
+                                color = Color.Gray
+                            )
+                        }
+                    }
 
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(FormatUtils.formatDate(m.scheduledAt), fontSize = 12.sp, color = Color.DarkGray)
-                if (!m.location.isNullOrEmpty()) {
-                    Text(" • ", fontSize = 12.sp, color = Color.Gray)
-                    Text(m.location, fontSize = 12.sp, color = Color.DarkGray)
+                    val dateStr = try { m.scheduledAt.take(16).replace("T", " ") } catch (e: Exception) { m.scheduledAt }
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(top = 2.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Event,
+                            contentDescription = null,
+                            modifier = Modifier.size(12.dp),
+                            tint = Color.Gray
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            text = dateStr,
+                            fontSize = 12.sp,
+                            color = Color.Gray
+                        )
+                    }
                 }
-            }
-            if (!m.agenda.isNullOrBlank()) {
-                Spacer(Modifier.height(4.dp))
-                Text(m.agenda, fontSize = 12.sp, color = Color.Gray)
+                StatusBadge(m.status)
             }
         }
     }
@@ -296,13 +325,13 @@ fun EventsContent(
     Column {
         Row(
             modifier = Modifier
+                .fillMaxWidth()
                 .horizontalScroll(rememberScrollState())
                 .padding(8.dp)
         ) {
-            listOf("ALL", "OPEN", "UPCOMING", "CLOSED").forEach {
+            listOf("ALL", "UPCOMING", "CLOSED").forEach {
                 val labelId = when(it) {
                     "ALL" -> R.string.filter_all_caps
-                    "OPEN" -> R.string.filter_open
                     "UPCOMING" -> R.string.filter_upcoming
                     "CLOSED" -> R.string.filter_closed
                     else -> R.string.filter_all_caps
@@ -320,18 +349,18 @@ fun EventsContent(
             }
         }
 
-        if (events.isEmpty()) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text(stringResource(R.string.no_events_found), color = Color.Gray)
-            }
-        } else {
-            val filteredEvents = if (filter == "ALL") events else events.filter { it.status.uppercase() == filter }
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(filteredEvents) { e ->
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(12.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            items(events) { e ->
+                val show = when (filter) {
+                    "UPCOMING" -> e.status.uppercase() == "UPCOMING" || e.status.uppercase() == "OPEN"
+                    "CLOSED" -> e.status.uppercase() == "CLOSED" || e.status.uppercase() == "COMPLETED"
+                    else -> true
+                }
+                if (show) {
                     EventCard(e)
                 }
             }
@@ -353,89 +382,58 @@ fun EventCard(e: Event) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.Top
             ) {
-                Text(e.title, fontWeight = FontWeight.Bold, color = NavyBlue, modifier = Modifier.weight(1f))
-                com.example.tisunga.ui.components.StatusBadge(e.status)
-            }
-
-            Spacer(Modifier.height(8.dp))
-
-            if (e.targetAmount != null && e.targetAmount > 0) {
-                val progress = (e.currentAmount / e.targetAmount).toFloat().coerceIn(0f, 1f)
-                LinearProgressIndicator(
-                    progress = { progress },
-                    modifier = Modifier.fillMaxWidth().height(8.dp),
-                    color = com.example.tisunga.ui.theme.GreenAccent,
-                    trackColor = Color(0xFFEEEEEE),
-                    strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(stringResource(R.string.amount_mk, e.currentAmount.toString()), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = com.example.tisunga.ui.theme.GreenAccent)
-                    Text(stringResource(R.string.target_amount_label, e.targetAmount.toString()), fontSize = 12.sp, color = Color.Gray)
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(e.title, fontWeight = FontWeight.Bold, color = NavyBlue, fontSize = 14.sp)
+                    // Note: 'type' is not in the Event model, using a placeholder or common field if available
+                    Text("EVENT", fontSize = 11.sp, color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.Bold)
                 }
-            } else {
-                Text(stringResource(R.string.collected_amount_label, e.currentAmount.toString()), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = com.example.tisunga.ui.theme.GreenAccent)
+                StatusBadge(e.status)
+            }
+
+            if (!e.description.isNullOrBlank()) {
+                Spacer(Modifier.height(6.dp))
+                Text(e.description, fontSize = 12.sp, color = Color.Gray, maxLines = 2, overflow = TextOverflow.Ellipsis)
             }
 
             Spacer(Modifier.height(8.dp))
-            if (!e.endDate.isNullOrBlank()) {
-                Text(FormatUtils.formatDate(e.endDate), fontSize = 11.sp, color = Color.Gray)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.Event, null, modifier = Modifier.size(12.dp), tint = Color.Gray)
+                Spacer(Modifier.width(4.dp))
+                Text(FormatUtils.formatDate(e.endDate ?: ""), fontSize = 11.sp, color = Color.Gray)
             }
         }
     }
 }
-
-// STATUS BADGE
 
 @Composable
 fun StatusBadge(status: String) {
     val color = when (status.uppercase()) {
-        "ONGOING", "OPEN" -> GreenAccent
-        "SCHEDULED", "UPCOMING" -> BlueLink
-        "COMPLETED", "CLOSED" -> TextSecondary
+        "UPCOMING", "OPEN" -> GreenAccent
+        "CLOSED", "COMPLETED" -> Color.Gray
         "CANCELLED" -> RedAccent
-        else -> MaterialTheme.colorScheme.primary
+        else -> NavyBlue
     }
-
-    Text(
-        text = status,
-        color = Color.White,
-        fontSize = 10.sp,
-        fontWeight = FontWeight.Bold,
-        modifier = Modifier
-            .background(color, RoundedCornerShape(10.dp))
-            .padding(horizontal = 8.dp, vertical = 2.dp)
-    )
+    Surface(
+        shape = RoundedCornerShape(6.dp),
+        color = color.copy(alpha = 0.1f)
+    ) {
+        Text(
+            text = status,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Bold,
+            color = color
+        )
+    }
 }
 
-// CREATE MEETING DIALOG
-
 @Composable
-fun CreateMeetingDialog(
-    onDismiss: () -> Unit,
-    onConfirm: (String, String, String?, String?) -> Unit
-) {
+fun CreateMeetingDialog(onDismiss: () -> Unit, onCreate: (String, String, String, String) -> Unit) {
     var title by remember { mutableStateOf("") }
+    var agenda by remember { mutableStateOf("") }
     var date by remember { mutableStateOf("") }
     var location by remember { mutableStateOf("") }
-    var description by remember { mutableStateOf("") }
-    val focusManager = LocalFocusManager.current
-    val context = LocalContext.current
-
-    val isDateValid = remember(date) {
-        if (date.isBlank()) true 
-        else try {
-            val formatter = DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm")
-                .withResolverStyle(ResolverStyle.STRICT)
-            LocalDateTime.parse(date, formatter)
-            true
-        } catch (e: Exception) {
-            false
-        }
-    }
+    var isDateValid by remember { mutableStateOf(true) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -446,64 +444,61 @@ fun CreateMeetingDialog(
                     value = title,
                     onValueChange = { title = it },
                     label = { Text(stringResource(R.string.meeting_title_label)) },
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                    keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
                     modifier = Modifier.fillMaxWidth()
                 )
-                
-                Box(modifier = Modifier.fillMaxWidth()) {
-                    OutlinedTextField(
-                        value = date,
-                        onValueChange = { },
-                        label = { Text(stringResource(R.string.schedule_datetime_label)) },
-                        readOnly = true,
-                        isError = !isDateValid,
-                        supportingText = { if (!isDateValid) Text(stringResource(R.string.invalid_datetime_format), color = Color.Red) },
-                        trailingIcon = { Icon(Icons.Default.CalendarMonth, stringResource(R.string.select_date_label)) },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Box(
-                        modifier = Modifier
-                            .matchParentSize()
-                            .clickable {
-                                val c = Calendar.getInstance()
-                                DatePickerDialog(context, { _, y, m, d ->
-                                    val datePart = String.format("%04d-%02d-%02d", y, m + 1, d)
-                                    TimePickerDialog(context, { _, h, min ->
-                                        date = String.format("%s %02d:%02d", datePart, h, min)
-                                    }, c.get(Calendar.HOUR_OF_DAY), c.get(Calendar.MINUTE), true).show()
-                                }, c.get(Calendar.YEAR), c.get(Calendar.MONTH), c.get(Calendar.DAY_OF_MONTH)).show()
-                            }
-                    )
-                }
-
+                OutlinedTextField(
+                    value = agenda,
+                    onValueChange = { agenda = it },
+                    label = { Text(stringResource(R.string.agenda_label)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 2
+                )
                 OutlinedTextField(
                     value = location,
                     onValueChange = { location = it },
                     label = { Text(stringResource(R.string.location_label)) },
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                    keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
                     modifier = Modifier.fillMaxWidth()
                 )
-                OutlinedTextField(
-                    value = description,
-                    onValueChange = { description = it },
-                    label = { Text(stringResource(R.string.description_label)) },
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                    keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
-                    modifier = Modifier.fillMaxWidth()
-                )
+                
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    val context = LocalContext.current
+                    OutlinedTextField(
+                        value = date,
+                        onValueChange = { 
+                            date = it
+                            isDateValid = true 
+                        },
+                        label = { Text(stringResource(R.string.schedule_datetime_label)) },
+                        placeholder = { Text("YYYY-MM-DD HH:MM") },
+                        supportingText = { if (!isDateValid) Text(stringResource(R.string.invalid_date_format), color = Color.Red) },
+                        trailingIcon = { 
+                            IconButton(onClick = {
+                                val cal = Calendar.getInstance()
+                                DatePickerDialog(context, { _, y, m, d ->
+                                    val datePart = String.format("%04d-%02d-%02d", y, m + 1, d)
+                                    TimePickerDialog(context, { _, hh, mm ->
+                                        date = "$datePart ${String.format("%02d:%02d", hh, mm)}"
+                                    }, cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE), true).show()
+                                }, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH)).show()
+                            }) {
+                                Icon(Icons.Default.CalendarMonth, stringResource(R.string.select_date_label))
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
             }
         },
         confirmButton = {
             Button(
-                enabled = isDateValid && title.isNotBlank() && date.isNotBlank() && location.isNotBlank() && description.isNotBlank(),
                 onClick = {
-                    onConfirm(title, date, location, description)
+                    if (title.isNotBlank() && date.isNotBlank()) {
+                        onCreate(title, agenda, date.replace(" ", "T"), location)
+                    }
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = NavyBlue)
             ) {
-                Text(stringResource(R.string.schedule_button))
+                Text(stringResource(R.string.create_button))
             }
         },
         dismissButton = {
@@ -514,43 +509,16 @@ fun CreateMeetingDialog(
     )
 }
 
-// CREATE EVENT DIALOG
-
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CreateEventDialog(
-    onDismiss: () -> Unit,
-    onConfirm: (String, String, String, String, Double, String?) -> Unit
-) {
-    var type by remember { mutableStateOf("Wedding") }
-    var expanded by remember { mutableStateOf(false) }
+fun CreateEventDialog(onDismiss: () -> Unit, onCreate: (String, String, String, String) -> Unit) {
     var title by remember { mutableStateOf("") }
-    var date by remember { mutableStateOf("") }
-    var amountType by remember { mutableStateOf("FIXED") }
-    var amount by remember { mutableStateOf("") }
-    var description by remember { mutableStateOf("") }
-    val focusManager = LocalFocusManager.current
-    val context = LocalContext.current
+    var desc by remember { mutableStateOf("") }
+    var eventType by remember { mutableStateOf("SOCIAL") }
+    var eventDate by remember { mutableStateOf("") }
+    var expanded by remember { mutableStateOf(false) }
+    var isDateValid by remember { mutableStateOf(true) }
 
-    val isDateValid = remember(date) {
-        if (date.isBlank()) true
-        else try {
-            val formatter = DateTimeFormatter.ofPattern("uuuu-MM-dd")
-                .withResolverStyle(ResolverStyle.STRICT)
-            LocalDate.parse(date, formatter)
-            true
-        } catch (e: Exception) {
-            false
-        }
-    }
-
-    val eventTypes = listOf(
-        stringResource(R.string.event_type_wedding) to "Wedding",
-        stringResource(R.string.event_type_funeral) to "Funeral",
-        stringResource(R.string.event_type_birthday) to "Birthday",
-        stringResource(R.string.event_type_other) to "Others"
-    )
-    val displayType = eventTypes.find { it.second == type }?.first ?: type
+    val types = listOf("SOCIAL", "CONTRIBUTION", "EMERGENCY", "OTHER")
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -561,97 +529,82 @@ fun CreateEventDialog(
                     value = title,
                     onValueChange = { title = it },
                     label = { Text(stringResource(R.string.event_title_label)) },
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                    keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
-                    trailingIcon = {
-                        Box {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier
-                                    .clickable { expanded = true }
-                                    .padding(end = 8.dp)
-                            ) {
-                                Text(displayType, color = NavyBlue, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                                ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
-                            }
-                            DropdownMenu(
-                                expanded = expanded,
-                                onDismissRequest = { expanded = false }
-                            ) {
-                                eventTypes.forEach { (label, value) ->
-                                    DropdownMenuItem(
-                                        text = { Text(label) },
-                                        onClick = {
-                                            type = value
-                                            expanded = false
-                                        }
-                                    )
-                                }
-                            }
-                        }
-                    },
                     modifier = Modifier.fillMaxWidth()
                 )
-                Box(modifier = Modifier.fillMaxWidth()) {
-                    OutlinedTextField(
-                        value = date,
-                        onValueChange = { },
-                        label = { Text(stringResource(R.string.date_label)) },
-                        readOnly = true,
-                        isError = !isDateValid,
-                        supportingText = { if (!isDateValid) Text(stringResource(R.string.invalid_date_format), color = Color.Red) },
-                        trailingIcon = { Icon(Icons.Default.CalendarMonth, stringResource(R.string.select_date_label)) },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Box(
-                        modifier = Modifier
-                            .matchParentSize()
-                            .clickable {
-                                val c = Calendar.getInstance()
-                                DatePickerDialog(context, { _, y, m, d ->
-                                    date = String.format("%04d-%02d-%02d", y, m + 1, d)
-                                }, c.get(Calendar.YEAR), c.get(Calendar.MONTH), c.get(Calendar.DAY_OF_MONTH)).show()
-                            }
-                    )
-                }
                 
-
-
-                Text(stringResource(R.string.amount_type_label), fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    listOf("FIXED", "FLEXIBLE").forEach {
-                        val labelId = if (it == "FIXED") R.string.amount_type_fixed else R.string.amount_type_flexible
-                        FilterChip(
-                            selected = amountType == it,
-                            onClick = { amountType = it },
-                            label = { Text(stringResource(labelId), fontSize = 10.sp) }
-                        )
+                Box {
+                    val displayType = eventType.lowercase().replaceFirstChar { it.uppercase() }
+                    OutlinedCard(
+                        onClick = { expanded = true },
+                        modifier = Modifier.fillMaxWidth(),
+                        border = BorderStroke(1.dp, Color.Gray.copy(alpha = 0.5f))
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(displayType, color = NavyBlue, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                            Icon(Icons.Default.ArrowDropDown, null)
+                        }
+                    }
+                    DropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false },
+                        modifier = Modifier.fillMaxWidth(0.7f)
+                    ) {
+                        types.forEach { label ->
+                            DropdownMenuItem(
+                                text = { Text(label) },
+                                onClick = {
+                                    eventType = label
+                                    expanded = false
+                                }
+                            )
+                        }
                     }
                 }
 
                 OutlinedTextField(
-                    value = amount,
-                    onValueChange = { amount = it },
-                    label = { Text(stringResource(R.string.event_target_amount_label)) },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Next),
-                    keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
-                    modifier = Modifier.fillMaxWidth()
-                )
-                OutlinedTextField(
-                    value = description,
-                    onValueChange = { description = it },
+                    value = desc,
+                    onValueChange = { desc = it },
                     label = { Text(stringResource(R.string.description_label)) },
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                    keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 2
                 )
+                
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    val context = LocalContext.current
+                    OutlinedTextField(
+                        value = eventDate,
+                        onValueChange = { 
+                            eventDate = it
+                            isDateValid = true 
+                        },
+                        label = { Text(stringResource(R.string.date_label)) },
+                        placeholder = { Text("YYYY-MM-DD") },
+                        supportingText = { if (!isDateValid) Text(stringResource(R.string.invalid_date_format), color = Color.Red) },
+                        trailingIcon = { 
+                            IconButton(onClick = {
+                                val cal = Calendar.getInstance()
+                                DatePickerDialog(context, { _, y, m, d ->
+                                    eventDate = String.format("%04d-%02d-%02d", y, m + 1, d)
+                                }, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH)).show()
+                            }) {
+                                Icon(Icons.Default.CalendarMonth, stringResource(R.string.select_date_label))
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
             }
         },
         confirmButton = {
             Button(
-                enabled = isDateValid && title.isNotBlank() && date.isNotBlank() && amount.isNotBlank(),
                 onClick = {
-                    onConfirm(type, title, date, amountType, amount.toDoubleOrNull() ?: 0.0, description.takeIf { it.isNotBlank() })
+                    if (title.isNotBlank() && eventDate.isNotBlank()) {
+                        onCreate(title, desc, eventType, eventDate)
+                    }
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = NavyBlue)
             ) {

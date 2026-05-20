@@ -149,11 +149,28 @@ class SavingsViewModel(
         }
     }
 
-    fun getMyHistory() {
+    fun getMyHistory(groupId: String? = null) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = "")
             try {
-                val contributions = savingsRepository.getMyContributions()
+                val userId = sessionManager.getUserId()
+                if (userId.isEmpty()) {
+                    _uiState.value = _uiState.value.copy(isLoading = false, myHistory = emptyList())
+                    return@launch
+                }
+
+                // Try fetching from the group-contributions endpoint as a fallback or if groupId is provided,
+                // as the user-specific endpoint is currently reporting 404 in some environments.
+                val contributions = if (!groupId.isNullOrEmpty()) {
+                    try {
+                        apiService.getGroupContributions(groupId).filter { it.userId == userId }
+                    } catch (e: Exception) {
+                        savingsRepository.getMyContributions()
+                    }
+                } else {
+                    savingsRepository.getMyContributions()
+                }
+
                 _uiState.value = _uiState.value.copy(isLoading = false, myHistory = contributions)
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
@@ -195,7 +212,7 @@ class SavingsViewModel(
                     isSuccess      = true,
                     successMessage = "Contribution request sent. You will receive an SMS to confirm."
                 )
-                getMyHistory()
+                getMyHistory(contribution.groupId)
                 getGroupHistory(contribution.groupId)
                 loadSavingsData(contribution.groupId)
             } catch (e: Exception) {

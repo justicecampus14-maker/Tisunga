@@ -1,6 +1,8 @@
 package com.example.tisunga.ui.screens.savings
 
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -15,6 +17,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -22,6 +26,7 @@ import androidx.compose.ui.res.stringResource
 import com.example.tisunga.R
 import com.example.tisunga.data.model.Contribution
 import com.example.tisunga.ui.theme.*
+import com.example.tisunga.utils.FormatUtils
 import com.example.tisunga.viewmodel.SavingsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -35,7 +40,7 @@ fun ContributionHistoryScreen(
     var selectedTab by remember { mutableIntStateOf(0) }
 
     LaunchedEffect(selectedTab) {
-        if (selectedTab == 0) viewModel.getMyHistory()
+        if (selectedTab == 0) viewModel.getMyHistory(groupId)
         else viewModel.getGroupHistory(groupId)
     }
 
@@ -131,72 +136,115 @@ fun ContributionCard(contribution: Contribution, isMyHistory: Boolean) {
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(2.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(12.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Column {
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = contribution.type.replace("_", " "),
                         fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        text = if (isMyHistory) contribution.group?.name ?: stringResource(R.string.personal_loan_default)
-                               else "${contribution.user?.firstName} ${contribution.user?.lastName}",
-                        fontSize = 13.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
-                Text(
-                    text = "MK ${String.format("%,.2f", contribution.amount)}",
-                    fontWeight = FontWeight.ExtraBold,
-                    fontSize = 16.sp,
-                    color = MaterialTheme.colorScheme.primary
-                )
+
+                Spacer(modifier = Modifier.width(16.dp))
+
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        text = FormatUtils.formatMoney(contribution.amount),
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 16.sp,
+                        color = MaterialTheme.colorScheme.primary,
+                        textAlign = TextAlign.End
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(4.dp))
+            
+            val name = remember(contribution) {
+                val enriched = contribution.memberName?.replace("null", "", true)?.trim()
+                if (!enriched.isNullOrEmpty()) {
+                    enriched
+                } else {
+                    val first = contribution.user?.firstName?.replace("null", "", true)?.trim() ?: ""
+                    val last = contribution.user?.lastName?.replace("null", "", true)?.trim() ?: ""
+                    val combined = "$first $last".trim()
+                    combined.ifEmpty { "A member" }
+                }
+            }
+
+            val subText = if (isMyHistory) {
+                val gName = contribution.group?.name?.replace("null", "", true)?.trim()
+                val groupPart = if (gName.isNullOrEmpty()) "the group" else gName
+                if (contribution.type == "LOAN_REPAYMENT") "Loan repayment to $groupPart"
+                else "Contributed to $groupPart"
+            } else {
+                if (contribution.type == "LOAN_REPAYMENT") "$name repayment"
+                else "$name contribution"
             }
             
-            Spacer(modifier = Modifier.height(12.dp))
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-            Spacer(modifier = Modifier.height(12.dp))
+            val dateStr = FormatUtils.formatDateTime(contribution.createdAt)
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.Top
             ) {
-                Column {
-                    Text(contribution.createdAt.take(16).replace("T", " "), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    if (contribution.transactionRef != null) {
-                        Text("Ref: ${contribution.transactionRef}", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f))
-                    }
-                }
+                Text(
+                    text = subText,
+                    modifier = Modifier.weight(1f),
+                    fontSize = 12.sp,
+                    color = TextSecondary,
+                    lineHeight = 16.sp,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
                 
-                Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = statusColor.copy(alpha = 0.1f)
+                Spacer(modifier = Modifier.width(8.dp))
+                
+                Column(
+                    modifier = Modifier.weight(1f),
+                    horizontalAlignment = Alignment.End
                 ) {
                     Text(
-                        text = contribution.status,
-                        color = statusColor,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold
+                        text = dateStr,
+                        fontSize = 12.sp,
+                        color = TextSecondary,
+                        lineHeight = 16.sp,
+                        textAlign = TextAlign.End
                     )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = statusColor.copy(alpha = 0.1f)
+                    ) {
+                        Text(
+                            text = contribution.status,
+                            color = statusColor,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
 
             if (contribution.status == "FAILED" && contribution.failureReason != null) {
+                Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = contribution.failureReason,
+                    text = "Reason: ${contribution.failureReason}",
                     color = MaterialTheme.colorScheme.error,
-                    fontSize = 11.sp,
-                    modifier = Modifier.padding(top = 8.dp)
+                    fontSize = 11.sp
                 )
             }
         }
     }
 }
+
