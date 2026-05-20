@@ -444,7 +444,7 @@ fun FullGroupLoanCard(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    val initials = loan.borrowerName.split(" ")
+                    val initials = (loan.borrowerName ?: "").split(" ")
                         .filter { it.isNotEmpty() }.take(2)
                         .joinToString("") { it.first().uppercase() }
                     Box(
@@ -456,7 +456,7 @@ fun FullGroupLoanCard(
                             color = NavyBlue, fontSize = 13.sp)
                     }
                     Column {
-                        Text(loan.borrowerName, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        Text(loan.borrowerName ?: "", fontWeight = FontWeight.Bold, fontSize = 14.sp)
                         Text(loan.purpose?.ifBlank { "Personal loan" } ?: "Personal loan",
                             fontSize = 11.sp, color = TextSecondary)
                     }

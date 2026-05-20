@@ -334,7 +334,7 @@ private fun PendingApprovalCard(
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     // Initials avatar
-                    val initials = loan.borrowerName.split(" ")
+                    val initials = (loan.borrowerName ?: "").split(" ")
                         .filter { it.isNotEmpty() }
                         .take(2)
                         .joinToString("") { it.first().uppercase() }
@@ -348,7 +348,7 @@ private fun PendingApprovalCard(
                             color = MaterialTheme.colorScheme.primary, fontSize = 14.sp)
                     }
                     Column {
-                        Text(loan.borrowerName, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurface)
+                        Text(loan.borrowerName ?: "", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurface)
                         Text(
                             loan.purpose?.ifBlank { stringResource(R.string.personal_loan_default) } ?: stringResource(R.string.personal_loan_default),
                             fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -604,7 +604,7 @@ fun GroupLoanCard(loan: Loan) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    loan.borrowerName.ifBlank { stringResource(R.string.member_default_name) },
+                    loan.borrowerName.orEmpty().ifBlank { stringResource(R.string.member_default_name) },
                     fontWeight = FontWeight.SemiBold,
                     fontSize   = 14.sp,
                     modifier   = Modifier.weight(1f),

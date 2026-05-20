@@ -50,31 +50,81 @@ fun AppDrawerContent(
     onLogout: () -> Unit
 ) {
     ModalDrawerSheet(
-        modifier = Modifier.width(300.dp),
+        modifier = Modifier.width(250.dp),
         drawerContainerColor = MaterialTheme.colorScheme.surface,
-        drawerShape = RoundedCornerShape(0.dp)
+        drawerShape = RoundedCornerShape(topEnd = 24.dp, bottomEnd = 24.dp)
     ) {
-        Spacer(modifier = Modifier.height(48.dp))
-
-        Row(
-            modifier = Modifier.padding(horizontal = 16.dp),
-            verticalAlignment = Alignment.CenterVertically
+        // Header
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            MaterialTheme.colorScheme.primary,
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
+                        )
+                    )
+                )
         ) {
-            IconButton(onClick = { scope.launch { drawerState.close() } }) {
+            // Close Button - Positioned carefully at the top end
+            IconButton(
+                onClick = { scope.launch { drawerState.close() } },
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(top = 40.dp, end = 12.dp)
+                    .size(32.dp)
+            ) {
                 Icon(
                     Icons.Default.Close,
                     contentDescription = "Close Menu",
-                    modifier = Modifier.size(32.dp),
-                    tint = MaterialTheme.colorScheme.primary
+                    tint = Color.White.copy(alpha = 0.9f),
+                    modifier = Modifier.size(22.dp)
+                )
+            }
+
+            Column(
+                modifier = Modifier
+                    .padding(top = 56.dp, start = 20.dp, bottom = 24.dp)
+            ) {
+                // Profile Avatar Initial
+                Surface(
+                    modifier = Modifier.size(52.dp),
+                    shape = CircleShape,
+                    color = Color.White.copy(alpha = 0.25f)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Text(
+                            text = userName.firstOrNull()?.toString()?.uppercase() ?: "?",
+                            color = Color.White,
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    text = userName,
+                    color = Color.White,
+                    fontSize = 17.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = userPhone,
+                    color = Color.White.copy(alpha = 0.7f),
+                    fontSize = 13.sp
                 )
             }
         }
 
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
+        // Navigation Items
         NavigationDrawerItem(
-            icon = { Icon(Icons.Default.Person, contentDescription = null, modifier = Modifier.size(24.dp)) },
-            label = { Text("My Profile", fontSize = 16.sp) },
+            icon = { Icon(Icons.Default.Person, contentDescription = null, modifier = Modifier.size(22.dp)) },
+            label = { Text("My Profile", fontSize = 15.sp) },
             selected = false,
             onClick = {
                 scope.launch {
@@ -82,13 +132,13 @@ fun AppDrawerContent(
                     navController.navigate(Routes.PROFILE)
                 }
             },
-            modifier = Modifier.padding(horizontal = 12.dp),
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp),
             colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
         )
 
         NavigationDrawerItem(
-            icon = { Icon(Icons.Default.Settings, contentDescription = null, modifier = Modifier.size(24.dp)) },
-            label = { Text("Settings", fontSize = 16.sp) },
+            icon = { Icon(Icons.Default.Settings, contentDescription = null, modifier = Modifier.size(22.dp)) },
+            label = { Text("Settings", fontSize = 15.sp) },
             selected = false,
             onClick = {
                 scope.launch {
@@ -96,13 +146,13 @@ fun AppDrawerContent(
                     navController.navigate(Routes.SETTINGS)
                 }
             },
-            modifier = Modifier.padding(horizontal = 12.dp),
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp),
             colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
         )
 
         NavigationDrawerItem(
-            icon = { Icon(Icons.Default.Palette, contentDescription = null, modifier = Modifier.size(24.dp)) },
-            label = { Text("Theme", fontSize = 16.sp) },
+            icon = { Icon(Icons.Default.Palette, contentDescription = null, modifier = Modifier.size(22.dp)) },
+            label = { Text("Theme", fontSize = 15.sp) },
             selected = false,
             onClick = {
                 scope.launch {
@@ -110,15 +160,19 @@ fun AppDrawerContent(
                     navController.navigate(Routes.THEME)
                 }
             },
-            modifier = Modifier.padding(horizontal = 12.dp),
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp),
             colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
         )
 
-        Spacer(modifier = Modifier.height(32.dp))
+        HorizontalDivider(
+            modifier = Modifier.padding(vertical = 12.dp, horizontal = 24.dp),
+            thickness = 0.5.dp,
+            color = MaterialTheme.colorScheme.outlineVariant
+        )
 
         NavigationDrawerItem(
-            icon = { Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null, tint = RedAccent, modifier = Modifier.size(24.dp)) },
-            label = { Text("Logout", color = RedAccent, fontSize = 16.sp) },
+            icon = { Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null, tint = RedAccent, modifier = Modifier.size(22.dp)) },
+            label = { Text("Logout", color = RedAccent, fontSize = 15.sp) },
             selected = false,
             onClick = {
                 scope.launch {
@@ -126,7 +180,7 @@ fun AppDrawerContent(
                     onLogout()
                 }
             },
-            modifier = Modifier.padding(horizontal = 12.dp),
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp),
             colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
         )
     }
@@ -222,6 +276,7 @@ fun QuickActionsNoGroup(navController: NavController) {
             shape = RoundedCornerShape(8.dp),
             color = MaterialTheme.colorScheme.surface
         ) {
+            @Suppress("DEPRECATION")
             Text(
                 stringResource(R.string.quick_action_title),
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),

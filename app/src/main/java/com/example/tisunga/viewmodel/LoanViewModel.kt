@@ -51,7 +51,8 @@ class LoanViewModel(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = "")
             try {
-                val loans = api.getMyLoans()
+                val userId = sessionManager.getUserId()
+                val loans = apiService.getMyLoans(userId)
                 _uiState.value = _uiState.value.copy(isLoading = false, myLoans = loans)
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
@@ -66,7 +67,7 @@ class LoanViewModel(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = "")
             try {
-                val response = api.getUserLoans(userId)
+                val response = apiService.getUserLoans(userId)
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     myLoans = response.loans,
@@ -88,7 +89,7 @@ class LoanViewModel(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = "")
             try {
-                val loans = api.getGroupLoans(groupId)
+                val loans = apiService.getGroupLoans(groupId)
                 _uiState.value = _uiState.value.copy(isLoading = false, groupLoans = loans)
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
@@ -127,7 +128,7 @@ class LoanViewModel(
                 )
                 if (finalPurpose.isNotBlank()) body["purpose"] = finalPurpose
 
-                api.applyForLoan(body)
+                apiService.applyForLoan(body)
                 _uiState.value = _uiState.value.copy(
                     isLoading      = false,
                     isSuccess      = true,
@@ -151,7 +152,7 @@ class LoanViewModel(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isApproving = loanId, errorMessage = "")
             try {
-                api.approveLoan(loanId)
+                apiService.approveLoan(loanId)
                 _uiState.value = _uiState.value.copy(
                     isApproving    = null,
                     isSuccess      = true,
@@ -175,7 +176,7 @@ class LoanViewModel(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isRejecting = loanId, errorMessage = "")
             try {
-                api.rejectLoan(loanId, RejectLoanRequest(reason))
+                apiService.rejectLoan(loanId, RejectLoanRequest(reason))
                 _uiState.value = _uiState.value.copy(
                     isRejecting    = null,
                     isSuccess      = true,
@@ -197,7 +198,7 @@ class LoanViewModel(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isRepaying = true, errorMessage = "")
             try {
-                api.repayLoanTyped(loanId, RepayLoanRequest(amount, phone))
+                apiService.repayLoanTyped(loanId, RepayLoanRequest(amount, phone))
                 _uiState.value = _uiState.value.copy(
                     isRepaying     = false,
                     isSuccess      = true,
