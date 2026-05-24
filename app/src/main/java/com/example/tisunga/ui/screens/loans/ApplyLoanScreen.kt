@@ -2,7 +2,10 @@ package com.example.tisunga.ui.screens.loans
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -53,22 +56,22 @@ fun ApplyLoanScreen(
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
 
-    // Priority: live dashboard → seeded selectedGroup → HomeViewModel group
-    val totalSavings = groupState.groupDashboard?.group?.totalSavings
-        ?: groupState.selectedGroup?.totalSavings
-        ?: homeViewModel?.uiState?.collectAsState()?.value?.myGroups?.firstOrNull()?.totalSavings
+    // Access properties directly from state to avoid type inference issues with polymorphic objects
+    val totalSavings = groupState.groupDashboard?.totalSavings 
+        ?: groupState.selectedGroup?.totalSavings 
         ?: 0.0
+    
+    val savingPeriod = groupState.selectedGroup?.savingPeriod?.takeIf { it > 0 } ?: 12
 
     var amount by remember { mutableStateOf("") }
     var durationValue by remember { mutableIntStateOf(1) }
-    var isWeeks by remember { mutableStateOf(false) }
     var purpose by remember { mutableStateOf("") }
     var showSuccessDialog by remember { mutableStateOf(false) }
 
     // Automatically synchronize calculations whenever inputs change
-    LaunchedEffect(amount, durationValue, isWeeks) {
+    LaunchedEffect(amount, durationValue) {
         val amt = amount.toDoubleOrNull() ?: 0.0
-        viewModel.calculateInterest(amt, durationValue, isWeeks)
+        viewModel.calculateInterest(amt, durationValue)
     }
 
     LaunchedEffect(uiState.isSuccess) {
@@ -154,7 +157,7 @@ fun ApplyLoanScreen(
                         Icon(Icons.Default.Info, null, tint = NavyBlue)
                         Spacer(modifier = Modifier.width(12.dp))
                         Text(
-                            "Interest rate varies by duration (2% to 55%)",
+                            "Interest is 5% compounded monthly",
                             fontSize = 13.sp, color = NavyBlue, fontWeight = FontWeight.Medium
                         )
                     }
@@ -163,7 +166,7 @@ fun ApplyLoanScreen(
                         Icon(Icons.Default.Warning, null, tint = NavyBlue, modifier = Modifier.size(20.dp))
                         Spacer(modifier = Modifier.width(12.dp))
                         Text(
-                            stringResource(R.string.group_balance_label, String.format("%,.0f", totalSavings)),
+                            stringResource(R.string.group_balance_label, FormatUtils.formatMoney(totalSavings)),
                             fontSize = 13.sp, color = NavyBlue, fontWeight = FontWeight.Bold
                         )
                     }
@@ -216,7 +219,7 @@ fun ApplyLoanScreen(
                                 horizontalArrangement = Arrangement.spacedBy(10.dp)
                             ) {
                                 InfoBox(
-                                    label = "Rate",
+                                    label = "Total Rate",
                                     value = "${String.format("%.1f", uiState.calculatedInterestRate)}%",
                                     modifier = Modifier.weight(1f)
                                 )
@@ -231,7 +234,7 @@ fun ApplyLoanScreen(
                                 horizontalArrangement = Arrangement.spacedBy(10.dp)
                             ) {
                                 InfoBox(
-                                    label = if (isWeeks) "Per Week" else "Per Month",
+                                    label = "Per Month",
                                     value = FormatUtils.formatMoney(uiState.calculatedPeriodicRepayment),
                                     modifier = Modifier.weight(1f)
                                 )
@@ -246,49 +249,26 @@ fun ApplyLoanScreen(
 
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    // Unit Selection Toggle
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        FilterChip(
-                            selected = isWeeks,
-                            onClick = { 
-                                isWeeks = true
-                                durationValue = 1 
-                            },
-                            label = { Text("Weeks") }
-                        )
-                        Spacer(Modifier.width(16.dp))
-                        FilterChip(
-                            selected = !isWeeks,
-                            onClick = { 
-                                isWeeks = false
-                                durationValue = 1
-                            },
-                            label = { Text("Months") }
-                        )
-                    }
+                    Text("Duration (Months)", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = TextPrimary)
+                    Spacer(modifier = Modifier.height(12.dp))
 
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Text("Duration (${if (isWeeks) "Weeks" else "Months"})", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = TextPrimary)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row(
+                    // Dynamic slideable row for months based on group saving period
+                    val monthOptions = (1..savingPeriod).toList()
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        contentPadding = PaddingValues(horizontal = 4.dp)
                     ) {
-                        val options = if (isWeeks) listOf(1, 2, 3, 4) else listOf(1, 2, 3, 6, 12)
-                        options.forEach { value ->
+                        items(monthOptions) { value ->
                             val isSelected = durationValue == value
                             Surface(
                                 modifier = Modifier
-                                    .weight(1f)
-                                    .height(44.dp),
-                                shape = RoundedCornerShape(10.dp),
+                                    .width(64.dp)
+                                    .height(48.dp)
+                                    .clickable { durationValue = value },
+                                shape = RoundedCornerShape(12.dp),
                                 color = if (isSelected) NavyBlue else BackgroundGray,
-                                onClick = { durationValue = value }
+                                border = if (isSelected) null else BorderStroke(1.dp, DividerColor)
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
                                     Text(
@@ -301,7 +281,7 @@ fun ApplyLoanScreen(
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(modifier = Modifier.height(24.dp))
 
                     Text(stringResource(R.string.purpose_label), fontWeight = FontWeight.Bold, fontSize = 14.sp, color = TextPrimary)
                     Spacer(modifier = Modifier.height(8.dp))
@@ -335,7 +315,7 @@ fun ApplyLoanScreen(
                     Button(
                         onClick = {
                             if (amtVal > 0 && !isInsufficient) {
-                                viewModel.applyForLoan(groupId, amtVal, durationValue, isWeeks, purpose)
+                                viewModel.applyForLoan(groupId, amtVal, durationValue, purpose)
                             }
                         },
                         modifier = Modifier.fillMaxWidth().height(56.dp),
@@ -369,7 +349,7 @@ fun ApplyLoanScreen(
                                 Icon(Icons.Default.Error, null, tint = Color.Red, modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
-                                    stringResource(R.string.insufficient_balance_error, String.format("%,.0f", amtVal), String.format("%,.0f", totalSavings)),
+                                    stringResource(R.string.insufficient_balance_error, FormatUtils.formatMoney(amtVal), FormatUtils.formatMoney(totalSavings)),
                                     color = Color.Red, fontSize = 12.sp, lineHeight = 16.sp
                                 )
                             }

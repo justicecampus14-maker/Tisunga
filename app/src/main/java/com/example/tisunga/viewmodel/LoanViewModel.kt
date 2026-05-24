@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlin.math.ceil
+import kotlin.math.pow
 
 data class LoanUiState(
     val isLoading: Boolean        = false,
@@ -22,13 +22,11 @@ data class LoanUiState(
     val calculatedRepayable: Double  = 0.0,
     val calculatedInterestRate: Double = 0.0,
     val calculatedPeriodicRepayment: Double = 0.0,
-    // Separate success/error so the UI can react precisely
     val isSuccess: Boolean        = false,
     val successMessage: String    = "",
     val errorMessage: String      = "",
     val memberLoansTitle: String? = null,
     val memberLoansName: String?  = null,
-    // Action-specific loading flags (avoid blocking the whole screen)
     val isApproving: String?      = null,   // loanId being approved
     val isRejecting: String?      = null,   // loanId being rejected
     val isRepaying: Boolean       = false
@@ -41,11 +39,9 @@ class LoanViewModel(
 
     private val _uiState = MutableStateFlow(LoanUiState())
     val uiState: StateFlow<LoanUiState> = _uiState.asStateFlow()
-
-    // Keep an instance of the apiService for direct calls if repository is too high-level
     private val apiService = ApiClient.getClient()
 
-    // ── Load my loans ─────────────────────────────────────────────────────────
+    // ── Data Fetching ─────────────────────────────────────────────────────────
 
     fun getMyLoans() {
         viewModelScope.launch {
@@ -54,10 +50,19 @@ class LoanViewModel(
                 val loans = apiService.getMyLoansApi()
                 _uiState.value = _uiState.value.copy(isLoading = false, myLoans = loans)
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    isLoading    = false,
-                    errorMessage = e.message ?: "Failed to load loans"
-                )
+                _uiState.value = _uiState.value.copy(isLoading = false, errorMessage = e.message ?: "Failed to load my loans")
+            }
+        }
+    }
+
+    fun getGroupLoans(groupId: String) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = "")
+            try {
+                val loans = apiService.getGroupLoans(groupId)
+                _uiState.value = _uiState.value.copy(isLoading = false, groupLoans = loans)
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(isLoading = false, errorMessage = e.message ?: "Failed to load group loans")
             }
         }
     }
@@ -74,78 +79,35 @@ class LoanViewModel(
                     memberLoansName = response.borrowerName
                 )
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    isLoading    = false,
-                    errorMessage = e.message ?: "Failed to load member loans"
-                )
+                _uiState.value = _uiState.value.copy(isLoading = false, errorMessage = e.message ?: "Failed")
             }
         }
     }
 
-    // ── Load group loans (for CHAIR / SECRETARY review panel) ────────────────
+    // ── Loan Actions ──────────────────────────────────────────────────────────
 
-    fun getGroupLoans(groupId: String) {
+    fun applyForLoan(groupId: String, amount: Double, durationMonths: Int, purpose: String) {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = "")
+            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = "", isSuccess = false)
             try {
-                val loans = apiService.getGroupLoans(groupId)
-                _uiState.value = _uiState.value.copy(isLoading = false, groupLoans = loans)
-            } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    isLoading    = false,
-                    errorMessage = e.message ?: "Failed to load group loans"
+                val body = mapOf(
+                    "groupId" to groupId,
+                    "amount" to amount,
+                    "durationMonths" to durationMonths,
+                    "purpose" to purpose
                 )
-            }
-        }
-    }
-
-    // ── Apply for loan ────────────────────────────────────────────────────────
-
-    fun applyForLoan(groupId: String, amount: Double, durationValue: Int, isWeeks: Boolean, purpose: String) {
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(
-                isLoading    = true,
-                errorMessage = "",
-                isSuccess    = false
-            )
-            try {
-                // Backend expects durationMonths (Integer)
-                // If weeks, we approximate to months (minimum 1 month for backend consistency)
-                val durationMonths = if (isWeeks) {
-                    ceil(durationValue / 4.0).toInt().coerceAtLeast(1)
-                } else {
-                    durationValue
-                }
-                
-                // Track original requested period in purpose if weeks
-                val finalPurpose = if (isWeeks) "[$durationValue Weeks] $purpose" else purpose
-
-                val body = mutableMapOf<String, Any>(
-                    "groupId"        to groupId,
-                    "amount"         to amount,
-                    "durationMonths" to durationMonths
-                )
-                if (finalPurpose.isNotBlank()) body["purpose"] = finalPurpose
-
                 apiService.applyForLoan(body)
                 _uiState.value = _uiState.value.copy(
-                    isLoading      = false,
-                    isSuccess      = true,
-                    successMessage = "Loan application submitted. The group will be notified."
+                    isLoading = false, 
+                    isSuccess = true,
+                    successMessage = "Loan application submitted successfully."
                 )
                 getMyLoans()
-                getGroupLoans(groupId)
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    isLoading    = false,
-                    isSuccess    = false,
-                    errorMessage = parseError(e)
-                )
+                _uiState.value = _uiState.value.copy(isLoading = false, errorMessage = e.message ?: "Error")
             }
         }
     }
-
-    // ── Approve loan (CHAIR or SECRETARY only — backend enforces) ─────────────
 
     fun approveLoan(loanId: String, groupId: String) {
         viewModelScope.launch {
@@ -153,23 +115,16 @@ class LoanViewModel(
             try {
                 apiService.approveLoan(loanId)
                 _uiState.value = _uiState.value.copy(
-                    isApproving    = null,
-                    isSuccess      = true,
-                    successMessage = "Loan approved and disbursement initiated. The member will receive an SMS."
+                    isApproving = null,
+                    isSuccess = true,
+                    successMessage = "Loan approved and disbursement initiated."
                 )
-                // Refresh list so the approved loan moves to ACTIVE
                 getGroupLoans(groupId)
-                getMyLoans()
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    isApproving  = null,
-                    errorMessage = parseError(e)
-                )
+                _uiState.value = _uiState.value.copy(isApproving = null, errorMessage = e.message ?: "Approval failed")
             }
         }
     }
-
-    // ── Reject loan ───────────────────────────────────────────────────────────
 
     fun rejectLoan(loanId: String, reason: String, groupId: String) {
         viewModelScope.launch {
@@ -177,21 +132,16 @@ class LoanViewModel(
             try {
                 apiService.rejectLoan(loanId, RejectLoanRequest(reason))
                 _uiState.value = _uiState.value.copy(
-                    isRejecting    = null,
-                    isSuccess      = true,
+                    isRejecting = null,
+                    isSuccess = true,
                     successMessage = "Loan application rejected."
                 )
                 getGroupLoans(groupId)
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    isRejecting  = null,
-                    errorMessage = parseError(e)
-                )
+                _uiState.value = _uiState.value.copy(isRejecting = null, errorMessage = e.message ?: "Rejection failed")
             }
         }
     }
-
-    // ── Repay loan ────────────────────────────────────────────────────────────
 
     fun repayLoan(loanId: String, amount: Double, phone: String) {
         viewModelScope.launch {
@@ -199,64 +149,48 @@ class LoanViewModel(
             try {
                 apiService.repayLoanTyped(loanId, RepayLoanRequest(amount, phone))
                 _uiState.value = _uiState.value.copy(
-                    isRepaying     = false,
-                    isSuccess      = true,
-                    successMessage = "Repayment initiated. You will receive an STK push on your phone to enter your PIN."
+                    isRepaying = false,
+                    isSuccess = true,
+                    successMessage = "Repayment initiated. Check your phone for the PIN prompt."
                 )
                 getMyLoans()
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    isRepaying   = false,
-                    errorMessage = parseError(e)
-                )
+                _uiState.value = _uiState.value.copy(isRepaying = false, errorMessage = e.message ?: "Repayment failed")
             }
         }
     }
 
-    // ── Interest calculator (local — no API call) ─────────────────────────────
+    // ── Calculations ──────────────────────────────────────────────────────────
 
-    fun calculateInterest(amount: Double, durationValue: Int, isWeeks: Boolean) {
-        // Scaling interest rate logic based on the period
-        // Base rate is 5% for 1 month. 
-        // We'll scale it: 5% per month. 
-        // For weeks, it's (5 / 4)% per week = 1.25% per week.
-        val monthlyRate = 0.05
-        val rate = if (isWeeks) {
-            (monthlyRate / 4.0) * durationValue
-        } else {
-            monthlyRate * durationValue
-        }
+    /**
+     * Local Interest Calculator using Compound Interest
+     * Formula: A = P * (1 + r)^n
+     */
+    fun calculateInterest(amount: Double, durationMonths: Int) {
+        val monthlyRate = 0.05 // 5% per month
+
+        // Compound interest factor: (1 + r)^n
+        val factor = (1 + monthlyRate).pow(durationMonths.toDouble())
         
-        val interest    = amount * rate
-        val totalRepay  = amount + interest
+        val totalRepay = if (durationMonths > 0) amount * factor else amount
+        val interest = totalRepay - amount
+        
+        // Total effective rate for the entire period as a percentage
+        val totalEffectiveRate = if (amount > 0) (interest / amount) * 100 else (factor - 1) * 100
+        
         _uiState.value = _uiState.value.copy(
             calculatedInterest  = interest,
             calculatedRepayable = totalRepay,
-            calculatedInterestRate = rate * 100,
-            calculatedPeriodicRepayment = if (durationValue > 0) totalRepay / durationValue else totalRepay
+            calculatedInterestRate = totalEffectiveRate,
+            calculatedPeriodicRepayment = if (durationMonths > 0) totalRepay / durationMonths else totalRepay
         )
     }
 
     fun resetState() {
         _uiState.value = _uiState.value.copy(
-            isSuccess      = false,
-            successMessage = "",
-            errorMessage   = ""
+            isSuccess = false,
+            errorMessage = "",
+            successMessage = ""
         )
-    }
-
-    // ── Helpers ───────────────────────────────────────────────────────────────
-
-    /** Extract a clean message from an exception, stripping Retrofit boilerplate */
-    private fun parseError(e: Exception): String {
-        val raw = e.message ?: "Unknown error"
-        // Retrofit wraps HTTP errors as "HTTP 409 ..." — extract the readable part
-        return when {
-            raw.contains("409") -> "You already have an active or pending loan in this group."
-            raw.contains("400") -> "Invalid request. Please check the details and try again."
-            raw.contains("403") -> "You don't have permission to perform this action."
-            raw.contains("502") -> "Disbursement failed. Please try again or contact support."
-            else                -> raw.take(120)
-        }
     }
 }
