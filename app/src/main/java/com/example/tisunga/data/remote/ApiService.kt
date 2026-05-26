@@ -267,7 +267,7 @@ interface ApiService {
         @Body body: Map<String, @JvmSuppressWildcards Any>
     ): MeetingAttendance
 
-    @POST("groups/{groupId}/meetings/{meetingId}/attendance/bulk")
+    @POST("groups/{groupId}/meetings/{meetingId}/attendance")
     suspend fun submitBulkAttendance(
         @Path("groupId") groupId: String,
         @Path("meetingId") meetingId: String,

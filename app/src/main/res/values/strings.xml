@@ -424,6 +424,7 @@
     <string name="present_count_label">%1$d / %2$d Present</string>
     <string name="attendance_rate_label">Attendance Rate</string>
     <string name="attendance_list_title">Attendance List</string>
+    <string name="attendance_not_recorded">Attendance will be available once recorded.</string>
 
     <!-- Attendance Screen -->
     <string name="attendance_title">Mark Attendance</string>

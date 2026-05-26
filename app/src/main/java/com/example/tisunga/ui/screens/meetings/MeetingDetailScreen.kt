@@ -1,6 +1,7 @@
 package com.example.tisunga.ui.screens.meetings
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -41,32 +42,29 @@ fun MeetingDetailScreen(
     val meeting = uiState.selectedMeeting
     val context = LocalContext.current
     val sessionManager = remember { com.example.tisunga.utils.SessionManager(context) }
-    val navBackStackEntry by navController.currentBackStackEntryAsState()
     
     var showCompleteDialog by remember { mutableStateOf(false) }
     var showCancelDialog by remember { mutableStateOf(false) }
+    var isAttendanceExpanded by remember { mutableStateOf(false) }
 
     val groupRole = sessionManager.getGroupRole(groupId)?.uppercase() ?: "MEMBER"
     val isChair = groupRole == "CHAIR" || groupRole == "CHAIRPERSON" || groupRole == "SECRETARY" || groupRole == "ADMIN"
 
-    LaunchedEffect(groupId, meetingId, navBackStackEntry) {
-        // Refresh data whenever we are on this screen
-        if (navBackStackEntry?.destination?.route?.startsWith("meeting_detail") == true) {
+    LaunchedEffect(groupId, meetingId) {
+        // Only fetch if we don't have the meeting or it's a different meeting
+        if (uiState.selectedMeeting?.id != meetingId) {
             viewModel.getMeeting(groupId, meetingId)
         }
     }
 
-    LaunchedEffect(uiState.isSuccess, uiState.errorMessage, navBackStackEntry) {
-        val isCurrent = navBackStackEntry?.destination?.route?.startsWith("meeting_detail") == true
-        if (isCurrent) {
-            if (uiState.isSuccess && uiState.successMessage.isNotEmpty()) {
-                Toast.makeText(context, uiState.successMessage, Toast.LENGTH_SHORT).show()
-                viewModel.resetState()
-            }
-            if (uiState.errorMessage.isNotEmpty()) {
-                Toast.makeText(context, uiState.errorMessage, Toast.LENGTH_LONG).show()
-                viewModel.resetState()
-            }
+    LaunchedEffect(uiState.isSuccess, uiState.errorMessage) {
+        if (uiState.isSuccess && uiState.successMessage.isNotEmpty()) {
+            Toast.makeText(context, uiState.successMessage, Toast.LENGTH_SHORT).show()
+            viewModel.resetState()
+        }
+        if (uiState.errorMessage.isNotEmpty()) {
+            Toast.makeText(context, uiState.errorMessage, Toast.LENGTH_LONG).show()
+            viewModel.resetState()
         }
     }
 
@@ -166,21 +164,34 @@ fun MeetingDetailScreen(
                     }
                 }
 
-                item {
-                    MeetingAttendanceSummaryCard(meeting.presentCount, meeting.totalCount, meeting.attendancePercent)
-                }
+                val isAttendanceTaken = meeting.totalCount > 0 && 
+                    meeting.status.uppercase().trim() != "SCHEDULED" &&
+                    meeting.attendance.any { it.status.isNotBlank() && it.status.uppercase().trim() != "PENDING" }
 
                 item {
-                    Text(
-                        stringResource(R.string.attendance_list_title),
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(vertical = 8.dp)
+                    MeetingAttendanceSummaryCard(
+                        present = meeting.presentCount,
+                        total = meeting.totalCount,
+                        percent = meeting.attendancePercent,
+                        isExpanded = isAttendanceExpanded,
+                        isAttendanceTaken = isAttendanceTaken,
+                        onExpandClick = { isAttendanceExpanded = !isAttendanceExpanded }
                     )
                 }
 
-                items(meeting.attendance, key = { it.userId }) { attendance ->
-                    AttendanceMemberItem(attendance)
+                if (isAttendanceTaken && isAttendanceExpanded) {
+                    item {
+                        Text(
+                            stringResource(R.string.attendance_list_title),
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(vertical = 8.dp)
+                        )
+                    }
+
+                    items(meeting.attendance, key = { it.userId }) { attendance ->
+                        AttendanceMemberItem(attendance)
+                    }
                 }
                 
                 item {
@@ -348,34 +359,66 @@ fun MeetingActionsCard(onComplete: () -> Unit, onCancel: () -> Unit) {
 }
 
 @Composable
-fun MeetingAttendanceSummaryCard(present: Int, total: Int, percent: Int) {
+fun MeetingAttendanceSummaryCard(
+    present: Int,
+    total: Int,
+    percent: Int,
+    isExpanded: Boolean,
+    isAttendanceTaken: Boolean,
+    onExpandClick: () -> Unit
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(stringResource(R.string.attendance_overview_title), fontWeight = FontWeight.Bold, fontSize = 16.sp)
-            Spacer(modifier = Modifier.height(12.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column {
-                    Text(stringResource(R.string.present_count_label, present, total), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = GreenAccent)
-                    Text(stringResource(R.string.attendance_rate_label), fontSize = 12.sp, color = TextSecondary)
+                Text(stringResource(R.string.attendance_overview_title), fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                if (isAttendanceTaken) {
+                    IconButton(onClick = onExpandClick) {
+                        Icon(
+                            imageVector = if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                            contentDescription = if (isExpanded) "Collapse" else "Expand",
+                            tint = GreenAccent
+                        )
+                    }
                 }
-                Box(contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(
-                        progress = { percent / 100f },
-                        modifier = Modifier.size(60.dp),
-                        color = GreenAccent,
-                        trackColor = BackgroundGray,
-                        strokeWidth = 6.dp
-                    )
-                    Text("$percent%", fontSize = 14.sp, fontWeight = FontWeight.Bold)
+            }
+
+            if (isAttendanceTaken) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(stringResource(R.string.present_count_label, present, total), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = GreenAccent)
+                        Text(stringResource(R.string.attendance_rate_label), fontSize = 12.sp, color = TextSecondary)
+                    }
+                    Box(contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(
+                            progress = { percent / 100f },
+                            modifier = Modifier.size(60.dp),
+                            color = GreenAccent,
+                            trackColor = BackgroundGray,
+                            strokeWidth = 6.dp
+                        )
+                        Text("$percent%", fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                    }
                 }
+            } else {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = stringResource(R.string.attendance_not_recorded),
+                    fontSize = 14.sp,
+                    color = TextSecondary
+                )
             }
         }
     }
