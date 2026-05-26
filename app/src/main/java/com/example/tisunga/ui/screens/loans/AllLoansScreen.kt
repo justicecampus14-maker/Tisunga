@@ -158,19 +158,7 @@ fun AllLoansScreen(
                 )
             },
             bottomBar = { BottomNavBar(navController) },
-            snackbarHost = { SnackbarHost(snackbarHost) },
-            floatingActionButton = {
-                if (groupId.isNotEmpty() && activeMyLoan == null && pendingMyLoan == null) {
-                    ExtendedFloatingActionButton(
-                        onClick = { navController.navigate("apply_loan/$groupId") },
-                        icon    = { Icon(Icons.Default.Add, null) },
-                        text    = { Text(stringResource(R.string.apply_loan_button)) },
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor   = MaterialTheme.colorScheme.onPrimary,
-                        shape = RoundedCornerShape(16.dp)
-                    )
-                }
-            }
+            snackbarHost = { SnackbarHost(snackbarHost) }
         ) { padding ->
             Column(
                 modifier = Modifier
