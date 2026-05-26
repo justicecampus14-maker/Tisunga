@@ -40,6 +40,7 @@ import com.example.tisunga.ui.theme.*
 import com.example.tisunga.utils.FormatUtils
 import com.example.tisunga.viewmodel.GroupViewModel
 import com.example.tisunga.viewmodel.LoanViewModel
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Suppress("DEPRECATION")
@@ -49,14 +50,15 @@ fun ApplyLoanScreen(
     groupId: String,
     viewModel: LoanViewModel,
     groupViewModel: GroupViewModel,
-    homeViewModel: com.example.tisunga.viewmodel.HomeViewModel? = null
+    @Suppress("UNUSED_PARAMETER") homeViewModel: com.example.tisunga.viewmodel.HomeViewModel? = null
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val groupState by groupViewModel.uiState.collectAsState()
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
+    val snackbarHostState = remember { SnackbarHostState() }
 
-    // Access properties directly from state to avoid type inference issues with polymorphic objects
+    // Derive values from state
     val totalSavings = groupState.groupDashboard?.totalSavings 
         ?: groupState.selectedGroup?.totalSavings 
         ?: 0.0
@@ -68,15 +70,33 @@ fun ApplyLoanScreen(
     var purpose by remember { mutableStateOf("") }
     var showSuccessDialog by remember { mutableStateOf(false) }
 
-    // Automatically synchronize calculations whenever inputs change
+    // Validation logic
+    val amtVal = amount.toDoubleOrNull() ?: 0.0
+    val isInsufficient = amtVal > totalSavings
+    val isValidAmount = amount.isNotEmpty() && amtVal > 0
+
+    // Synchronize local interest calculations
     LaunchedEffect(amount, durationValue) {
         val amt = amount.toDoubleOrNull() ?: 0.0
         viewModel.calculateInterest(amt, durationValue)
     }
 
+    // Success Navigation
     LaunchedEffect(uiState.isSuccess) {
         if (uiState.isSuccess) {
             showSuccessDialog = true
+        }
+    }
+
+    // Error Handling: Show transient errors in a Snackbar
+    LaunchedEffect(uiState.errorMessage) {
+        if (uiState.errorMessage.isNotEmpty()) {
+            snackbarHostState.showSnackbar(
+                message = uiState.errorMessage,
+                duration = SnackbarDuration.Long
+            )
+            // Error has been communicated, clear it
+            viewModel.resetState()
         }
     }
 
@@ -107,7 +127,6 @@ fun ApplyLoanScreen(
                     Spacer(modifier = Modifier.height(24.dp))
                     Button(
                         onClick = {
-                            showSuccessDialog = false
                             viewModel.resetState()
                             navController.popBackStack()
                         },
@@ -123,6 +142,7 @@ fun ApplyLoanScreen(
     }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.apply_for_loan_title), fontSize = 20.sp, fontWeight = FontWeight.Bold) },
@@ -186,9 +206,12 @@ fun ApplyLoanScreen(
                     Spacer(modifier = Modifier.height(8.dp))
                     OutlinedTextField(
                         value = amount,
-                        onValueChange = { if (it.isEmpty() || it.all { c -> c.isDigit() || c == '.' }) amount = it },
+                        onValueChange = { 
+                            if (it.isEmpty() || it.all { c -> c.isDigit() || c == '.' }) amount = it 
+                        },
                         modifier = Modifier.fillMaxWidth(),
                         placeholder = { Text(stringResource(R.string.loan_amount_hint)) },
+                        isError = isInsufficient,
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Number,
                             imeAction = ImeAction.Next
@@ -212,15 +235,14 @@ fun ApplyLoanScreen(
                         Text("Repayment Summary", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = TextPrimary)
                         Spacer(modifier = Modifier.height(12.dp))
                         
-                        // 2x2 Grid of Boxes
                         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(10.dp)
                             ) {
                                 InfoBox(
-                                    label = "Total Rate",
-                                    value = "${String.format("%.1f", uiState.calculatedInterestRate)}%",
+                                    label = "Effective Rate",
+                                    value = "${String.format(Locale.US, "%.1f", uiState.calculatedInterestRate)}%",
                                     modifier = Modifier.weight(1f)
                                 )
                                 InfoBox(
@@ -234,12 +256,12 @@ fun ApplyLoanScreen(
                                 horizontalArrangement = Arrangement.spacedBy(10.dp)
                             ) {
                                 InfoBox(
-                                    label = "Per Month",
+                                    label = "Monthly Pay",
                                     value = FormatUtils.formatMoney(uiState.calculatedPeriodicRepayment),
                                     modifier = Modifier.weight(1f)
                                 )
                                 InfoBox(
-                                    label = "Repayable",
+                                    label = "Total Repayable",
                                     value = FormatUtils.formatMoney(uiState.calculatedRepayable),
                                     modifier = Modifier.weight(1f)
                                 )
@@ -252,7 +274,6 @@ fun ApplyLoanScreen(
                     Text("Duration (Months)", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = TextPrimary)
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    // Dynamic slideable row for months based on group saving period
                     val monthOptions = (1..savingPeriod).toList()
                     LazyRow(
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -309,28 +330,28 @@ fun ApplyLoanScreen(
 
                     Spacer(modifier = Modifier.height(32.dp))
 
-                    val amtVal = amount.toDoubleOrNull() ?: 0.0
-                    val isInsufficient = amtVal > totalSavings
-
                     Button(
                         onClick = {
-                            if (amtVal > 0 && !isInsufficient) {
+                            if (isValidAmount && !isInsufficient) {
                                 viewModel.applyForLoan(groupId, amtVal, durationValue, purpose)
                             }
                         },
                         modifier = Modifier.fillMaxWidth().height(56.dp),
                         shape = RoundedCornerShape(14.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = if (isInsufficient) Color.Gray else NavyBlue
+                            containerColor = if (isInsufficient || !isValidAmount) Color.Gray else NavyBlue
                         ),
-                        enabled = !uiState.isLoading && amount.isNotEmpty() && !isInsufficient
+                        enabled = !uiState.isLoading && isValidAmount && !isInsufficient
                     ) {
                         if (uiState.isLoading) {
                             CircularProgressIndicator(color = White, modifier = Modifier.size(24.dp))
                         } else {
                             Text(
-                                if (isInsufficient) stringResource(R.string.insufficient_balance_button) else stringResource(R.string.submit_application_button),
-                                color = White, fontSize = 16.sp, fontWeight = FontWeight.Bold
+                                text = if (isInsufficient) stringResource(R.string.insufficient_balance_button) 
+                                       else stringResource(R.string.submit_application_button),
+                                color = White, 
+                                fontSize = 16.sp, 
+                                fontWeight = FontWeight.Bold
                             )
                         }
                     }
@@ -351,30 +372,6 @@ fun ApplyLoanScreen(
                                 Text(
                                     stringResource(R.string.insufficient_balance_error, FormatUtils.formatMoney(amtVal), FormatUtils.formatMoney(totalSavings)),
                                     color = Color.Red, fontSize = 12.sp, lineHeight = 16.sp
-                                )
-                            }
-                        }
-                    }
-
-                    if (uiState.errorMessage.isNotEmpty()) {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(10.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color(0xFFFFEBEE))
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(12.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(Icons.Default.Error, null,
-                                    tint = Color.Red, modifier = Modifier.size(16.dp))
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    uiState.errorMessage,
-                                    color = Color.Red,
-                                    fontSize = 12.sp,
-                                    lineHeight = 16.sp
                                 )
                             }
                         }
