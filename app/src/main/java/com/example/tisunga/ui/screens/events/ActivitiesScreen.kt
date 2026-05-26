@@ -48,9 +48,6 @@ fun ActivitiesScreen(
     viewModel: ActivitiesViewModel
 ) {
     val context = LocalContext.current
-    val navBackStackEntryState = navController.currentBackStackEntryAsState()
-    val navBackStackEntry = navBackStackEntryState.value
-
     val selectedTabState = remember { mutableIntStateOf(0) }
     val selectedTab = selectedTabState.intValue
     
@@ -152,7 +149,7 @@ fun ActivitiesScreen(
                         filter = meetingFilter,
                         onFilterChange = { viewModel.setMeetingFilter(it) },
                         onMeetingClick = { m ->
-                            navController.navigate("meeting_detail/${m.id}")
+                            navController.navigate("meeting_detail/$groupId/${m.id}")
                         }
                     )
                 } else {

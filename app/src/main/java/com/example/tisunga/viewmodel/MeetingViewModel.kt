@@ -209,10 +209,22 @@ class MeetingViewModel(
                 val result = api.submitBulkAttendance(
                     groupId, meetingId, BulkAttendanceRequest(entries)
                 )
-                // Refresh meeting details so that MeetingDetailScreen and others have fresh data
+                
+                // Immediately update local state from result if possible, 
+                // but we also need the full meeting object for other fields.
+                // We'll perform the refresh call, but we can optimize by merging the result.
                 val updatedMeeting = api.getMeeting(groupId, meetingId)
                 
-                // Update meetings list for the summary view
+                _uiState.value = _uiState.value.copy(
+                    isLoading       = false,
+                    isSuccess       = true,
+                    selectedMeeting = updatedMeeting,
+                    attendance      = updatedMeeting.attendance,
+                    successMessage  = "Attendance saved. ${result.presentCount} present."
+                )
+
+                // Update the meetings list in the background or separately if needed, 
+                // but for now, prioritize the current screen's state.
                 val meetings = _uiState.value.meetings.map {
                     if (it.id == meetingId) {
                         it.copy(
@@ -222,15 +234,8 @@ class MeetingViewModel(
                         )
                     } else it
                 }
+                _uiState.value = _uiState.value.copy(meetings = meetings)
                 
-                _uiState.value = _uiState.value.copy(
-                    isLoading       = false,
-                    isSuccess       = true,
-                    meetings        = meetings,
-                    selectedMeeting = updatedMeeting,
-                    attendance      = updatedMeeting.attendance,
-                    successMessage  = "Attendance saved. ${result.presentCount} present."
-                )
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading    = false,
