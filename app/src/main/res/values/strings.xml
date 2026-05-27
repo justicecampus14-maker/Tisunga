@@ -330,7 +330,7 @@
     <string name="savings_cycle_ended_warning">⚠️ Savings cycle ended %1$s</string>
     <string name="total_to_disburse_label">Total to Disburse</string>
     <string name="member_shares_title">Member Shares</string>
-    <string name="request_disbursement_button">Request Disbursement</string>
+    <string name="request_disbursement_button">Initiate Disbursement</string>
     <string name="approve_disbursement_button">Approve Disbursement</string>
     <string name="reject_button">Reject</string>
     <string name="request_disbursement_confirm_msg">Request disbursement of MWK %1$s to %2$d members? Treasurer must approve before funds are sent.</string>
@@ -426,6 +426,8 @@
     <string name="attendance_rate_label">Attendance Rate</string>
     <string name="attendance_list_title">Attendance List</string>
     <string name="attendance_not_recorded">Attendance will be available once recorded.</string>
+    <string name="meeting_not_found">Meeting not found</string>
+    <string name="go_back_button">Go Back</string>
 
     <!-- Attendance Screen -->
     <string name="attendance_title">Mark Attendance</string>

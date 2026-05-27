@@ -63,8 +63,15 @@ class MeetingViewModel(
     }
 
     fun getMeeting(groupId: String, meetingId: String) {
+        if (_uiState.value.selectedMeeting?.id == meetingId && _uiState.value.errorMessage.isEmpty()) return
+
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = "")
+            _uiState.value = _uiState.value.copy(
+                isLoading = true, 
+                errorMessage = "", 
+                selectedMeeting = null,
+                attendance = emptyList()
+            )
             try {
                 val meeting = api.getMeeting(groupId, meetingId)
                 _uiState.value = _uiState.value.copy(
@@ -73,10 +80,45 @@ class MeetingViewModel(
                     attendance      = meeting.attendance
                 )
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    isLoading    = false,
-                    errorMessage = e.message ?: "Failed to load meeting"
-                )
+                // FALLBACK: If the detail API fails (common for SCHEDULED meetings on some backends),
+                // try to load the meeting from the group meetings list.
+                try {
+                    val meetings = api.getGroupMeetings(groupId)
+                    val found = meetings.find { it.id == meetingId }
+                    if (found != null) {
+                        val detailFallback = MeetingDetailResponse(
+                            id = found.id,
+                            title = found.title,
+                            agenda = found.agenda,
+                            location = found.location,
+                            scheduledAt = found.scheduledAt,
+                            status = found.status,
+                            notes = found.notes,
+                            image = found.image,
+                            imageUrl = found.imageUrl,
+                            presentCount = found.presentCount,
+                            totalCount = found.totalCount,
+                            attendancePercent = found.attendancePercent,
+                            attendance = emptyList()
+                        )
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            meetings = meetings,
+                            selectedMeeting = detailFallback,
+                            attendance = emptyList()
+                        )
+                    } else {
+                        _uiState.value = _uiState.value.copy(
+                            isLoading    = false,
+                            errorMessage = e.message ?: "Meeting not found"
+                        )
+                    }
+                } catch (e2: Exception) {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading    = false,
+                        errorMessage = e.message ?: "Failed to load meeting details"
+                    )
+                }
             }
         }
     }
@@ -135,7 +177,10 @@ class MeetingViewModel(
                             status = updatedMeeting.status,
                             presentCount = updatedMeeting.presentCount,
                             totalCount = updatedMeeting.totalCount,
-                            attendancePercent = updatedMeeting.attendancePercent
+                            attendancePercent = updatedMeeting.attendancePercent,
+                            notes = updatedMeeting.notes,
+                            image = updatedMeeting.image,
+                            imageUrl = updatedMeeting.imageUrl
                         )
                     } else it
                 }
@@ -161,16 +206,24 @@ class MeetingViewModel(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = "")
             try {
-                // 1. Update status and notes
-                val body = mapOf("status" to "COMPLETED", "notes" to notes)
-                api.updateMeetingStatus(groupId, meetingId, body)
+                // 1. Update status to COMPLETED
+                api.updateMeetingStatus(groupId, meetingId, mapOf("status" to "COMPLETED"))
 
-                // 2. Upload image if present
+                // 2. Update meeting notes using dedicated endpoint
+                api.updateMeetingNotes(groupId, meetingId, mapOf("notes" to notes))
+
+                // 3. Upload image if present
                 if (imageUri != null) {
-                    val file = uriToFile(imageUri, context)
-                    val requestFile = file.asRequestBody("image/*".toMediaTypeOrNull())
-                    val imagePart = MultipartBody.Part.createFormData("image", file.name, requestFile)
-                    api.uploadMeetingImage(groupId, meetingId, imagePart)
+                    val file = try {
+                        uriToFile(imageUri, context)
+                    } catch (e: Exception) {
+                        null
+                    }
+                    if (file != null) {
+                        val requestFile = file.asRequestBody("image/*".toMediaTypeOrNull())
+                        val imagePart = MultipartBody.Part.createFormData("image", file.name, requestFile)
+                        api.uploadMeetingImage(groupId, meetingId, imagePart)
+                    }
                 }
 
                 // 3. Refresh full meeting detail
@@ -183,7 +236,10 @@ class MeetingViewModel(
                             status = updatedMeeting.status,
                             presentCount = updatedMeeting.presentCount,
                             totalCount = updatedMeeting.totalCount,
-                            attendancePercent = updatedMeeting.attendancePercent
+                            attendancePercent = updatedMeeting.attendancePercent,
+                            notes = updatedMeeting.notes,
+                            image = updatedMeeting.image,
+                            imageUrl = updatedMeeting.imageUrl
                         )
                     } else it
                 }
@@ -209,14 +265,40 @@ class MeetingViewModel(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = "")
             try {
-                val file = uriToFile(uri, context)
+                val file = try {
+                    uriToFile(uri, context)
+                } catch (e: Exception) {
+                    null
+                }
+                
+                if (file == null) {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        errorMessage = "Could not process image file"
+                    )
+                    return@launch
+                }
+
                 val requestFile = file.asRequestBody("image/*".toMediaTypeOrNull())
                 val body = MultipartBody.Part.createFormData("image", file.name, requestFile)
                 
                 val updatedMeeting = api.uploadMeetingImage(groupId, meetingId, body)
+                
+                // Update the meeting in the list as well
+                val meetings = _uiState.value.meetings.map {
+                    if (it.id == meetingId) {
+                        it.copy(
+                            notes = updatedMeeting.notes,
+                            image = updatedMeeting.image,
+                            imageUrl = updatedMeeting.imageUrl
+                        )
+                    } else it
+                }
+
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     isSuccess = true,
+                    meetings = meetings,
                     selectedMeeting = updatedMeeting,
                     successMessage = "Meeting image uploaded successfully"
                 )
@@ -235,24 +317,38 @@ class MeetingViewModel(
             FileOutputStream(file).use { output ->
                 input.copyTo(output)
             }
-        }
+        } ?: throw Exception("Failed to open input stream from URI")
         return file
     }
 
     fun updateMeetingNotes(groupId: String, meetingId: String, notes: String) {
         viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = "")
             try {
                 val body = mapOf("notes" to notes)
-                api.updateMeetingStatus(groupId, meetingId, body)
+                val updatedMeeting = api.updateMeetingNotes(groupId, meetingId, body)
                 
-                // Update local state without full refresh if possible, or just refresh
-                val updatedMeeting = api.getMeeting(groupId, meetingId)
+                // Update the meeting in the list
+                val meetings = _uiState.value.meetings.map {
+                    if (it.id == meetingId) {
+                        it.copy(
+                            notes = updatedMeeting.notes,
+                            image = updatedMeeting.image,
+                            imageUrl = updatedMeeting.imageUrl
+                        )
+                    } else it
+                }
+
                 _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    isSuccess = true,
+                    meetings = meetings,
                     selectedMeeting = updatedMeeting,
-                    successMessage = "Notes updated"
+                    successMessage = "Notes updated successfully"
                 )
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
+                    isLoading = false,
                     errorMessage = e.message ?: "Failed to update notes"
                 )
             }
@@ -339,7 +435,10 @@ class MeetingViewModel(
                         it.copy(
                             presentCount = updatedMeeting.presentCount,
                             totalCount = updatedMeeting.totalCount,
-                            attendancePercent = updatedMeeting.attendancePercent
+                            attendancePercent = updatedMeeting.attendancePercent,
+                            notes = updatedMeeting.notes,
+                            image = updatedMeeting.image,
+                            imageUrl = updatedMeeting.imageUrl
                         )
                     } else it
                 }

@@ -260,6 +260,13 @@ interface ApiService {
         @Body body: Map<String, String>
     ): Meeting
 
+    @PUT("groups/{groupId}/meetings/{meetingId}/notes")
+    suspend fun updateMeetingNotes(
+        @Path("groupId") groupId: String,
+        @Path("meetingId") meetingId: String,
+        @Body body: Map<String, String>
+    ): MeetingDetailResponse
+
     @POST("groups/{groupId}/meetings/{meetingId}/attendance")
     suspend fun markAttendance(
         @Path("groupId") groupId: String,

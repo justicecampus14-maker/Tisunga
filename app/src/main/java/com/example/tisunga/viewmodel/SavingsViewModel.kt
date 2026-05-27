@@ -259,11 +259,11 @@ class SavingsViewModel(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = "")
             try {
-                apiService.approveDisbursement(groupId, disbursementId)
+                val response = apiService.approveDisbursement(groupId, disbursementId)
                 _uiState.value = _uiState.value.copy(
                     isLoading           = false,
                     isSuccess           = true,
-                    successMessage      = "Disbursement approved! Funds are being sent to members.",
+                    successMessage      = response.message ?: "Disbursement approved! Funds are being sent to members.",
                     currentDisbursement = _uiState.value.currentDisbursement?.copy(status = "APPROVED")
                 )
                 loadSavingsData(groupId)
@@ -280,11 +280,11 @@ class SavingsViewModel(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = "")
             try {
-                apiService.rejectDisbursement(groupId, disbursementId, RejectDisbursementRequest(reason))
+                val response = apiService.rejectDisbursement(groupId, disbursementId, RejectDisbursementRequest(reason))
                 _uiState.value = _uiState.value.copy(
                     isLoading           = false,
                     isSuccess           = true,
-                    successMessage      = "Disbursement request rejected.",
+                    successMessage      = response.message ?: "Disbursement request rejected.",
                     currentDisbursement = _uiState.value.currentDisbursement?.copy(
                         status          = "REJECTED",
                         rejectionReason = reason

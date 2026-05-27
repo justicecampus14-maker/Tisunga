@@ -4,6 +4,7 @@ import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -56,7 +57,8 @@ fun MeetingDetailScreen(
     var showCancelDialog by remember { mutableStateOf(false) }
     var isAttendanceExpanded by remember { mutableStateOf(false) }
     
-    var discussionText by remember(meetingId) { mutableStateOf(meeting?.notes ?: "") }
+    var isEditingNotes by remember { mutableStateOf(false) }
+    var discussionText by remember(meetingId) { mutableStateOf("") }
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
     
     val imagePickerLauncher = rememberLauncherForActivityResult(
@@ -66,16 +68,24 @@ fun MeetingDetailScreen(
     }
 
     LaunchedEffect(meeting?.notes) {
-        if (meeting?.notes != null && discussionText.isEmpty()) {
+        if (meeting?.notes != null && !isEditingNotes) {
             discussionText = meeting.notes
         }
     }
 
+    LaunchedEffect(meeting?.status) {
+        val s = meeting?.status?.uppercase()
+        if (s == "COMPLETED" || s == "CANCELLED") {
+            isEditingNotes = false
+            selectedImageUri = null
+        }
+    }
+
     val groupRole = sessionManager.getGroupRole(groupId)?.uppercase() ?: "MEMBER"
-    val isChair = groupRole == "CHAIR" || groupRole == "CHAIRPERSON" || groupRole == "SECRETARY" || groupRole == "ADMIN"
+    val isChair = groupRole == "CHAIR" || groupRole == "CHAIRPERSON" || groupRole == "SECRETARY" || groupRole == "TREASURER" || groupRole == "ADMIN"
 
     LaunchedEffect(groupId, meetingId) {
-        if (uiState.selectedMeeting?.id != meetingId) {
+        if (meeting == null || meeting.id != meetingId) {
             viewModel.getMeeting(groupId, meetingId)
         }
     }
@@ -85,9 +95,9 @@ fun MeetingDetailScreen(
             Toast.makeText(context, uiState.successMessage, Toast.LENGTH_SHORT).show()
             viewModel.resetState()
         }
+        // Do NOT resetState() here for errorMessage, as we want to show it in the UI with a Retry button
         if (uiState.errorMessage.isNotEmpty()) {
             Toast.makeText(context, uiState.errorMessage, Toast.LENGTH_LONG).show()
-            viewModel.resetState()
         }
     }
 
@@ -181,14 +191,24 @@ fun MeetingDetailScreen(
                     MeetingDiscussionCard(
                         notes = discussionText,
                         onNotesChange = { discussionText = it },
+                        isEditing = isEditingNotes,
+                        onEditingChange = { isEditingNotes = it },
                         isEditable = isChair && (statusUpper == "SCHEDULED" || statusUpper == "ONGOING"),
                         onSave = { 
                             viewModel.updateMeetingNotes(groupId, meetingId, discussionText) 
                         },
                         onImagePick = { imagePickerLauncher.launch("image/*") },
                         onImageRemove = { selectedImageUri = null },
+                        onImageUpload = {
+                            selectedImageUri?.let { uri ->
+                                viewModel.uploadMeetingImage(groupId, meetingId, uri, context)
+                                selectedImageUri = null
+                            }
+                        },
                         imageUri = selectedImageUri,
-                        imageUrl = meeting.image
+                        imageUrl = meeting.imageUrl ?: meeting.image,
+                        originalNotes = meeting.notes ?: "",
+                        isChair = isChair
                     )
                 }
 
@@ -225,6 +245,50 @@ fun MeetingDetailScreen(
                 
                 item {
                     Spacer(modifier = Modifier.height(80.dp))
+                }
+            }
+        } else {
+            // Error or Initial State
+            Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(24.dp)) {
+                    if (uiState.errorMessage.isNotEmpty()) {
+                        Text(
+                            text = uiState.errorMessage,
+                            color = Color.Red,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                            modifier = Modifier.padding(bottom = 16.dp)
+                        )
+                        Button(
+                            onClick = { viewModel.getMeeting(groupId, meetingId) },
+                            colors = ButtonDefaults.buttonColors(containerColor = GreenAccent)
+                        ) {
+                            Text("Retry")
+                        }
+                    } else {
+                        // If no meeting and no error, we are likely still loading or it truly doesn't exist.
+                        // Since we cleared state on entry, it's normal for it to be null for a few ms.
+                        CircularProgressIndicator(color = GreenAccent)
+                        
+                        // If after some time it's still null and not loading, it might be a 404
+                        var showNotFound by remember { mutableStateOf(false) }
+                        LaunchedEffect(Unit) {
+                            kotlinx.coroutines.delay(3000)
+                            if (meeting == null && !uiState.isLoading) {
+                                showNotFound = true
+                            }
+                        }
+                        
+                        if (showNotFound) {
+                            Text(stringResource(R.string.meeting_not_found), color = TextSecondary)
+                            Spacer(Modifier.height(8.dp))
+                            Button(
+                                onClick = { navController.popBackStack() },
+                                colors = ButtonDefaults.buttonColors(containerColor = GreenAccent)
+                            ) {
+                                Text(stringResource(R.string.go_back_button))
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -294,27 +358,47 @@ fun MeetingHeaderCard(
 fun MeetingDiscussionCard(
     notes: String,
     onNotesChange: (String) -> Unit,
+    isEditing: Boolean,
+    onEditingChange: (Boolean) -> Unit,
     isEditable: Boolean,
     onSave: () -> Unit,
     onImagePick: () -> Unit,
     onImageRemove: () -> Unit,
+    onImageUpload: () -> Unit,
     imageUri: Uri? = null,
-    imageUrl: String? = null
+    imageUrl: String? = null,
+    originalNotes: String = "",
+    isChair: Boolean = false
 ) {
+    val hasChanges = notes != originalNotes
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = stringResource(R.string.meeting_notes_label),
-                fontWeight = FontWeight.Bold,
-                fontSize = 16.sp
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = stringResource(R.string.meeting_notes_label),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp
+                )
+                if (isEditable && !isEditing) {
+                    TextButton(onClick = { onEditingChange(true) }) {
+                        Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text("Edit", fontSize = 14.sp)
+                    }
+                }
+            }
             Spacer(modifier = Modifier.height(12.dp))
             
-            if (isEditable) {
+            if (isEditing) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -337,52 +421,43 @@ fun MeetingDiscussionCard(
                     )
                     
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        IconButton(onClick = onImagePick) {
+                        IconButton(
+                            onClick = onImagePick,
+                            modifier = Modifier.size(32.dp)
+                        ) {
                             Icon(
                                 imageVector = Icons.Default.AddPhotoAlternate,
-                                contentDescription = "Add image",
+                                contentDescription = "Add Image",
                                 tint = GreenAccent,
                                 modifier = Modifier.size(24.dp)
                             )
                         }
-                    }
-                }
-                
-                if (imageUri != null) {
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Box(
-                        modifier = Modifier
-                            .size(120.dp)
-                            .border(1.dp, BackgroundGray, RoundedCornerShape(8.dp))
-                    ) {
-                        AsyncImage(
-                            model = imageUri,
-                            contentDescription = "Meeting Minutes Preview",
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .clip(RoundedCornerShape(8.dp)),
-                            contentScale = ContentScale.Crop
-                        )
-                        
-                        Surface(
-                            modifier = Modifier
-                                .align(Alignment.TopEnd)
-                                .padding(4.dp)
-                                .size(24.dp)
-                                .clickable { onImageRemove() },
-                            shape = CircleShape,
-                            color = Color.Black.copy(alpha = 0.6f)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Close,
-                                contentDescription = "Remove image",
-                                tint = Color.White,
-                                modifier = Modifier.padding(4.dp)
-                            )
+
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            TextButton(onClick = { 
+                                onEditingChange(false) 
+                                onNotesChange(originalNotes)
+                            }) {
+                                Text("Cancel", color = Color.Gray)
+                            }
+                            if (hasChanges) {
+                                Button(
+                                    onClick = { 
+                                        onSave()
+                                        onEditingChange(false)
+                                    },
+                                    colors = ButtonDefaults.buttonColors(containerColor = GreenAccent),
+                                    shape = RoundedCornerShape(8.dp),
+                                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
+                                    modifier = Modifier.height(36.dp)
+                                ) {
+                                    Text("Submit", color = Color.White)
+                                }
+                            }
                         }
                     }
                 }
@@ -392,11 +467,58 @@ fun MeetingDiscussionCard(
                     color = TextPrimary,
                     fontSize = 14.sp
                 )
+            }
 
-                if (!imageUrl.isNullOrBlank()) {
-                    Spacer(modifier = Modifier.height(12.dp))
+            if (isEditable) {
+                if (imageUri != null) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .border(1.dp, BackgroundGray, RoundedCornerShape(8.dp))
+                    ) {
+                        AsyncImage(
+                            model = imageUri,
+                            contentDescription = "Meeting Minutes Preview",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                        
+                        Surface(
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .padding(8.dp)
+                                .size(32.dp)
+                                .clickable { onImageRemove() },
+                            shape = CircleShape,
+                            color = Color.Black.copy(alpha = 0.6f)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Remove image",
+                                tint = Color.White,
+                                modifier = Modifier.padding(6.dp)
+                            )
+                        }
+
+                        Button(
+                            onClick = onImageUpload,
+                            modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = GreenAccent)
+                        ) {
+                            Icon(Icons.Default.CloudUpload, contentDescription = null)
+                            Spacer(Modifier.width(8.dp))
+                            Text("Upload Image")
+                        }
+                    }
+                }
+            }
+
+                if (isChair && !imageUrl.isNullOrBlank()) {
+                    Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        text = "Attached Minutes:",
+                        text = "Uploaded Minutes:",
                         fontWeight = FontWeight.Bold,
                         fontSize = 12.sp,
                         color = TextSecondary,
@@ -416,8 +538,16 @@ fun MeetingDiscussionCard(
                             .border(1.dp, BackgroundGray, RoundedCornerShape(8.dp)),
                         contentScale = ContentScale.Fit
                     )
+                    
+                    if (isEditable) {
+                        TextButton(
+                            onClick = onImagePick,
+                            modifier = Modifier.align(Alignment.End)
+                        ) {
+                            Text("Replace Image", fontSize = 12.sp, color = GreenAccent)
+                        }
+                    }
                 }
-            }
         }
     }
 }

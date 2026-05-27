@@ -28,6 +28,7 @@ import com.example.tisunga.ui.navigation.Routes
 import com.example.tisunga.ui.theme.*
 import com.example.tisunga.viewmodel.GroupViewModel
 import com.example.tisunga.viewmodel.HomeViewModel
+import com.example.tisunga.viewmodel.SavingsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -35,7 +36,8 @@ fun AddMembersScreen(
     navController: NavController,
     groupId: String,
     viewModel: GroupViewModel,
-    homeViewModel: HomeViewModel
+    homeViewModel: HomeViewModel,
+    savingsViewModel: SavingsViewModel
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -58,6 +60,7 @@ fun AddMembersScreen(
                 uiState.searchResult?.user?.let { userSummary ->
                     sessionMembers.add(0, MembershipResponse(role = selectedRole, user = userSummary))
                 }
+                savingsViewModel.loadSavingsData(groupId)
             }
             viewModel.resetState()
             phoneSearch = ""

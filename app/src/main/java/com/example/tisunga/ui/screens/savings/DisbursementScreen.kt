@@ -7,6 +7,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -42,7 +44,17 @@ fun DisbursementScreen(
     var dialogType by remember { mutableStateOf("") } // "request" or "approve"
     var rejectionReason by remember { mutableStateOf("") }
 
-    val userRole = sessionManager.getGroupRole(groupId)?.lowercase() ?: "member"
+    val rawRole = sessionManager.getGroupRole(groupId)?.lowercase() ?: "member"
+    val userRole = when (rawRole) {
+        "chair", "chairperson" -> "chairperson"
+        "secretary" -> "secretary"
+        "treasurer" -> "treasurer"
+        else -> "member"
+    }
+    
+    val canInitiate = userRole == "chairperson"
+    val canApprove = userRole == "treasurer" || userRole == "secretary"
+
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(uiState.isSuccess, uiState.errorMessage) {
@@ -73,7 +85,38 @@ fun DisbursementScreen(
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = White)
             )
         },
-        snackbarHost = { SnackbarHost(snackbarHostState) }
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        floatingActionButton = {
+            // Show FAB for chairperson to request OR treasurer/secretary to approve
+            val showRequestFab = canInitiate && (uiState.currentDisbursement == null || uiState.currentDisbursement?.status == "REJECTED")
+            val showApproveFab = canApprove && uiState.currentDisbursement?.status == "PENDING"
+            
+            if (showRequestFab || showApproveFab) {
+                ExtendedFloatingActionButton(
+                    onClick = {
+                        if (showRequestFab) {
+                            dialogType = "request"
+                        } else {
+                            dialogType = "approve"
+                        }
+                        showConfirmDialog = true
+                    },
+                    containerColor = NavyBlue,
+                    contentColor = White
+                ) {
+                    Text(
+                        text = if (showRequestFab) stringResource(R.string.request_disbursement_button) else stringResource(R.string.approve_disbursement_button),
+                        color = White,
+                        fontWeight = SemiBold
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                        contentDescription = null
+                    )
+                }
+            }
+        }
     ) { padding ->
         Column(
             modifier = Modifier
@@ -97,6 +140,7 @@ fun DisbursementScreen(
                             disbursement = uiState.currentDisbursement,
                             role = userRole,
                             totalGroupSavings = uiState.totalGroupSavings,
+                            canApprove = canApprove,
                             onRequest = {
                                 dialogType = "request"
                                 showConfirmDialog = true
@@ -111,14 +155,35 @@ fun DisbursementScreen(
                         )
                     }
 
-                    // 2. Member Payouts List (if any)
-                    uiState.currentDisbursement?.let { current ->
-                        if (current.memberShares.isNotEmpty()) {
+                    // 2. Member Payouts List
+                    val currentDisbursement = uiState.currentDisbursement
+                    if (currentDisbursement != null) {
+                        if (currentDisbursement.memberShares.isNotEmpty()) {
                             item {
                                 Text(stringResource(R.string.member_shares_title), fontWeight = Bold, fontSize = 16.sp)
                             }
-                            items(current.memberShares) { payout ->
+                            items(currentDisbursement.memberShares) { payout ->
                                 PayoutItem(payout)
+                            }
+                        }
+                    } else {
+                        // Show projected payouts from current group savings
+                        val summary = uiState.groupSavings.firstOrNull()
+                        if (summary != null && summary.memberSavings.isNotEmpty()) {
+                            item {
+                                Text(stringResource(R.string.member_shares_title), fontWeight = Bold, fontSize = 16.sp)
+                            }
+                            items(summary.memberSavings) { row ->
+                                PayoutItem(
+                                    MemberSharePayout(
+                                        userId = row.userId,
+                                        userName = row.userName,
+                                        userPhone = row.userPhone,
+                                        memberSavings = row.amount,
+                                        shareAmount = row.amount, // Default to 100% of savings for projection
+                                        status = "PENDING"
+                                    )
+                                )
                             }
                         }
                     }
@@ -210,6 +275,7 @@ fun CurrentDisbursementCard(
     disbursement: Disbursement?,
     role: String,
     totalGroupSavings: Double,
+    canApprove: Boolean,
     onRequest: () -> Unit,
     onApprove: () -> Unit,
     onReject: () -> Unit
@@ -225,16 +291,7 @@ fun CurrentDisbursementCard(
                 Text(stringResource(R.string.total_to_disburse_label), fontSize = 14.sp, color = TextSecondary)
                 Text(FormatUtils.formatMoney(totalGroupSavings), fontSize = 28.sp, fontWeight = Bold, color = NavyBlue)
                 Spacer(Modifier.height(16.dp))
-                if (role == "chairperson") {
-                    Button(
-                        onClick = onRequest,
-                        modifier = Modifier.fillMaxWidth().height(48.dp),
-                        shape = RoundedCornerShape(10.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = NavyBlue)
-                    ) {
-                        Text(stringResource(R.string.request_disbursement_button), color = White, fontWeight = SemiBold)
-                    }
-                } else {
+                if (role != "chairperson") {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.Info, null, tint = TextSecondary, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(8.dp))
@@ -259,16 +316,7 @@ fun CurrentDisbursementCard(
 
                 if (disbursement.status == "PENDING") {
                     Spacer(Modifier.height(16.dp))
-                    if (role == "treasurer") {
-                        Button(
-                            onClick = onApprove,
-                            modifier = Modifier.fillMaxWidth().height(48.dp),
-                            shape = RoundedCornerShape(10.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = GreenAccent)
-                        ) {
-                            Text(stringResource(R.string.approve_disbursement_button), color = White, fontWeight = SemiBold)
-                        }
-                        Spacer(Modifier.height(8.dp))
+                    if (canApprove) {
                         OutlinedButton(
                             onClick = onReject,
                             modifier = Modifier.fillMaxWidth().height(48.dp),
@@ -284,12 +332,6 @@ fun CurrentDisbursementCard(
                     Spacer(Modifier.height(12.dp))
                     Box(Modifier.fillMaxWidth().background(RedAccent.copy(alpha = 0.05f), RoundedCornerShape(8.dp)).padding(12.dp)) {
                         Text("${stringResource(R.string.purpose_label)}: ${disbursement.rejectionReason}", color = RedAccent, fontSize = 13.sp)
-                    }
-                    if (role == "chairperson") {
-                        Spacer(Modifier.height(12.dp))
-                        Button(onClick = onRequest, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = NavyBlue)) {
-                            Text(stringResource(R.string.resubmit_request_button))
-                        }
                     }
                 }
             }

@@ -40,19 +40,17 @@ fun AttendanceScreen(
     }
 
     LaunchedEffect(uiState.attendance) {
-        uiState.attendance.forEach {
-            if (!attendanceEntries.containsKey(it.userId)) {
-                attendanceEntries[it.userId] = it.status.uppercase()
+        if (uiState.attendance.isNotEmpty()) {
+            uiState.attendance.forEach {
+                if (!attendanceEntries.containsKey(it.userId) || attendanceEntries[it.userId] == "PENDING") {
+                    attendanceEntries[it.userId] = it.status.uppercase().ifBlank { "PENDING" }
+                }
             }
         }
     }
 
-    // Refresh Local Map if it's empty and we have data
-    if (attendanceEntries.isEmpty() && uiState.attendance.isNotEmpty()) {
-        uiState.attendance.forEach {
-            attendanceEntries[it.userId] = it.status.uppercase()
-        }
-    }
+    // Remove the redundant if(attendanceEntries.isEmpty()...) block below to avoid conflicts
+
 
     LaunchedEffect(uiState.isSuccess) {
         if (uiState.isSuccess) {

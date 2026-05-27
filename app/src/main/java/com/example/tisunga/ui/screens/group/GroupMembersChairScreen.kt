@@ -18,6 +18,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -30,18 +31,36 @@ import com.example.tisunga.ui.navigation.Routes
 import com.example.tisunga.ui.components.TisungaConfirmDialog
 import com.example.tisunga.ui.theme.*
 import com.example.tisunga.viewmodel.GroupViewModel
+import com.example.tisunga.viewmodel.SavingsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun GroupMembersChairScreen(navController: NavController, groupId: String, viewModel: GroupViewModel) {
+fun GroupMembersChairScreen(
+    navController: NavController, 
+    groupId: String, 
+    viewModel: GroupViewModel,
+    savingsViewModel: SavingsViewModel
+) {
     val uiState by viewModel.uiState.collectAsState()
+    val savingsUiState by savingsViewModel.uiState.collectAsState()
     var expandedMemberId by remember { mutableStateOf<String?>(null) }
     
     val currentUserRole = uiState.currentUserRole.uppercase()
 
+    val currentGroupSavings = remember(savingsUiState.groupSavings, groupId) {
+        savingsUiState.groupSavings.find { it.groupId == groupId }
+    }
+
+    LaunchedEffect(uiState.successMessage) {
+        if (uiState.successMessage.contains("removed") || uiState.successMessage.contains("Member deleted")) {
+            savingsViewModel.loadSavingsData(groupId)
+        }
+    }
+
     LaunchedEffect(Unit) {
         viewModel.getGroupDashboard(groupId)
         viewModel.getGroupMembers(groupId)
+        savingsViewModel.loadSavingsData(groupId)
     }
 
     Scaffold(
@@ -121,8 +140,10 @@ fun GroupMembersChairScreen(navController: NavController, groupId: String, viewM
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(sortedMembers) { member ->
+                    val memberSavingsAmount = currentGroupSavings?.memberSavings?.find { it.userId == member.id }?.amount ?: 0.0
                     ChairMemberCard(
                         member = member,
+                        memberSavings = memberSavingsAmount,
                         isExpanded = expandedMemberId == member.id,
                         onExpandClick = {
                             expandedMemberId = if (expandedMemberId == member.id) null else member.id
@@ -144,6 +165,7 @@ fun GroupMembersChairScreen(navController: NavController, groupId: String, viewM
 @Composable
 private fun ChairMemberCard(
     member: User, 
+    memberSavings: Double,
     isExpanded: Boolean, 
     onExpandClick: () -> Unit, 
     currentUserRole: String,
@@ -155,6 +177,8 @@ private fun ChairMemberCard(
 ) {
     val roleLower = member.role.lowercase()
     val isMemberChair = roleLower == "chair" || roleLower == "chairperson"
+    val isMemberSecretary = roleLower == "secretary"
+    val isOfficial = isMemberChair || isMemberSecretary
     val canUserManage = currentUserRole == "CHAIR" || currentUserRole == "CHAIRPERSON" || currentUserRole == "SECRETARY"
     val isMe = member.id == currentUserId
     
@@ -229,7 +253,7 @@ private fun ChairMemberCard(
                             )
                         }
                         MemberActionChip(stringResource(R.string.savings_label), Modifier.weight(1f)) { 
-                            navController.navigate(Routes.CONTRIBUTION_HISTORY.replace("{groupId}", groupId)) 
+                            navController.navigate(Routes.CONTRIBUTION_HISTORY.replace("{groupId}", groupId))
                         }
                         
                         // Role and Manage actions for CHAIR and SECRETARY (cannot manage the Chair)
@@ -267,9 +291,18 @@ private fun ChairMemberCard(
                                     modifier = Modifier.background(White)
                                 ) {
                                     Text(stringResource(R.string.admin_options_header), Modifier.padding(12.dp), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = TextSecondary)
+                                    val hasSavings = memberSavings > 0
+                                    val cannotDeactivate = hasSavings || isOfficial
                                     DropdownMenuItem(
-                                        text = { Text(stringResource(R.string.deactivate_user_option), fontSize = 14.sp) },
-                                        onClick = { showManageMenu = false }
+                                        text = { 
+                                            Text(
+                                                stringResource(R.string.deactivate_user_option), 
+                                                color = if (cannotDeactivate) Color.Gray.copy(alpha = 0.5f) else TextPrimary,
+                                                fontSize = 14.sp
+                                            ) 
+                                        },
+                                        onClick = { showManageMenu = false },
+                                        enabled = !cannotDeactivate
                                     )
                                     DropdownMenuItem(
                                         text = { Text(stringResource(R.string.reset_user_stats_option), fontSize = 14.sp) },
@@ -278,9 +311,18 @@ private fun ChairMemberCard(
                                     
                                     if (currentUserRole == "CHAIR" || currentUserRole == "CHAIRPERSON") {
                                         HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                                        val hasSavings = memberSavings > 0
+                                        val cannotRemove = hasSavings || isOfficial
                                         DropdownMenuItem(
-                                            text = { Text(stringResource(R.string.remove_from_group_option), color = RedAccent, fontSize = 14.sp) },
-                                            onClick = { showManageMenu = false; showDeleteConfirm = true }
+                                            text = { 
+                                                Text(
+                                                    stringResource(R.string.remove_from_group_option), 
+                                                    color = if (cannotRemove) Color.Gray.copy(alpha = 0.5f) else RedAccent,
+                                                    fontSize = 14.sp
+                                                ) 
+                                            },
+                                            onClick = { showManageMenu = false; showDeleteConfirm = true },
+                                            enabled = !cannotRemove
                                         )
                                     }
                                 }
