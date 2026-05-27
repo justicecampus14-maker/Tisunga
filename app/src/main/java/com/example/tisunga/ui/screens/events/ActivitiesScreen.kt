@@ -146,7 +146,7 @@ fun ActivitiesScreen(
                         filter = meetingFilter,
                         onFilterChange = { viewModel.setMeetingFilter(it) },
                         onMeetingClick = { m ->
-                            navController.navigate("meeting_detail/${m.id}")
+                            navController.navigate("meeting_detail/$groupId/${m.id}")
                         }
                     )
                 } else {

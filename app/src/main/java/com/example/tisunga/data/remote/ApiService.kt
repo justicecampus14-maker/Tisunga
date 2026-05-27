@@ -253,21 +253,21 @@ interface ApiService {
         @Body body: Map<String, @JvmSuppressWildcards Any>
     ): Meeting
 
-    @PATCH("groups/{groupId}/meetings/{meetingId}")
+    @PATCH("groups/{groupId}/meetings/{meetingId}/status")
     suspend fun updateMeetingStatus(
         @Path("groupId") groupId: String,
         @Path("meetingId") meetingId: String,
         @Body body: Map<String, String>
     ): Meeting
 
-    @POST("groups/{groupId}/meetings/{meetingId}/attendance")
+    @PATCH("groups/{groupId}/meetings/{meetingId}/attendance")
     suspend fun markAttendance(
         @Path("groupId") groupId: String,
         @Path("meetingId") meetingId: String,
         @Body body: Map<String, @JvmSuppressWildcards Any>
     ): MeetingAttendance
 
-    @POST("groups/{groupId}/meetings/{meetingId}/attendance/bulk")
+    @PATCH("groups/{groupId}/meetings/{meetingId}/attendance")
     suspend fun submitBulkAttendance(
         @Path("groupId") groupId: String,
         @Path("meetingId") meetingId: String,
@@ -280,7 +280,7 @@ interface ApiService {
         @Path("meetingId") meetingId: String
     ): MeetingAttendanceResponse
 
-    @POST("groups/{groupId}/meetings/{meetingId}/reminder")
+    @POST("groups/{groupId}/meetings/{meetingId}/remind")
     suspend fun sendReminder(
         @Path("groupId") groupId: String,
         @Path("meetingId") meetingId: String
