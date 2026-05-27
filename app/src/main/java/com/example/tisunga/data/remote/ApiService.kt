@@ -286,6 +286,14 @@ interface ApiService {
         @Path("meetingId") meetingId: String
     ): ReminderResponse
 
+    @Multipart
+    @POST("groups/{groupId}/meetings/{meetingId}/image")
+    suspend fun uploadMeetingImage(
+        @Path("groupId") groupId: String,
+        @Path("meetingId") meetingId: String,
+        @Part image: MultipartBody.Part
+    ): MeetingDetailResponse
+
     // ── NOTIFICATIONS ────────────────────────────────────────────────────
 
     @GET("notifications")
