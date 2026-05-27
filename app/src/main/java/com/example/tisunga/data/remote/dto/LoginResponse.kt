@@ -9,19 +9,20 @@ import com.example.tisunga.data.model.Group
  * set-password returns the same shape.
  */
 data class LoginResponse(
-    @SerializedName("accessToken")  val accessToken: String = "",
-    @SerializedName("refreshToken") val refreshToken: String = "",
+    @SerializedName("accessToken")  val accessToken: String? = null,
+    @SerializedName("refreshToken") val refreshToken: String? = null,
     @SerializedName("user")         val user: UserPayload? = null
 ) {
-    // Convenience accessors so existing callers keep working
-    val token: String get() = accessToken
+    // Convenience accessors so existing callers keep working.
+    // We return non-null Strings to satisfy ViewModel's UiState.
+    val token: String get() = accessToken ?: ""
     val userId: String get() = user?.id ?: ""
     val userName: String get() = user?.firstName ?: ""
     val userPhone: String get() = user?.phone ?: ""
 }
 
 data class UserPayload(
-    @SerializedName("id")        val id: String,
-    @SerializedName("firstName") val firstName: String,
-    @SerializedName("phone")     val phone: String
+    @SerializedName("id")        val id: String? = null,
+    @SerializedName("firstName") val firstName: String? = null,
+    @SerializedName("phone")     val phone: String? = null
 )

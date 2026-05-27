@@ -107,7 +107,7 @@ class AuthViewModel(private val sessionManager: SessionManager) : ViewModel() {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     isSuccess = true,
-                    token     = response.accessToken,
+                    token     = response.token,
                     userId    = response.userId,
                     userName  = response.userName,
                     userPhone = response.userPhone
@@ -128,7 +128,7 @@ class AuthViewModel(private val sessionManager: SessionManager) : ViewModel() {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     isSuccess = true,
-                    token     = response.accessToken,
+                    token     = response.token,
                     userId    = response.userId,
                     userName  = response.userName,
                     userPhone = response.userPhone
@@ -172,9 +172,14 @@ class AuthViewModel(private val sessionManager: SessionManager) : ViewModel() {
     }
 
     private fun saveSession(response: LoginResponse) {
-        sessionManager.saveAuthToken(response.accessToken)
-        sessionManager.saveRefreshToken(response.refreshToken)
-        sessionManager.saveUserData(response.userId, response.userName, response.userPhone, "MEMBER")
+        sessionManager.saveAuthToken(response.token)
+        sessionManager.saveRefreshToken(response.refreshToken ?: "")
+        sessionManager.saveUserData(
+            response.userId,
+            response.userName,
+            response.userPhone,
+            "MEMBER"
+        )
     }
 
     fun logout() {

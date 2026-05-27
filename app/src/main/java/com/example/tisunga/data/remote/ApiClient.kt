@@ -130,15 +130,14 @@ object ApiClient {
                         val body = refreshResponse.body()
                         if (body != null) {
                             // If the response is success, save tokens
-                            sessionManager?.saveAuthToken(body.accessToken)
-                            sessionManager?.saveRefreshToken(body.refreshToken)
+                            sessionManager?.saveAuthToken(body.token)
+                            sessionManager?.saveRefreshToken(body.refreshToken ?: "")
 
                             return response.request.newBuilder()
-                                .header("Authorization", "Bearer ${body.accessToken}")
+                                .header("Authorization", "Bearer ${body.token}")
                                 .build()
                         }
-                    }
-else {
+                    } else {
                         // Refresh failed, possibly log out user
                         // sessionManager?.clearSession()
                     }

@@ -71,7 +71,7 @@ fun AppDrawerContent(
                     )
                 )
         ) {
-            // Close Button - Positioned carefully at the top end
+            // Close Button
             IconButton(
                 onClick = { scope.launch { drawerState.close() } },
                 modifier = Modifier
@@ -148,20 +148,6 @@ fun AppDrawerContent(
                 scope.launch {
                     drawerState.close()
                     navController.navigate(Routes.SETTINGS)
-                }
-            },
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp),
-            colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
-        )
-
-        NavigationDrawerItem(
-            icon = { Icon(Icons.Default.Palette, contentDescription = null, modifier = Modifier.size(22.dp)) },
-            label = { Text("Theme", fontSize = 15.sp) },
-            selected = false,
-            onClick = {
-                scope.launch {
-                    drawerState.close()
-                    navController.navigate(Routes.THEME)
                 }
             },
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp),
@@ -275,57 +261,6 @@ fun HomeScreen(
 }
 
 @Composable
-fun QuickActionsNoGroup(navController: NavController) {
-    Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-        Surface(
-            shape = RoundedCornerShape(8.dp),
-            color = MaterialTheme.colorScheme.surface
-        ) {
-            @Suppress("DEPRECATION")
-            Text(
-                stringResource(R.string.quick_action_title),
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                fontSize = 14.sp,
-                fontWeight = FontWeight.SemiBold
-            )
-        }
-        Spacer(modifier = Modifier.height(12.dp))
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            QuickActionCard(
-                icon = Icons.Filled.GroupAdd,
-                label = stringResource(R.string.create_group_label),
-                modifier = Modifier.weight(1f),
-                onClick = {
-                    navController.navigate(Routes.CREATE_GROUP_STEP1)
-                }
-            )
-
-            QuickActionCard(
-                icon = Icons.Filled.Search,
-                label = "Join Group",
-                modifier = Modifier.weight(1f),
-                onClick = {
-                    // Logic for joining group
-                }
-            )
-
-            QuickActionCard(
-                icon = Icons.Filled.Help,
-                label = "Help",
-                modifier = Modifier.weight(1f),
-                onClick = {
-                    // Logic for help
-                }
-            )
-        }
-        Spacer(modifier = Modifier.height(20.dp))
-    }
-}
-
-@Composable
 fun GroupInfoCard(group: com.example.tisunga.data.model.Group, lastUpdated: String? = null) {
     var isGroupSavingsVisible by remember { mutableStateOf(false) }
     var isMySavingsVisible by remember { mutableStateOf(false) }
@@ -422,6 +357,7 @@ fun GroupInfoCard(group: com.example.tisunga.data.model.Group, lastUpdated: Stri
                 }
 
                 Column {
+                    @Suppress("DEPRECATION")
                     Text(
                         text = "My Savings",
                         color = Color.White.copy(alpha = 0.7f),
@@ -437,7 +373,7 @@ fun GroupInfoCard(group: com.example.tisunga.data.model.Group, lastUpdated: Stri
                         Text(
                             text = if (isMySavingsVisible) com.example.tisunga.utils.FormatUtils.formatMoney(group.mySavings) else "MWK XXXXXX",
                             color = Color.White,
-                            fontSize = 20.sp,
+                            fontSize = 24.sp,
                             fontWeight = FontWeight.Bold,
                             maxLines = 1,
                             modifier = Modifier.weight(1f)
@@ -771,6 +707,7 @@ fun RecentTransactionsSection(transactions: List<Transaction>, hasGroup: Boolean
             shape = RoundedCornerShape(8.dp),
             color = MaterialTheme.colorScheme.surface
         ) {
+            @Suppress("DEPRECATION")
             Text(
                 text = stringResource(R.string.recent_transactions_title),
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
@@ -918,4 +855,3 @@ fun TransactionRow(transaction: Transaction) {
         }
     }
 }
-

@@ -16,6 +16,7 @@
     <string name="middle_name_label">Middle Name (Optional)</string>
     <string name="last_name_label">Last Name</string>
     <string name="error_fill_all_fields">Please fill all required fields</string>
+    <string name="error_invalid_phone_format">Number must start with 09 or 08 and be 10 digits</string>
     <string name="continue_button">Continue</string>
     <string name="already_have_account_text">Already have an account? </string>
     <string name="signin_link">Sign In</string>

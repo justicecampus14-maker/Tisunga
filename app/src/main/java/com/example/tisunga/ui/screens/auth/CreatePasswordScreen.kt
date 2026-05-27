@@ -39,6 +39,7 @@ fun CreatePasswordScreen(navController: NavController, viewModel: AuthViewModel)
 
     LaunchedEffect(uiState.isSuccess) {
         if (uiState.isSuccess) {
+            // New users are taken to the Home screen after setting their password
             navController.navigate(Routes.HOME) {
                 popUpTo(Routes.WELCOME) { inclusive = true }
             }

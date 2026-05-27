@@ -35,6 +35,7 @@ fun CreateAccountScreen(navController: NavController, viewModel: AuthViewModel) 
     var middleName by remember { mutableStateOf("") }
     var lastName by remember { mutableStateOf("") }
     var showError by remember { mutableStateOf(false) }
+    var phoneError by remember { mutableStateOf("") }
 
     LaunchedEffect(uiState.isSuccess) {
         if (uiState.isSuccess) {
@@ -75,6 +76,7 @@ fun CreateAccountScreen(navController: NavController, viewModel: AuthViewModel) 
                         onValueChange = { input -> 
                             if (input.all { it.isDigit() } && input.length <= 10) {
                                 phone = input
+                                phoneError = ""
                             }
                         },
                         modifier = Modifier.fillMaxWidth(),
@@ -82,14 +84,24 @@ fun CreateAccountScreen(navController: NavController, viewModel: AuthViewModel) 
                         placeholder = { Text(stringResource(R.string.phone_number_placeholder)) },
                         leadingIcon = { Icon(Icons.Default.Phone, contentDescription = null) },
                         colors = OutlinedTextFieldDefaults.colors(
-                            unfocusedBorderColor = DividerColor,
-                            focusedBorderColor = NavyBlue,
+                            unfocusedBorderColor = if (phoneError.isNotEmpty()) RedAccent else DividerColor,
+                            focusedBorderColor = if (phoneError.isNotEmpty()) RedAccent else NavyBlue,
                             unfocusedContainerColor = BackgroundGray,
                             focusedContainerColor = BackgroundGray
                         ),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                        singleLine = true
+                        singleLine = true,
+                        isError = phoneError.isNotEmpty()
                     )
+                    
+                    if (phoneError.isNotEmpty()) {
+                        Text(
+                            text = phoneError,
+                            color = RedAccent,
+                            fontSize = 12.sp,
+                            modifier = Modifier.padding(top = 4.dp, start = 4.dp)
+                        )
+                    }
                     
                     Spacer(modifier = Modifier.height(16.dp))
                     
@@ -143,13 +155,20 @@ fun CreateAccountScreen(navController: NavController, viewModel: AuthViewModel) 
                     
                     Spacer(modifier = Modifier.height(24.dp))
                     
+                    val invalidPhoneMsg = stringResource(R.string.error_invalid_phone_format)
+                    
                     Button(
                         onClick = { 
                             focusManager.clearFocus()
-                            if (phone.length == 10 && firstName.isNotEmpty() && lastName.isNotEmpty()) {
-                                viewModel.register(firstName, middleName, lastName, phone)
+                            val isValidPrefix = phone.startsWith("09") || phone.startsWith("08")
+                            if (phone.length == 10 && isValidPrefix) {
+                                if (firstName.isNotEmpty() && lastName.isNotEmpty()) {
+                                    viewModel.register(firstName, middleName, lastName, phone)
+                                } else {
+                                    showError = true
+                                }
                             } else {
-                                showError = true
+                                phoneError = invalidPhoneMsg
                             }
                         },
                         enabled = phone.length == 10 && firstName.isNotEmpty() && lastName.isNotEmpty() && !uiState.isLoading,
