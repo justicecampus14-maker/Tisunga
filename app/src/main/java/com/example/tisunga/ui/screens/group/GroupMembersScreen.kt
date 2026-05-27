@@ -35,19 +35,26 @@ import com.example.tisunga.ui.navigation.Routes
 import com.example.tisunga.ui.components.TisungaConfirmDialog
 import com.example.tisunga.ui.theme.*
 import com.example.tisunga.viewmodel.GroupViewModel
+import com.example.tisunga.viewmodel.SavingsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GroupMembersScreen(
     navController: NavController,
     groupId: String,
-    viewModel: GroupViewModel
+    viewModel: GroupViewModel,
+    savingsViewModel: SavingsViewModel
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val savingsUiState by savingsViewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val sheetState = rememberModalBottomSheetState()
     var showAddBottomSheet by remember { mutableStateOf(false) }
     
+    val currentGroupSavings = remember(savingsUiState.groupSavings, groupId) {
+        savingsUiState.groupSavings.find { it.groupId == groupId }
+    }
+
     // Sort members: Current User first, then by hierarchy: CHAIRPERSON -> TREASURER -> SECRETARY -> MEMBER
     val sortedMembers = remember(uiState.members, uiState.currentUserId) {
         val hierarchy = listOf("chairperson", "treasurer", "secretary", "member")
@@ -63,10 +70,16 @@ fun GroupMembersScreen(
     LaunchedEffect(groupId) {
         viewModel.getGroupDashboard(groupId)
         viewModel.getGroupMembers(groupId)
+        savingsViewModel.loadSavingsData(groupId)
     }
 
     LaunchedEffect(uiState.successMessage) {
         if (uiState.successMessage.isNotEmpty()) {
+            if (uiState.successMessage.contains("Member added") || 
+                uiState.successMessage.contains("removed") || 
+                uiState.successMessage.contains("Member deleted")) {
+                savingsViewModel.loadSavingsData(groupId)
+            }
             snackbarHostState.showSnackbar(uiState.successMessage)
             viewModel.resetState()
             if (showAddBottomSheet) {
@@ -149,8 +162,10 @@ fun GroupMembersScreen(
                     }
 
                     items(sortedMembers) { member ->
+                        val memberSavingsAmount = currentGroupSavings?.memberSavings?.find { it.userId == member.id }?.amount ?: 0.0
                         MemberRowItem(
                             member = member,
+                            memberSavings = memberSavingsAmount,
                             isChair = uiState.currentUserRole.lowercase() == "chairperson",
                             currentUserId = uiState.currentUserId,
                             onRemove = { viewModel.removeMember(groupId, member.id) },
@@ -360,6 +375,7 @@ fun AddMemberBottomSheetContent(
 @Composable
 fun MemberRowItem(
     member: User,
+    memberSavings: Double,
     isChair: Boolean,
     currentUserId: String,
     onRemove: () -> Unit,
@@ -457,12 +473,21 @@ fun MemberRowItem(
                                 )
                             }
                             HorizontalDivider()
+                            val hasSavings = memberSavings > 0
+                            val isSecretary = member.role.lowercase() == "secretary"
+                            val cannotRemove = hasSavings || isSecretary
                             DropdownMenuItem(
-                                text = { Text(stringResource(R.string.remove_from_group_option), color = Color.Red) },
+                                text = { 
+                                    Text(
+                                        stringResource(R.string.remove_from_group_option), 
+                                        color = if (cannotRemove) Color.Gray.copy(alpha = 0.5f) else Color.Red
+                                    ) 
+                                },
                                 onClick = {
                                     showMenu = false
                                     showDeleteConfirm = true
-                                }
+                                },
+                                enabled = !cannotRemove
                             )
                         }
                     }

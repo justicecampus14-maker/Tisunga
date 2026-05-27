@@ -24,6 +24,8 @@ data class MeetingDetailResponse(
     @SerializedName("status")            val status: String,
     @SerializedName("notes")             val notes: String? = null,
     @SerializedName("image")             val image: String? = null,
+    @SerializedName("imageUrl")          val imageUrl: String? = null,
+    @SerializedName("images")            val images: List<String> = emptyList(),
     @SerializedName("creatorName")       val creatorName: String? = null,
     @SerializedName("attendance")        val attendance: List<MeetingAttendance> = emptyList(),
     @SerializedName("presentCount")      val presentCount: Int = 0,
