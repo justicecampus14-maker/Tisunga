@@ -9,10 +9,6 @@ import com.example.tisunga.data.model.MeetingAttendance
 import com.example.tisunga.data.model.AttendanceSummary
 import com.google.gson.annotations.SerializedName
 
-// ── Auth ─────────────────────────────────────────────────────────────────
-
-// ── Groups ────────────────────────────────────────────────────────────────
-
 // ── Meetings ──────────────────────────────────────────────────────────────
 
 data class MeetingDetailResponse(
@@ -23,6 +19,7 @@ data class MeetingDetailResponse(
     @SerializedName("scheduledAt")       val scheduledAt: String,
     @SerializedName("status")            val status: String,
     @SerializedName("notes")             val notes: String? = null,
+    @SerializedName("imageUrl")          val imageUrl: String? = null, // Fixed: image -> imageUrl
     @SerializedName("creatorName")       val creatorName: String? = null,
     @SerializedName("attendance")        val attendance: List<MeetingAttendance> = emptyList(),
     @SerializedName("presentCount")      val presentCount: Int = 0,
@@ -41,7 +38,7 @@ data class BulkAttendanceRequest(
 
 data class AttendanceEntry(
     @SerializedName("userId") val userId: String,
-    @SerializedName("status") val status: String,   // "PRESENT" | "ABSENT" | "EXCUSED"
+    @SerializedName("status") val status: String,   // "PRESENT" | "ABSENT" | "EXCUSED" | "LATE"
     @SerializedName("note")   val note: String? = null
 )
 
@@ -53,6 +50,8 @@ data class BulkAttendanceResponse(
 data class ReminderResponse(
     @SerializedName("sentTo") val sentTo: Int
 )
+
+// ── Disbursements ─────────────────────────────────────────────────────────
 
 data class DisbursementRequestResponse(
     @SerializedName("id")            val id: String,
@@ -86,6 +85,8 @@ data class MemberSharePayoutDto(
     @SerializedName("shareAmount")   val shareAmount: Double,
     @SerializedName("status")        val status: String
 )
+
+// ── Events ────────────────────────────────────────────────────────────────
 
 data class CreateEventRequest(
     @SerializedName("type")             val type: String,
@@ -142,4 +143,3 @@ data class RepayLoanResponse(
     @SerializedName("remainingBalance") val remainingBalance: Double,
     @SerializedName("status")           val status: String
 )
-

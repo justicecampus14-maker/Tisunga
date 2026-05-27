@@ -23,5 +23,6 @@ data class AttendanceSummary(
     val present: Int,
     val absent: Int,
     val excused: Int,
+    val late: Int = 0, // Added late
     val attendancePercent: Int
 )
