@@ -267,7 +267,7 @@ interface ApiService {
         @Body body: Map<String, @JvmSuppressWildcards Any>
     ): MeetingAttendance
 
-    @POST("groups/{groupId}/meetings/{meetingId}/attendance/bulk")
+    @POST("groups/{groupId}/meetings/{meetingId}/attendance")
     suspend fun submitBulkAttendance(
         @Path("groupId") groupId: String,
         @Path("meetingId") meetingId: String,
@@ -285,6 +285,14 @@ interface ApiService {
         @Path("groupId") groupId: String,
         @Path("meetingId") meetingId: String
     ): ReminderResponse
+
+    @Multipart
+    @POST("groups/{groupId}/meetings/{meetingId}/image")
+    suspend fun uploadMeetingImage(
+        @Path("groupId") groupId: String,
+        @Path("meetingId") meetingId: String,
+        @Part image: MultipartBody.Part
+    ): MeetingDetailResponse
 
     // ── NOTIFICATIONS ────────────────────────────────────────────────────
 

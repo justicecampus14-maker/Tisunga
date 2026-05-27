@@ -48,9 +48,6 @@ fun ActivitiesScreen(
     viewModel: ActivitiesViewModel
 ) {
     val context = LocalContext.current
-    val navBackStackEntryState = navController.currentBackStackEntryAsState()
-    val navBackStackEntry = navBackStackEntryState.value
-
     val selectedTabState = remember { mutableIntStateOf(0) }
     val selectedTab = selectedTabState.intValue
     
@@ -80,39 +77,45 @@ fun ActivitiesScreen(
     }
 
     Scaffold(
+        containerColor = BackgroundGray,
         topBar = {
-            Column(modifier = Modifier.background(NavyBlue)) {
-                CenterAlignedTopAppBar(
-                    title = { Text(stringResource(R.string.events_title), color = Color.White, fontWeight = FontWeight.Bold) },
-                    navigationIcon = {
-                        IconButton(onClick = { navController.popBackStack() }) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
-                        }
-                    },
-                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = NavyBlue)
-                )
-                TabRow(
-                    selectedTabIndex = selectedTab,
-                    containerColor = NavyBlue,
-                    contentColor = Color.White,
-                    indicator = { tabPositions ->
-                        TabRowDefaults.SecondaryIndicator(
-                            Modifier.tabIndicatorOffset(tabPositions[selectedTab]),
-                            color = Color.White
+            Surface(
+                shadowElevation = 3.dp,
+                color = Color.White
+            ) {
+                Column {
+                    CenterAlignedTopAppBar(
+                        title = { Text(stringResource(R.string.events_title), color = NavyBlue, fontWeight = FontWeight.Bold) },
+                        navigationIcon = {
+                            IconButton(onClick = { navController.popBackStack() }) {
+                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = NavyBlue)
+                            }
+                        },
+                        colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.White)
+                    )
+                    TabRow(
+                        selectedTabIndex = selectedTab,
+                        containerColor = Color.White,
+                        contentColor = NavyBlue,
+                        indicator = { tabPositions ->
+                            TabRowDefaults.SecondaryIndicator(
+                                Modifier.tabIndicatorOffset(tabPositions[selectedTab]),
+                                color = NavyBlue
+                            )
+                        },
+                        divider = {}
+                    ) {
+                        Tab(
+                            selected = selectedTab == 0,
+                            onClick = { selectedTabState.intValue = 0 },
+                            text = { Text(stringResource(R.string.tab_meetings), fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Normal) }
                         )
-                    },
-                    divider = {}
-                ) {
-                    Tab(
-                        selected = selectedTab == 0,
-                        onClick = { selectedTabState.intValue = 0 },
-                        text = { Text(stringResource(R.string.tab_meetings), fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Normal) }
-                    )
-                    Tab(
-                        selected = selectedTab == 1,
-                        onClick = { selectedTabState.intValue = 1 },
-                        text = { Text(stringResource(R.string.tab_other_events), fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Normal) }
-                    )
+                        Tab(
+                            selected = selectedTab == 1,
+                            onClick = { selectedTabState.intValue = 1 },
+                            text = { Text(stringResource(R.string.tab_other_events), fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Normal) }
+                        )
+                    }
                 }
             }
         },
@@ -146,7 +149,7 @@ fun ActivitiesScreen(
                         filter = meetingFilter,
                         onFilterChange = { viewModel.setMeetingFilter(it) },
                         onMeetingClick = { m ->
-                            navController.navigate("meeting_detail/${m.id}")
+                            navController.navigate("meeting_detail/$groupId/${m.id}")
                         }
                     )
                 } else {
@@ -191,29 +194,44 @@ fun MeetingsContent(
     onMeetingClick: (Meeting) -> Unit
 ) {
     Column {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState())
-                .padding(8.dp)
+        Spacer(Modifier.height(4.dp))
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            color = Color.White,
+            shadowElevation = 1.dp
         ) {
-            listOf("ALL", "UPCOMING", "CLOSED").forEach {
-                val labelId = when(it) {
-                    "ALL" -> R.string.filter_all_caps
-                    "UPCOMING" -> R.string.filter_upcoming
-                    "CLOSED" -> R.string.filter_closed
-                    else -> R.string.filter_all_caps
-                }
-                FilterChip(
-                    selected = filter == it,
-                    onClick = { onFilterChange(it) },
-                    label = { Text(stringResource(labelId)) },
-                    modifier = Modifier.padding(end = 6.dp),
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = NavyBlue,
-                        selectedLabelColor = Color.White
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState())
+                    .padding(vertical = 10.dp, horizontal = 16.dp)
+            ) {
+                listOf("ALL", "UPCOMING", "CLOSED").forEach {
+                    val labelId = when(it) {
+                        "ALL" -> R.string.filter_all_caps
+                        "UPCOMING" -> R.string.filter_upcoming
+                        "CLOSED" -> R.string.filter_closed
+                        else -> R.string.filter_all_caps
+                    }
+                    FilterChip(
+                        selected = filter == it,
+                        onClick = { onFilterChange(it) },
+                        label = { Text(stringResource(labelId)) },
+                        modifier = Modifier.padding(end = 8.dp),
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = NavyBlue,
+                            selectedLabelColor = Color.White,
+                            containerColor = BackgroundGray.copy(alpha = 0.5f),
+                            labelColor = NavyBlue
+                        ),
+                        border = FilterChipDefaults.filterChipBorder(
+                            enabled = true,
+                            selected = filter == it,
+                            borderColor = Color.Transparent,
+                            selectedBorderColor = NavyBlue
+                        )
                     )
-                )
+                }
             }
         }
 
@@ -323,29 +341,44 @@ fun EventsContent(
     onFilterChange: (String) -> Unit
 ) {
     Column {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState())
-                .padding(8.dp)
+        Spacer(Modifier.height(4.dp))
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            color = Color.White,
+            shadowElevation = 1.dp
         ) {
-            listOf("ALL", "UPCOMING", "CLOSED").forEach {
-                val labelId = when(it) {
-                    "ALL" -> R.string.filter_all_caps
-                    "UPCOMING" -> R.string.filter_upcoming
-                    "CLOSED" -> R.string.filter_closed
-                    else -> R.string.filter_all_caps
-                }
-                FilterChip(
-                    selected = filter == it,
-                    onClick = { onFilterChange(it) },
-                    label = { Text(stringResource(labelId)) },
-                    modifier = Modifier.padding(end = 6.dp),
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = NavyBlue,
-                        selectedLabelColor = Color.White
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState())
+                    .padding(vertical = 10.dp, horizontal = 16.dp)
+            ) {
+                listOf("ALL", "UPCOMING", "CLOSED").forEach {
+                    val labelId = when(it) {
+                        "ALL" -> R.string.filter_all_caps
+                        "UPCOMING" -> R.string.filter_upcoming
+                        "CLOSED" -> R.string.filter_closed
+                        else -> R.string.filter_all_caps
+                    }
+                    FilterChip(
+                        selected = filter == it,
+                        onClick = { onFilterChange(it) },
+                        label = { Text(stringResource(labelId)) },
+                        modifier = Modifier.padding(end = 8.dp),
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = NavyBlue,
+                            selectedLabelColor = Color.White,
+                            containerColor = BackgroundGray.copy(alpha = 0.5f),
+                            labelColor = NavyBlue
+                        ),
+                        border = FilterChipDefaults.filterChipBorder(
+                            enabled = true,
+                            selected = filter == it,
+                            borderColor = Color.Transparent,
+                            selectedBorderColor = NavyBlue
+                        )
                     )
-                )
+                }
             }
         }
 

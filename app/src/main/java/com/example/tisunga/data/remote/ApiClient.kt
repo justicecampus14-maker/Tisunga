@@ -94,23 +94,43 @@ object ApiClient {
     }
 
     private class TokenAuthenticator : Authenticator {
+        @Volatile
+        private var isRefreshing = false
+
         override fun authenticate(route: Route?, response: Response): Request? {
+            // To avoid infinite loops, if the failed request was already a refresh attempt, stop.
+            if (response.request.url.encodedPath.contains("auth/refresh")) {
+                return null
+            }
+
             synchronized(this) {
                 val refreshToken = sessionManager?.fetchRefreshToken()
                 if (refreshToken.isNullOrBlank()) return null
 
-                // To avoid infinite loops, if the failed request was already a refresh attempt, stop.
-                if (response.request.url.encodedPath.contains("auth/refresh")) {
-                    return null
+                val currentToken = sessionManager?.fetchAuthToken()
+                // If the token has already been refreshed by another thread, use it
+                if (response.request.header("Authorization") != "Bearer $currentToken") {
+                    return response.request.newBuilder()
+                        .header("Authorization", "Bearer $currentToken")
+                        .build()
+                }
+
+                if (isRefreshing) {
+                    // Wait for the other thread to finish refreshing if necessary
+                    // but since this is synchronous, synchronized block already handles it.
                 }
 
                 try {
+                    isRefreshing = true
+                    
                     // We need a separate retrofit instance without the authenticator to avoid loops
                     val logging = HttpLoggingInterceptor().apply {
                         level = HttpLoggingInterceptor.Level.BODY
                     }
                     val refreshClient = OkHttpClient.Builder()
                         .addInterceptor(logging)
+                        .connectTimeout(15, TimeUnit.SECONDS)
+                        .readTimeout(15, TimeUnit.SECONDS)
                         .build()
 
                     val refreshRetrofit = Retrofit.Builder()
@@ -137,12 +157,11 @@ object ApiClient {
                                 .header("Authorization", "Bearer ${body.token}")
                                 .build()
                         }
-                    } else {
-                        // Refresh failed, possibly log out user
-                        // sessionManager?.clearSession()
                     }
                 } catch (e: Exception) {
                     e.printStackTrace()
+                } finally {
+                    isRefreshing = false
                 }
 
                 return null

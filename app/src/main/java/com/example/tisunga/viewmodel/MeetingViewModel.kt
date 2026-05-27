@@ -11,6 +11,13 @@ import com.example.tisunga.data.remote.dto.AttendanceEntry
 import com.example.tisunga.data.remote.dto.BulkAttendanceRequest
 import com.example.tisunga.data.remote.dto.MeetingDetailResponse
 import com.example.tisunga.utils.SessionManager
+import android.content.Context
+import android.net.Uri
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
+import java.io.File
+import java.io.FileOutputStream
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -150,6 +157,108 @@ class MeetingViewModel(
         }
     }
 
+    fun completeMeeting(groupId: String, meetingId: String, notes: String, imageUri: Uri?, context: Context) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = "")
+            try {
+                // 1. Update status and notes
+                val body = mapOf("status" to "COMPLETED", "notes" to notes)
+                api.updateMeetingStatus(groupId, meetingId, body)
+
+                // 2. Upload image if present
+                if (imageUri != null) {
+                    val file = uriToFile(imageUri, context)
+                    val requestFile = file.asRequestBody("image/*".toMediaTypeOrNull())
+                    val imagePart = MultipartBody.Part.createFormData("image", file.name, requestFile)
+                    api.uploadMeetingImage(groupId, meetingId, imagePart)
+                }
+
+                // 3. Refresh full meeting detail
+                val updatedMeeting = api.getMeeting(groupId, meetingId)
+                
+                // Update meetings list for the summary view
+                val meetings = _uiState.value.meetings.map {
+                    if (it.id == meetingId) {
+                        it.copy(
+                            status = updatedMeeting.status,
+                            presentCount = updatedMeeting.presentCount,
+                            totalCount = updatedMeeting.totalCount,
+                            attendancePercent = updatedMeeting.attendancePercent
+                        )
+                    } else it
+                }
+
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    isSuccess = true,
+                    meetings = meetings,
+                    selectedMeeting = updatedMeeting,
+                    attendance = updatedMeeting.attendance,
+                    successMessage = "Meeting completed and notes saved"
+                )
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    errorMessage = e.message ?: "Failed to complete meeting"
+                )
+            }
+        }
+    }
+
+    fun uploadMeetingImage(groupId: String, meetingId: String, uri: Uri, context: Context) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = "")
+            try {
+                val file = uriToFile(uri, context)
+                val requestFile = file.asRequestBody("image/*".toMediaTypeOrNull())
+                val body = MultipartBody.Part.createFormData("image", file.name, requestFile)
+                
+                val updatedMeeting = api.uploadMeetingImage(groupId, meetingId, body)
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    isSuccess = true,
+                    selectedMeeting = updatedMeeting,
+                    successMessage = "Meeting image uploaded successfully"
+                )
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    errorMessage = e.message ?: "Failed to upload image"
+                )
+            }
+        }
+    }
+
+    private fun uriToFile(uri: Uri, context: Context): File {
+        val file = File(context.cacheDir, "meeting_${System.currentTimeMillis()}.jpg")
+        context.contentResolver.openInputStream(uri)?.use { input ->
+            FileOutputStream(file).use { output ->
+                input.copyTo(output)
+            }
+        }
+        return file
+    }
+
+    fun updateMeetingNotes(groupId: String, meetingId: String, notes: String) {
+        viewModelScope.launch {
+            try {
+                val body = mapOf("notes" to notes)
+                api.updateMeetingStatus(groupId, meetingId, body)
+                
+                // Update local state without full refresh if possible, or just refresh
+                val updatedMeeting = api.getMeeting(groupId, meetingId)
+                _uiState.value = _uiState.value.copy(
+                    selectedMeeting = updatedMeeting,
+                    successMessage = "Notes updated"
+                )
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    errorMessage = e.message ?: "Failed to update notes"
+                )
+            }
+        }
+    }
+
     fun updateMeetingAgenda(groupId: String, meetingId: String, agenda: String) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = "")
@@ -209,10 +318,22 @@ class MeetingViewModel(
                 val result = api.submitBulkAttendance(
                     groupId, meetingId, BulkAttendanceRequest(entries)
                 )
-                // Refresh meeting details so that MeetingDetailScreen and others have fresh data
+                
+                // Immediately update local state from result if possible, 
+                // but we also need the full meeting object for other fields.
+                // We'll perform the refresh call, but we can optimize by merging the result.
                 val updatedMeeting = api.getMeeting(groupId, meetingId)
                 
-                // Update meetings list for the summary view
+                _uiState.value = _uiState.value.copy(
+                    isLoading       = false,
+                    isSuccess       = true,
+                    selectedMeeting = updatedMeeting,
+                    attendance      = updatedMeeting.attendance,
+                    successMessage  = "Attendance saved. ${result.presentCount} present."
+                )
+
+                // Update the meetings list in the background or separately if needed, 
+                // but for now, prioritize the current screen's state.
                 val meetings = _uiState.value.meetings.map {
                     if (it.id == meetingId) {
                         it.copy(
@@ -222,15 +343,8 @@ class MeetingViewModel(
                         )
                     } else it
                 }
+                _uiState.value = _uiState.value.copy(meetings = meetings)
                 
-                _uiState.value = _uiState.value.copy(
-                    isLoading       = false,
-                    isSuccess       = true,
-                    meetings        = meetings,
-                    selectedMeeting = updatedMeeting,
-                    attendance      = updatedMeeting.attendance,
-                    successMessage  = "Attendance saved. ${result.presentCount} present."
-                )
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading    = false,
