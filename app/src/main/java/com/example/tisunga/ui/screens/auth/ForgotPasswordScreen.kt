@@ -29,6 +29,7 @@ import com.example.tisunga.viewmodel.AuthViewModel
 fun ForgotPasswordScreen(navController: NavController, viewModel: AuthViewModel) {
     val uiState by viewModel.uiState.collectAsState()
     var phone by remember { mutableStateOf("") }
+    var phoneError by remember { mutableStateOf("") }
 
     LaunchedEffect(uiState.isSuccess) {
         if (uiState.isSuccess) {
@@ -85,6 +86,7 @@ fun ForgotPasswordScreen(navController: NavController, viewModel: AuthViewModel)
                         onValueChange = { input -> 
                             if (input.all { it.isDigit() } && input.length <= 10) {
                                 phone = input
+                                phoneError = ""
                             }
                         },
                         modifier = Modifier.fillMaxWidth(),
@@ -98,21 +100,36 @@ fun ForgotPasswordScreen(navController: NavController, viewModel: AuthViewModel)
                             }
                         },
                         colors = OutlinedTextFieldDefaults.colors(
-                            unfocusedBorderColor = DividerColor,
-                            focusedBorderColor = NavyBlue,
+                            unfocusedBorderColor = if (phoneError.isNotEmpty()) RedAccent else DividerColor,
+                            focusedBorderColor = if (phoneError.isNotEmpty()) RedAccent else NavyBlue,
                             unfocusedContainerColor = BackgroundGray,
                             focusedContainerColor = BackgroundGray
                         ),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                        singleLine = true
+                        singleLine = true,
+                        isError = phoneError.isNotEmpty()
                     )
+                    
+                    if (phoneError.isNotEmpty()) {
+                        Text(
+                            text = phoneError,
+                            color = RedAccent,
+                            fontSize = 12.sp,
+                            modifier = Modifier.padding(top = 4.dp, start = 4.dp)
+                        )
+                    }
                     
                     Spacer(modifier = Modifier.height(32.dp))
                     
+                    val invalidPhoneMsg = stringResource(R.string.error_invalid_phone_format)
+
                     Button(
                         onClick = { 
-                            if (phone.length == 10) {
+                            val isValidPrefix = phone.startsWith("09") || phone.startsWith("08")
+                            if (phone.length == 10 && isValidPrefix) {
                                 viewModel.forgotPassword(phone)
+                            } else {
+                                phoneError = invalidPhoneMsg
                             }
                         },
                         enabled = phone.length == 10 && !uiState.isLoading,

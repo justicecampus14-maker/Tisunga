@@ -1,5 +1,6 @@
 package com.example.tisunga.ui.screens.loans
 
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -19,7 +20,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.animation.animateContentSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -30,13 +30,11 @@ import com.example.tisunga.ui.navigation.Routes
 import com.example.tisunga.ui.screens.home.AppDrawerContent
 import com.example.tisunga.ui.screens.home.HomeHeader
 import com.example.tisunga.ui.theme.*
+import com.example.tisunga.utils.FormatUtils
 import com.example.tisunga.viewmodel.HomeViewModel
 import com.example.tisunga.viewmodel.LoanViewModel
 import com.example.tisunga.viewmodel.NotificationViewModel
-import com.example.tisunga.utils.FormatUtils
 import kotlinx.coroutines.launch
-import java.util.Locale
-import java.util.Locale.filter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -88,10 +86,12 @@ fun AllLoansScreen(
     val pendingMyLoan = uiState.myLoans.firstOrNull { it.status.uppercase() == "PENDING" }
 
     // Reject dialog
-
     if (rejectingLoanId != null) {
         AlertDialog(
-            onDismissRequest = { rejectingLoanId = null },
+            onDismissRequest = { 
+                rejectingLoanId = null 
+                rejectReason = ""
+            },
             icon = {
                 Icon(Icons.Default.DoNotDisturb, null,
                     tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(32.dp))
@@ -122,12 +122,13 @@ fun AllLoansScreen(
                 ) { Text(stringResource(R.string.reject_button_label), color = Color.White) }
             },
             dismissButton = {
-                OutlinedButton(onClick = { rejectingLoanId = null; rejectReason = "" }) { Text(stringResource(R.string.cancel_button)) }
+                OutlinedButton(onClick = { 
+                    rejectingLoanId = null
+                    rejectReason = "" 
+                }) { Text(stringResource(R.string.cancel_button)) }
             }
         )
     }
-
-    // Screen 
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -166,7 +167,6 @@ fun AllLoansScreen(
                     .padding(padding)
                     .verticalScroll(rememberScrollState())
             ) {
-                // Loading 
                 if (uiState.isLoading) {
                     LinearProgressIndicator(
                         modifier = Modifier.fillMaxWidth(),
@@ -174,7 +174,6 @@ fun AllLoansScreen(
                     )
                 }
 
-                //  Section: Leader Balance Card (CHAIR / SECRETARY / TREASURER) 
                 if (isLeader && currentGroup != null) {
                     GroupBalanceCard(
                         totalSavings = currentGroup.totalSavings,
@@ -183,7 +182,6 @@ fun AllLoansScreen(
                     Spacer(Modifier.height(8.dp))
                 }
 
-                // ── Section: Pending Approvals (CHAIR / SECRETARY only) ────────
                 if (canApprove && pendingLoans.isNotEmpty()) {
                     SectionHeader(
                         title   = stringResource(R.string.pending_approvals_title),
@@ -207,7 +205,6 @@ fun AllLoansScreen(
                     Spacer(Modifier.height(8.dp))
                 }
 
-                //Section: My Loan status 
                 SectionHeader(
                     title  = stringResource(R.string.my_loan_title),
                     action = if (uiState.myLoans.isNotEmpty()) Pair(stringResource(R.string.all_loans_link)) {
@@ -235,7 +232,6 @@ fun AllLoansScreen(
                     }
                 }
 
-                // Section: Group Loan Activity 
                 val activeGroupLoans = uiState.groupLoans.filter { it.status.uppercase() == "ACTIVE" }
                 if (activeGroupLoans.isNotEmpty()) {
                     Spacer(Modifier.height(8.dp))
@@ -266,8 +262,6 @@ fun AllLoansScreen(
         }
     }
 }
-
-//Section Header
 
 @Composable
 fun GroupBalanceCard(totalSavings: Double, actualAvailable: Double) {
@@ -301,7 +295,7 @@ fun GroupBalanceCard(totalSavings: Double, actualAvailable: Double) {
                         fontSize = 12.sp
                     )
                     Text(
-                        text = com.example.tisunga.utils.FormatUtils.formatMoney(totalSavings),
+                        text = FormatUtils.formatMoney(totalSavings),
                         color = Color.White,
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold
@@ -315,7 +309,7 @@ fun GroupBalanceCard(totalSavings: Double, actualAvailable: Double) {
                         fontSize = 12.sp
                     )
                     Text(
-                        text = com.example.tisunga.utils.FormatUtils.formatMoney(actualAvailable),
+                        text = FormatUtils.formatMoney(actualAvailable),
                         color = Color.White,
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold
@@ -364,8 +358,6 @@ private fun SectionHeader(
     }
 }
 
-// Pending Approval Card (for CHAIR / SECRETARY) 
-
 @Composable
 private fun PendingApprovalCard(
     loan: Loan,
@@ -386,8 +378,6 @@ private fun PendingApprovalCard(
         elevation = CardDefaults.cardElevation(2.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-
-            // Borrower + amount row
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
@@ -402,10 +392,10 @@ private fun PendingApprovalCard(
                         val last = loan.borrower?.lastName?.replace("null", "", true)?.trim() ?: ""
                         val fullName = "$first $last".trim()
 
-                        if (fullName.isNotEmpty()) fullName
-                        else loan.borrowerName?.replace("null", "", true)?.trim()?.ifEmpty { "Member" } ?: "Member"
+                        fullName.ifEmpty {
+                            loan.borrowerName?.replace("null", "", true)?.trim()?.ifEmpty { "Member" } ?: "Member"
+                        }
                     }
-                    // Initials avatar
 
                     val initials = cleanedBorrowerName.split(" ")
                         .filter { it.isNotEmpty() }
@@ -421,7 +411,6 @@ private fun PendingApprovalCard(
                             color = MaterialTheme.colorScheme.primary, fontSize = 14.sp)
                     }
                     Column(modifier = Modifier.weight(1f)) {
-
                         Text(
                             cleanedBorrowerName,
                             fontWeight = FontWeight.Bold,
@@ -476,7 +465,6 @@ private fun PendingApprovalCard(
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = MaterialTheme.colorScheme.outlineVariant)
 
-            // Loan details row
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -489,7 +477,6 @@ private fun PendingApprovalCard(
 
             Spacer(Modifier.height(14.dp))
 
-            // Action buttons
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -529,8 +516,6 @@ private fun PendingApprovalCard(
         }
     }
 }
-
-// Active Loan Card (borrower's own active loan
 
 @Composable
 private fun ActiveLoanCard(loan: Loan, onRepayClick: () -> Unit) {
@@ -580,7 +565,6 @@ private fun ActiveLoanCard(loan: Loan, onRepayClick: () -> Unit) {
 
             Spacer(Modifier.height(16.dp))
 
-            // Progress bar
             LinearProgressIndicator(
                 progress   = { pct },
                 modifier   = Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)),
@@ -598,7 +582,6 @@ private fun ActiveLoanCard(loan: Loan, onRepayClick: () -> Unit) {
 
             Spacer(Modifier.height(16.dp))
 
-            // Approver row
             val cleanedApprover = remember(loan.approverName) {
                 loan.approverName?.replace("null", "", true)?.trim()
             }
@@ -629,8 +612,6 @@ private fun ActiveLoanCard(loan: Loan, onRepayClick: () -> Unit) {
     }
 }
 
-// Pending Own Loan Card
-
 @Composable
 private fun PendingOwnLoanCard(loan: Loan) {
     Card(
@@ -660,8 +641,6 @@ private fun PendingOwnLoanCard(loan: Loan) {
         }
     }
 }
-
-//No Loan Card
 
 @Composable
 private fun NoLoanCard(hasGroup: Boolean, onApply: () -> Unit) {
@@ -700,10 +679,6 @@ private fun NoLoanCard(hasGroup: Boolean, onApply: () -> Unit) {
         }
     }
 }
-
-
-// Group Loan Summary Card (read-only, used in AllLoansScreen overview
-// Full card with approve/reject is in GroupLoansScreen → FullGroupLoanCard
 
 @Composable
 fun GroupLoanCard(loan: Loan) {
@@ -744,8 +719,9 @@ fun GroupLoanCard(loan: Loan) {
                         val last = loan.borrower?.lastName?.replace("null", "", true)?.trim() ?: ""
                         val fullName = "$first $last".trim()
 
-                        if (fullName.isNotEmpty()) fullName
-                        else loan.borrowerName?.replace("null", "", true)?.trim()?.ifEmpty { defaultName } ?: defaultName
+                        fullName.ifEmpty {
+                            loan.borrowerName?.replace("null", "", true)?.trim()?.ifEmpty { defaultName } ?: defaultName
+                        }
                     }
                     Text(
                         cleanedBorrowerName,
@@ -760,8 +736,9 @@ fun GroupLoanCard(loan: Loan) {
                         val last = loan.approver?.lastName?.replace("null", "", true)?.trim() ?: ""
                         val fullName = "$first $last".trim()
                         
-                        if (fullName.isNotEmpty()) fullName
-                        else loan.approverName?.replace("null", "", true)?.trim()?.ifEmpty { "System" } ?: "System"
+                        fullName.ifEmpty {
+                            loan.approverName?.replace("null", "", true)?.trim()?.ifEmpty { "System" } ?: "System"
+                        }
                     }
                     if (loan.status.uppercase() != "PENDING") {
                         val actionText = when (loan.status.uppercase()) {
@@ -823,28 +800,28 @@ fun GroupLoanCard(loan: Loan) {
 
             if (expanded) {
                 Spacer(Modifier.height(10.dp))
-                        Surface(
-                            color = BackgroundGray,
-                            shape = RoundedCornerShape(8.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Column(modifier = Modifier.padding(10.dp)) {
-                                Text(
-                                    text = stringResource(R.string.applied_on_label, FormatUtils.formatDateTime(loan.createdAt)),
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                if (!loan.purpose.isNullOrBlank()) {
-                                    Spacer(Modifier.height(4.dp))
-                                    Text(
-                                        text = loan.purpose,
-                                        fontSize = 12.sp,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            }
+                Surface(
+                    color = BackgroundGray,
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(10.dp)) {
+                        Text(
+                            text = stringResource(R.string.applied_on_label, FormatUtils.formatDateTime(loan.createdAt)),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        if (!loan.purpose.isNullOrBlank()) {
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                text = loan.purpose,
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
+                    }
+                }
             }
 
             Spacer(Modifier.height(8.dp))
@@ -882,31 +859,10 @@ fun GroupLoanCard(loan: Loan) {
     }
 }
 
-//  Reusable helpers (also used by GroupLoansScreen)
-
 @Composable
 fun LoanDetail(label: String, value: String) {
     Column(horizontalAlignment = Alignment.Start) {
         Text(label, fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(value, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
-    }
-}
-
-@Composable
-fun TabItem(label: String, isSelected: Boolean, onClick: () -> Unit) {
-    Surface(
-        modifier        = Modifier.width(85.dp).height(36.dp).clickable { onClick() },
-        shape           = RoundedCornerShape(8.dp),
-        color           = if (isSelected) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
-        shadowElevation = if (isSelected) 2.dp else 0.dp
-    ) {
-        Box(contentAlignment = Alignment.Center) {
-            Text(
-                label,
-                fontSize   = 13.sp,
-                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                color      = if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
     }
 }

@@ -17,10 +17,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.tisunga.R
 import com.example.tisunga.data.remote.dto.MembershipResponse
 import com.example.tisunga.ui.navigation.Routes
 import com.example.tisunga.ui.theme.*
@@ -111,6 +113,8 @@ fun AddMembersScreen(
             // Search Section
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    val isPhoneValid = phoneSearch.length == 10 && (phoneSearch.startsWith("09") || phoneSearch.startsWith("08"))
+                    
                     Text("FIND MEMBER", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = TextSecondary, letterSpacing = 1.sp)
                     OutlinedTextField(
                         value = phoneSearch,
@@ -123,10 +127,10 @@ fun AddMembersScreen(
                                 CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp, color = NavyBlue)
                             } else {
                                 TextButton(
-                                    onClick = { if (phoneSearch.length >= 9) viewModel.searchMemberByPhone(phoneSearch) }, 
-                                    enabled = phoneSearch.length >= 9 && !uiState.isLoading
+                                    onClick = { if (isPhoneValid) viewModel.searchMemberByPhone(phoneSearch) }, 
+                                    enabled = isPhoneValid && !uiState.isLoading
                                 ) {
-                                    Text("SEARCH", fontWeight = FontWeight.Bold, color = if (phoneSearch.length >= 9) NavyBlue else Color.LightGray)
+                                    Text("SEARCH", fontWeight = FontWeight.Bold, color = if (isPhoneValid) NavyBlue else Color.LightGray)
                                 }
                             }
                         },
@@ -137,7 +141,12 @@ fun AddMembersScreen(
                             focusedBorderColor = NavyBlue,
                             unfocusedContainerColor = White,
                             focusedContainerColor = White
-                        )
+                        ),
+                        supportingText = {
+                            if (phoneSearch.isNotEmpty() && !isPhoneValid && phoneSearch.length == 10) {
+                                Text("Number must start with 09 or 08", color = RedAccent)
+                            }
+                        }
                     )
                 }
             }
@@ -158,7 +167,7 @@ fun AddMembersScreen(
                                 Icon(Icons.Default.Info, null, tint = RedAccent)
                                 Spacer(modifier = Modifier.width(12.dp))
                                 Text(
-                                    text = "$phoneSearch already registered",
+                                    text = stringResource(R.string.member_already_in_group_msg, result.groupName ?: "this group"),
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 15.sp,
                                     color = RedAccent

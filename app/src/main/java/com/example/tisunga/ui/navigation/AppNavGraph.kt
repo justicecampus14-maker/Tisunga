@@ -140,7 +140,7 @@ fun AppNavGraph(
             arguments = listOf(navArgument("groupId") { type = NavType.StringType })
         ) { back ->
             val groupId = back.arguments?.getString("groupId") ?: ""
-            GroupDetailScreen(navController, groupId, groupViewModel, homeViewModel, notificationViewModel)
+            GroupDetailScreen(navController, groupId, groupViewModel, homeViewModel, notificationViewModel, savingsViewModel)
         }
 
         composable(
@@ -297,7 +297,7 @@ fun AppNavGraph(
             }
         }
 
-        // ── Events & Activities ──────────────────────────────────────────
+        // ── Events \u0026 Activities ──────────────────────────────────────────
         composable(
             Routes.ACTIVITIES,
             arguments = listOf(navArgument("groupId") { type = NavType.StringType })

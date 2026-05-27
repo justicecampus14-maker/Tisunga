@@ -1,23 +1,23 @@
 package com.example.tisunga.ui.screens.auth
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.*
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -33,6 +33,7 @@ fun SignInScreen(navController: NavController, viewModel: AuthViewModel) {
     var phone by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
+    var phoneError by remember { mutableStateOf("") }
 
     LaunchedEffect(uiState.isSuccess) {
         if (uiState.isSuccess) {
@@ -45,192 +46,192 @@ fun SignInScreen(navController: NavController, viewModel: AuthViewModel) {
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
-        containerColor = MaterialTheme.colorScheme.background
+        containerColor = BackgroundGray
     ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .background(
-                    brush = Brush.verticalGradient(
-                        colors = listOf(
-                            MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
-                            MaterialTheme.colorScheme.background
-                        )
-                    )
-                )
-                .verticalScroll(rememberScrollState())
-                .padding(24.dp),
+                .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier = Modifier.height(48.dp))
-            
-            // App Logo Icon
-            Surface(
-                modifier = Modifier.size(80.dp),
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.primary
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        Icons.Default.AccountBalance,
-                        contentDescription = null,
-                        tint = Color.White,
-                        modifier = Modifier.size(40.dp)
-                    )
-                }
-            }
-            
-            Spacer(modifier = Modifier.height(24.dp))
-            
-            Text(
-                text = "Welcome Back",
-                fontSize = 28.sp,
-                fontWeight = FontWeight.ExtraBold,
-                color = MaterialTheme.colorScheme.onBackground
-            )
-            Text(
-                text = "Sign in to continue to Tisunga",
-                fontSize = 14.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            
             Spacer(modifier = Modifier.height(40.dp))
-            
-            // Input Fields
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                Column {
-                    Text(
-                        text = "Phone Number",
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(start = 4.dp, bottom = 8.dp)
-                    )
-                    OutlinedTextField(
-                        value = phone,
-                        onValueChange = { input ->
-                            if (input.all { it.isDigit() } && input.length <= 10) {
-                                phone = input
-                            }
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        placeholder = { Text("0XXXXXXXXX", color = Color.Gray.copy(alpha = 0.4f)) },
-                        prefix = { Text("🇲🇼 ", modifier = Modifier.padding(end = 4.dp)) },
-                        leadingIcon = { Icon(Icons.Default.Phone, null, modifier = Modifier.size(20.dp)) },
-                        shape = RoundedCornerShape(16.dp),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone, imeAction = ImeAction.Next),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = MaterialTheme.colorScheme.primary,
-                            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
-                            focusedContainerColor = Color.Transparent,
-                            unfocusedContainerColor = Color.Transparent
-                        )
-                    )
-                }
-
-                Column {
-                    Text(
-                        text = "Password",
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(start = 4.dp, bottom = 8.dp)
-                    )
-                    OutlinedTextField(
-                        value = password,
-                        onValueChange = { password = it },
-                        modifier = Modifier.fillMaxWidth(),
-                        placeholder = { Text("Enter your password", color = Color.Gray.copy(alpha = 0.4f)) },
-                        leadingIcon = { Icon(Icons.Default.Lock, null, modifier = Modifier.size(20.dp)) },
-                        trailingIcon = {
-                            IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                                Icon(
-                                    imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-                        },
-                        visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                        shape = RoundedCornerShape(16.dp),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = MaterialTheme.colorScheme.primary,
-                            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
-                            focusedContainerColor = Color.Transparent,
-                            unfocusedContainerColor = Color.Transparent
-                        )
-                    )
-                }
-
-                TextButton(
-                    onClick = { navController.navigate(Routes.FORGOT_PASSWORD) },
-                    modifier = Modifier.align(Alignment.End)
-                ) {
-                    Text(
-                        text = "Forgot Password?",
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 13.sp
-                    )
-                }
-            }
+            Text(
+                text = stringResource(R.string.signin_title),
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Bold,
+                color = NavyBlue
+            )
             
             Spacer(modifier = Modifier.height(32.dp))
             
-            Button(
-                onClick = { viewModel.login(phone, password) },
-                enabled = phone.length >= 9 && password.isNotEmpty() && !uiState.isLoading,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
+            Card(
+                modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    disabledContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
-                )
+                colors = CardDefaults.cardColors(containerColor = White),
+                elevation = CardDefaults.cardElevation(2.dp)
             ) {
-                if (uiState.isLoading) {
-                    CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
-                } else {
-                    Text(
-                        text = "Sign In",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
-                }
-            }
-            
-            if (uiState.errorMessage.isNotEmpty()) {
-                Text(
-                    text = uiState.errorMessage,
-                    color = MaterialTheme.colorScheme.error,
-                    fontSize = 13.sp,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(top = 16.dp)
-                )
-            }
-            
-            Spacer(modifier = Modifier.height(24.dp))
-            
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = "Don't have an account? ",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 14.sp
-                )
-                TextButton(onClick = { navController.navigate(Routes.CREATE_ACCOUNT) }) {
-                    Text(
-                        text = "Sign Up",
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp
-                    )
+                Column(
+                    modifier = Modifier.padding(20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        Text(
+                            text = stringResource(R.string.phone_number_label),
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedTextField(
+                            value = phone,
+                            onValueChange = { input -> 
+                                if (input.all { it.isDigit() } && input.length <= 10) {
+                                    phone = input
+                                    phoneError = ""
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            placeholder = { Text(stringResource(R.string.phone_number_placeholder), color = Color.Gray.copy(alpha = 0.5f)) },
+                            leadingIcon = { 
+                                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 8.dp)) {
+                                    Text("🇲🇼")
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Icon(Icons.Default.Phone, contentDescription = null, modifier = Modifier.size(20.dp))
+                                }
+                            },
+                            colors = OutlinedTextFieldDefaults.colors(
+                                unfocusedBorderColor = if (phoneError.isNotEmpty()) RedAccent else DividerColor,
+                                focusedBorderColor = if (phoneError.isNotEmpty()) RedAccent else NavyBlue,
+                                unfocusedContainerColor = BackgroundGray,
+                                focusedContainerColor = BackgroundGray
+                            ),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                            singleLine = true,
+                            shape = RoundedCornerShape(12.dp),
+                            isError = phoneError.isNotEmpty()
+                        )
+                        
+                        if (phoneError.isNotEmpty()) {
+                            Text(
+                                text = phoneError,
+                                color = RedAccent,
+                                fontSize = 12.sp,
+                                modifier = Modifier.padding(top = 4.dp, start = 4.dp)
+                            )
+                        }
+                        
+                        Spacer(modifier = Modifier.height(16.dp))
+                        
+                        Text(
+                            text = stringResource(R.string.password_label),
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedTextField(
+                            value = password,
+                            onValueChange = { password = it },
+                            modifier = Modifier.fillMaxWidth(),
+                            placeholder = { Text(stringResource(R.string.password_label), color = Color.Gray.copy(alpha = 0.5f)) },
+                            leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
+                            trailingIcon = {
+                                IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                                    Icon(
+                                        imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                        contentDescription = null
+                                    )
+                                }
+                            },
+                            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                unfocusedBorderColor = DividerColor,
+                                focusedBorderColor = NavyBlue,
+                                unfocusedContainerColor = BackgroundGray,
+                                focusedContainerColor = BackgroundGray
+                            ),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                            singleLine = true,
+                            shape = RoundedCornerShape(12.dp)
+                        )
+                        
+                        TextButton(
+                            onClick = { navController.navigate(Routes.FORGOT_PASSWORD) },
+                            modifier = Modifier.align(Alignment.End)
+                        ) {
+                            Text(
+                                text = stringResource(R.string.forgot_password_link),
+                                color = BlueLink,
+                                fontSize = 13.sp
+                            )
+                        }
+                    }
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    val invalidPhoneMsg = stringResource(R.string.error_invalid_phone_format)
+                    
+                    Button(
+                        onClick = { 
+                            val isValidPrefix = phone.startsWith("09") || phone.startsWith("08")
+                            if (phone.length == 10 && isValidPrefix) {
+                                if (password.isNotEmpty()) {
+                                    viewModel.login(phone, password)
+                                }
+                            } else {
+                                phoneError = invalidPhoneMsg
+                            }
+                        },
+                        enabled = phone.length == 10 && password.isNotEmpty() && !uiState.isLoading,
+                        modifier = Modifier.fillMaxWidth().height(52.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = NavyBlue,
+                            disabledContainerColor = NavyBlue.copy(alpha = 0.6f)
+                        )
+                    ) {
+                        if (uiState.isLoading) {
+                            CircularProgressIndicator(color = White, modifier = Modifier.size(24.dp))
+                        } else {
+                            Text(
+                                text = stringResource(R.string.signin_title),
+                                color = White,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                    
+                    if (uiState.errorMessage.isNotEmpty()) {
+                        Text(
+                            text = uiState.errorMessage,
+                            color = RedAccent,
+                            fontSize = 12.sp,
+                            modifier = Modifier.padding(top = 8.dp).fillMaxWidth(),
+                            textAlign = TextAlign.Center
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+                    
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = stringResource(R.string.no_account_text),
+                            fontSize = 14.sp,
+                            color = TextSecondary
+                        )
+                        TextButton(onClick = { navController.navigate(Routes.CREATE_ACCOUNT) }) {
+                            Text(
+                                text = stringResource(R.string.signup_link),
+                                color = NavyBlue,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp
+                            )
+                        }
+                    }
                 }
             }
         }

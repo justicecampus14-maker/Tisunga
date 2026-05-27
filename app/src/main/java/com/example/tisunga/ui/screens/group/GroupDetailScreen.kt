@@ -34,7 +34,9 @@ import com.example.tisunga.ui.theme.*
 import com.example.tisunga.viewmodel.GroupViewModel
 import com.example.tisunga.viewmodel.HomeViewModel
 import com.example.tisunga.viewmodel.NotificationViewModel
+import com.example.tisunga.viewmodel.SavingsViewModel
 import com.example.tisunga.utils.FormatUtils
+import com.example.tisunga.ui.screens.savings.PayoutItem
 import kotlinx.coroutines.launch
 
 @Composable
@@ -43,14 +45,18 @@ fun GroupDetailScreen(
     groupId: String,
     viewModel: GroupViewModel,
     homeViewModel: HomeViewModel,
-    notificationViewModel: NotificationViewModel
+    notificationViewModel: NotificationViewModel,
+    savingsViewModel: SavingsViewModel
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val homeUiState by homeViewModel.uiState.collectAsState()
     val notificationState by notificationViewModel.uiState.collectAsState()
+    val savingsUiState by savingsViewModel.uiState.collectAsState()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     
+    var selectedTab by remember { mutableStateOf("SAVINGS") } // "SAVINGS" or "DISBURSE"
+
     // UI state derived from group dashboard
     val groupName = uiState.selectedGroup?.name ?: homeUiState.myGroups.firstOrNull { it.id == groupId }?.name ?: stringResource(R.string.placeholder_group_name)
     
@@ -61,6 +67,8 @@ fun GroupDetailScreen(
     LaunchedEffect(groupId) {
         viewModel.getGroupDashboard(groupId)
         viewModel.getGroupTransactions(groupId)
+        savingsViewModel.loadSavingsData(groupId)
+        savingsViewModel.loadDisbursementHistory(groupId)
     }
 
     ModalNavigationDrawer(
@@ -97,36 +105,134 @@ fun GroupDetailScreen(
                     onMenuClick = { scope.launch { drawerState.open() } }
                 )
 
+                // Tab Selector Buttons
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Button(
+                        onClick = { selectedTab = "SAVINGS" },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(10.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (selectedTab == "SAVINGS") NavyBlue else NavyBlue.copy(alpha = 0.6f),
+                            contentColor = Color.White
+                        )
+                    ) {
+                        Text("Group Savings", fontWeight = FontWeight.Bold)
+                    }
+                    Button(
+                        onClick = { selectedTab = "DISBURSE" },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(10.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (selectedTab == "DISBURSE") NavyBlue else NavyBlue.copy(alpha = 0.6f),
+                            contentColor = Color.White
+                        )
+                    ) {
+                        Text("Disburse", fontWeight = FontWeight.Bold)
+                    }
+                }
+
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(bottom = 16.dp)
                 ) {
-                    item {
-                        val lastUpdated = FormatUtils.formatDateTime(uiState.transactions.firstOrNull()?.createdAt)
-                        GroupSummaryCard(
-                            groupName = groupName,
-                            totalSavings = uiState.selectedGroup?.totalSavings ?: 0.0,
-                            mySavings = uiState.selectedGroup?.mySavings ?: 0.0,
-                            lastUpdated = lastUpdated
-                        )
-                        Spacer(modifier = Modifier.height(20.dp))
-                    }
-                    
-                    item {
-                        QuickActionsHeader(navController, groupId, isChair)
-                        Spacer(modifier = Modifier.height(12.dp))
-                        QuickActionsGrid(navController, groupId, isChair, groupName)
-                        Spacer(modifier = Modifier.height(20.dp))
-                    }
-                    
-                    item {
-                        TransactionsHeader(navController, groupId)
-                        Spacer(modifier = Modifier.height(12.dp))
-                    }
-                    
-                    items(uiState.transactions.take(2)) { transaction ->
-                        TransactionSummaryCard(transaction)
-                        Spacer(modifier = Modifier.height(12.dp))
+                    if (selectedTab == "SAVINGS") {
+                        item {
+                            val lastUpdated = FormatUtils.formatDateTime(uiState.transactions.firstOrNull()?.createdAt)
+                            GroupSummaryCard(
+                                groupName = groupName,
+                                totalSavings = uiState.selectedGroup?.totalSavings ?: 0.0,
+                                mySavings = uiState.selectedGroup?.mySavings ?: 0.0,
+                                lastUpdated = lastUpdated
+                            )
+                            Spacer(modifier = Modifier.height(20.dp))
+                        }
+                        
+                        item {
+                            QuickActionsHeader(navController, groupId, isChair)
+                            Spacer(modifier = Modifier.height(12.dp))
+                            QuickActionsGrid(navController, groupId, isChair, groupName)
+                            Spacer(modifier = Modifier.height(20.dp))
+                        }
+                        
+                        item {
+                            TransactionsHeader(navController, groupId)
+                            Spacer(modifier = Modifier.height(12.dp))
+                        }
+                        
+                        items(uiState.transactions.take(2)) { transaction ->
+                            TransactionSummaryCard(transaction)
+                            Spacer(modifier = Modifier.height(12.dp))
+                        }
+                    } else {
+                        // Disbursement List View
+                        item {
+                            Text(
+                                text = "Member Share Payouts",
+                                modifier = Modifier.padding(16.dp),
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+
+                        val currentDisbursement = savingsUiState.currentDisbursement
+                        if (currentDisbursement != null && currentDisbursement.memberShares.isNotEmpty()) {
+                            items(currentDisbursement.memberShares) { payout ->
+                                Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
+                                    PayoutItem(payout)
+                                }
+                            }
+                            
+                            item {
+                                Spacer(modifier = Modifier.height(24.dp))
+                                Button(
+                                    onClick = { navController.navigate(Routes.DISBURSEMENT.replace("{groupId}", groupId)) },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 16.dp)
+                                        .height(50.dp),
+                                    shape = RoundedCornerShape(12.dp),
+                                    colors = ButtonDefaults.buttonColors(containerColor = NavyBlue)
+                                ) {
+                                    Text("Confirm Disbursement", color = Color.White, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        } else {
+                            item {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(32.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Icon(
+                                            Icons.Default.Info,
+                                            contentDescription = null,
+                                            tint = TextSecondary,
+                                            modifier = Modifier.size(48.dp)
+                                        )
+                                        Spacer(modifier = Modifier.height(16.dp))
+                                        Text(
+                                            "No active disbursement request found.",
+                                            color = TextSecondary,
+                                            textAlign = TextAlign.Center
+                                        )
+                                        Spacer(modifier = Modifier.height(16.dp))
+                                        Button(
+                                            onClick = { navController.navigate(Routes.DISBURSEMENT.replace("{groupId}", groupId)) },
+                                            colors = ButtonDefaults.buttonColors(containerColor = NavyBlue)
+                                        ) {
+                                            Text("Go to Disbursement Page", color = Color.White)
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -155,10 +261,11 @@ fun GroupSummaryCard(groupName: String, totalSavings: Double, mySavings: Double,
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
+                val amountFontSize = 24.sp
                 Text(
                     text = if (isGroupSavingsVisible) com.example.tisunga.utils.FormatUtils.formatMoney(totalSavings) else "MWK XXXXXX",
                     color = Color.White,
-                    fontSize = 24.sp,
+                    fontSize = amountFontSize,
                     fontWeight = FontWeight.Bold
                 )
                 IconButton(
@@ -182,10 +289,11 @@ fun GroupSummaryCard(groupName: String, totalSavings: Double, mySavings: Double,
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
+                val amountFontSize = 24.sp
                 Text(
                     text = if (isMySavingsVisible) com.example.tisunga.utils.FormatUtils.formatMoney(mySavings) else "MWK XXXXXX",
                     color = Color.White,
-                    fontSize = 20.sp,
+                    fontSize = amountFontSize,
                     fontWeight = FontWeight.Bold
                 )
                 IconButton(
