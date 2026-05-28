@@ -267,22 +267,7 @@ interface ApiService {
         @Path("groupId") groupId: String,
         @Path("meetingId") meetingId: String,
         @Body body: Map<String, String>
-    ): Meeting
-
-    @Multipart
-    @POST("groups/{groupId}/meetings/{meetingId}/image")
-    suspend fun uploadMeetingImage(
-        @Path("groupId") groupId: String,
-        @Path("meetingId") meetingId: String,
-        @Part image: MultipartBody.Part
-    ): Meeting
-
-    @PATCH("groups/{groupId}/meetings/{meetingId}/attendance")
-    suspend fun markAttendance(
-        @Path("groupId") groupId: String,
-        @Path("meetingId") meetingId: String,
-        @Body body: Map<String, @JvmSuppressWildcards Any>
-    ): MeetingAttendance
+    ): MeetingDetailResponse
 
     @PATCH("groups/{groupId}/meetings/{meetingId}/attendance")
     suspend fun submitBulkAttendance(

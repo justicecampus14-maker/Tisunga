@@ -202,18 +202,21 @@ class GroupViewModel(
             _uiState.value = _uiState.value.copy(isLoading = true)
             try {
                 val memberships = apiService.getGroupMembers(groupId)
-                val users = memberships.map { m ->
-                    User(
-                        id        = m.user?.id ?: "",
-                        firstName = m.user?.firstName ?: "",
-                        lastName  = m.user?.lastName ?: "",
-                        phone     = m.user?.phone ?: "",
-                        role      = m.role.lowercase()
-                    )
-                }
+                val users = memberships
+                    .filter { it.status.uppercase() == "ACTIVE" }
+                    .map { m ->
+                        User(
+                            id        = m.user?.id ?: "",
+                            firstName = m.user?.firstName ?: "",
+                            lastName  = m.user?.lastName ?: "",
+                            phone     = m.user?.phone ?: "",
+                            role      = m.role.lowercase()
+                        )
+                    }
                 _uiState.value = _uiState.value.copy(isLoading = false, members = users)
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(isLoading = false, members = MockDataProvider.getMockMembers())
+                // If API fails, we keep the current list or fallback to empty if null, instead of mock
+                _uiState.value = _uiState.value.copy(isLoading = false)
             }
         }
     }
@@ -232,13 +235,14 @@ class GroupViewModel(
                 // Backend POST /groups/{id}/members returns AddMemberResponse, not List<User>
                 apiService.addMember(groupId, body)
 
-                // Re-fetch the updated member list
-                getGroupMembers(groupId)
-                
                 _uiState.value = _uiState.value.copy(
                     isLoading = false, 
-                    successMessage = "Member added"
+                    successMessage = "Member added",
+                    searchResult = null // Clear search result after successful addition
                 )
+                
+                // Re-fetch the updated member list
+                getGroupMembers(groupId)
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false, 

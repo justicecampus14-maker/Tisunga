@@ -150,7 +150,7 @@ fun AppNavGraph(
             arguments = listOf(navArgument("groupId") { type = NavType.StringType })
         ) { back ->
             val groupId = back.arguments?.getString("groupId") ?: ""
-            GroupMembersScreen(navController, groupId, groupViewModel)
+            GroupMembersScreen(navController, groupId, groupViewModel, savingsViewModel)
         }
 
         composable(
@@ -158,7 +158,7 @@ fun AppNavGraph(
             arguments = listOf(navArgument("groupId") { type = NavType.StringType })
         ) { back ->
             val groupId = back.arguments?.getString("groupId") ?: ""
-            GroupMembersChairScreen(navController, groupId, groupViewModel)
+            GroupMembersChairScreen(navController, groupId, groupViewModel, savingsViewModel)
         }
 
         // ... (remaining composables)
@@ -183,7 +183,7 @@ fun AppNavGraph(
             arguments = listOf(navArgument("groupId") { type = NavType.StringType })
         ) { back ->
             val groupId = back.arguments?.getString("groupId") ?: ""
-            AddMembersScreen(navController, groupId, groupViewModel, homeViewModel)
+            AddMembersScreen(navController, groupId, groupViewModel, homeViewModel, savingsViewModel)
         }
 
         composable(
@@ -300,13 +300,15 @@ fun AppNavGraph(
             }
         }
 
-        // ── Events \u0026 Activities ──────────────────────────────────────────
+        // ── Events & Activities ──────────────────────────────────────────
         composable(
             Routes.ACTIVITIES,
             arguments = listOf(navArgument("groupId") { type = NavType.StringType })
         ) { back ->
             val groupId = back.arguments?.getString("groupId") ?: ""
-            val activitiesViewModel: ActivitiesViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+            val activitiesViewModel: ActivitiesViewModel = androidx.lifecycle.viewmodel.compose.viewModel(
+                factory = com.example.tisunga.ViewModelFactory(sessionManager, back)
+            )
             ActivitiesScreen(navController, groupId, activitiesViewModel)
         }
 
@@ -315,7 +317,9 @@ fun AppNavGraph(
             arguments = listOf(navArgument("groupId") { type = NavType.StringType })
         ) { back ->
             val groupId = back.arguments?.getString("groupId") ?: ""
-            val activitiesViewModel: ActivitiesViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+            val activitiesViewModel: ActivitiesViewModel = androidx.lifecycle.viewmodel.compose.viewModel(
+                factory = com.example.tisunga.ViewModelFactory(sessionManager, back)
+            )
             ActivitiesScreen(navController, groupId, activitiesViewModel)
         }
 
