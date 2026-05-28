@@ -43,8 +43,9 @@ data class BulkAttendanceRequest(
 )
 
 data class AttendanceEntry(
+    @SerializedName("id")     val id: String? = null,
     @SerializedName("userId") val userId: String,
-    @SerializedName("status") val status: String,   // "PRESENT" | "ABSENT" | "EXCUSED"
+    @SerializedName("status") val status: String,   // "PRESENT" | "LATE" | "ABSENT" | "EXCUSED"
     @SerializedName("note")   val note: String? = null
 )
 

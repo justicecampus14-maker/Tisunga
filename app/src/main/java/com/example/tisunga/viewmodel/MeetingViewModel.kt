@@ -389,16 +389,12 @@ class MeetingViewModel(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(errorMessage = "")
             try {
-                val body = buildMap<String, Any> {
-                    put("userId", userId)
-                    put("status", status)
-                    if (!note.isNullOrBlank()) put("note", note)
-                }
-                val result = api.markAttendance(groupId, meetingId, body)
-                val updated = _uiState.value.attendance.map {
-                    if (it.userId == result.userId) result else it
-                }
-                _uiState.value = _uiState.value.copy(attendance = updated)
+                val entry = AttendanceEntry(userId = userId, status = status, note = note)
+                val request = BulkAttendanceRequest(listOf(entry))
+                api.submitBulkAttendance(groupId, meetingId, request)
+                
+                // Refresh attendance list
+                getMeetingAttendance(groupId, meetingId)
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     errorMessage = e.message ?: "Failed to mark attendance"

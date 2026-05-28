@@ -206,11 +206,10 @@ fun MeetingsContent(
                     .horizontalScroll(rememberScrollState())
                     .padding(vertical = 10.dp, horizontal = 16.dp)
             ) {
-                listOf("ALL", "UPCOMING", "ONGOING", "CLOSED").forEach {
+                listOf("ALL", "UPCOMING", "CLOSED").forEach {
                     val labelId = when(it) {
                         "ALL" -> R.string.filter_all_caps
                         "UPCOMING" -> R.string.filter_upcoming
-                        "ONGOING" -> R.string.filter_ongoing
                         "CLOSED" -> R.string.filter_closed
                         else -> R.string.filter_all_caps
                     }
@@ -244,8 +243,7 @@ fun MeetingsContent(
             items(meetings) { m ->
                 val status = m.status.uppercase()
                 val show = when (filter) {
-                    "UPCOMING" -> status == "SCHEDULED"
-                    "ONGOING" -> status == "ONGOING"
+                    "UPCOMING" -> status == "SCHEDULED" || status == "ONGOING"
                     "CLOSED" -> status == "COMPLETED" || status == "CANCELLED" || status == "CLOSED"
                     else -> true
                 }
@@ -355,11 +353,10 @@ fun EventsContent(
                     .horizontalScroll(rememberScrollState())
                     .padding(vertical = 10.dp, horizontal = 16.dp)
             ) {
-                listOf("ALL", "UPCOMING", "ONGOING", "CLOSED").forEach {
+                listOf("ALL", "UPCOMING", "CLOSED").forEach {
                     val labelId = when(it) {
                         "ALL" -> R.string.filter_all_caps
                         "UPCOMING" -> R.string.filter_upcoming
-                        "ONGOING" -> R.string.filter_ongoing
                         "CLOSED" -> R.string.filter_closed
                         else -> R.string.filter_all_caps
                     }
@@ -393,8 +390,7 @@ fun EventsContent(
             items(events) { e ->
                 val status = e.status.uppercase()
                 val show = when (filter) {
-                    "UPCOMING" -> status == "UPCOMING" || status == "OPEN"
-                    "ONGOING" -> status == "ONGOING"
+                    "UPCOMING" -> status == "UPCOMING" || status == "OPEN" || status == "ONGOING"
                     "CLOSED" -> status == "CLOSED" || status == "COMPLETED" || status == "CANCELLED"
                     else -> true
                 }

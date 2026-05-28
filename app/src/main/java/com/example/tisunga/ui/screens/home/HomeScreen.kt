@@ -323,7 +323,7 @@ fun GroupInfoCard(group: com.example.tisunga.data.model.Group, lastUpdated: Stri
 
                 Column {
                     Text(
-                        text = "Group Savings",
+                        text = "Total Group Savings",
                         color = Color.White.copy(alpha = 0.7f),
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Medium
