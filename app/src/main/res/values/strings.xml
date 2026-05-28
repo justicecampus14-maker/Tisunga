@@ -65,7 +65,7 @@
     <string name="view_loans_label">Loans</string>
     <string name="my_groups_title">My Groups</string>
     <string name="no_groups_msg">You don\'t belong to any group yet</string>
-    <string name="group_total_savings">Group savings : MWK %1$s</string>
+    <string name="group_total_savings">Total Group savings : MWK %1$s</string>
     <string name="group_my_savings">My Savings: MWK %1$s</string>
     <string name="save_now_link">Save Now</string>
     <string name="recent_transactions_title">Transactions</string>
@@ -434,6 +434,7 @@
     <string name="submit_attendance_button">Submit Attendance Sheet</string>
     <string name="attendance_live_tally">Live Tally: %1$d / %2$d marked present</string>
     <string name="status_present">PRESENT</string>
+    <string name="status_late">LATE</string>
     <string name="status_absent">ABSENT</string>
     <string name="status_excused">EXCUSED</string>
     <string name="add_new_member_title">Add New Member</string>
