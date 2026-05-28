@@ -235,6 +235,8 @@ interface ApiService {
         @Body body: ContributeRequest
     ): MessageResponse
 
+    // ── MEETINGS ──────────────────────────────────────────────────────────
+
     @GET("groups/{groupId}/meetings")
     suspend fun getGroupMeetings(
         @Path("groupId") groupId: String,
@@ -253,7 +255,7 @@ interface ApiService {
         @Body body: Map<String, @JvmSuppressWildcards Any>
     ): Meeting
 
-    @PATCH("groups/{groupId}/meetings/{meetingId}")
+    @PATCH("groups/{groupId}/meetings/{meetingId}/status")
     suspend fun updateMeetingStatus(
         @Path("groupId") groupId: String,
         @Path("meetingId") meetingId: String,
@@ -267,7 +269,7 @@ interface ApiService {
         @Body body: Map<String, String>
     ): MeetingDetailResponse
 
-    @POST("groups/{groupId}/meetings/{meetingId}/attendance")
+    @PATCH("groups/{groupId}/meetings/{meetingId}/attendance")
     suspend fun submitBulkAttendance(
         @Path("groupId") groupId: String,
         @Path("meetingId") meetingId: String,
@@ -280,19 +282,11 @@ interface ApiService {
         @Path("meetingId") meetingId: String
     ): MeetingAttendanceResponse
 
-    @POST("groups/{groupId}/meetings/{meetingId}/reminder")
+    @POST("groups/{groupId}/meetings/{meetingId}/remind")
     suspend fun sendReminder(
         @Path("groupId") groupId: String,
         @Path("meetingId") meetingId: String
     ): ReminderResponse
-
-    @Multipart
-    @POST("groups/{groupId}/meetings/{meetingId}/image")
-    suspend fun uploadMeetingImage(
-        @Path("groupId") groupId: String,
-        @Path("meetingId") meetingId: String,
-        @Part image: MultipartBody.Part
-    ): MeetingDetailResponse
 
     // ── NOTIFICATIONS ────────────────────────────────────────────────────
 

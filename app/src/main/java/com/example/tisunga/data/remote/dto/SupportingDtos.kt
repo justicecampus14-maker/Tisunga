@@ -9,10 +9,6 @@ import com.example.tisunga.data.model.MeetingAttendance
 import com.example.tisunga.data.model.AttendanceSummary
 import com.google.gson.annotations.SerializedName
 
-// ── Auth ─────────────────────────────────────────────────────────────────
-
-// ── Groups ────────────────────────────────────────────────────────────────
-
 // ── Meetings ──────────────────────────────────────────────────────────────
 
 data class MeetingDetailResponse(
@@ -58,6 +54,8 @@ data class ReminderResponse(
     @SerializedName("sentTo") val sentTo: Int
 )
 
+// ── Disbursements ─────────────────────────────────────────────────────────
+
 data class DisbursementRequestResponse(
     @SerializedName("id")            val id: String,
     @SerializedName("groupId")       val groupId: String,
@@ -90,6 +88,8 @@ data class MemberSharePayoutDto(
     @SerializedName("shareAmount")   val shareAmount: Double,
     @SerializedName("status")        val status: String
 )
+
+// ── Events ────────────────────────────────────────────────────────────────
 
 data class CreateEventRequest(
     @SerializedName("type")             val type: String,
@@ -146,4 +146,3 @@ data class RepayLoanResponse(
     @SerializedName("remainingBalance") val remainingBalance: Double,
     @SerializedName("status")           val status: String
 )
-
