@@ -47,6 +47,24 @@ class HomeViewModel(
             )
 
             try {
+                // 1. Fetch Latest Profile to keep Drawer/UI updated
+                try {
+                    val profile = apiService.getMyProfile()
+                    sessionManager.saveUserData(
+                        userId = profile.id,
+                        userName = "${profile.firstName ?: ""} ${profile.lastName ?: ""}".trim(),
+                        userPhone = profile.phone ?: "",
+                        userRole = profile.memberships?.firstOrNull()?.role ?: "member"
+                    )
+                    _uiState.value = _uiState.value.copy(
+                        userName = sessionManager.getUserName(),
+                        userPhone = sessionManager.getUserPhone()
+                    )
+                } catch (e: Exception) {
+                    Log.w(TAG, "Profile fetch failed (non-fatal): ${e.message}")
+                }
+
+                // 2. Fetch Group Data
                 val response = apiService.getMyGroup()
 
                 Log.d(TAG, "getMyGroup response: hasNoGroup=${response.hasNoGroup()}, " +
@@ -54,8 +72,6 @@ class HomeViewModel(
                         "group=${response.group?.id}, role=${response.role}")
 
                 if (response.hasNoGroup()) {
-                    // User genuinely not in a group
-                    Log.d(TAG, "User has no group — showing no-group UI")
                     _uiState.value = _uiState.value.copy(
                         isLoading          = false,
                         myGroups           = emptyList(),
@@ -68,10 +84,6 @@ class HomeViewModel(
                 val group = response.toGroup()
                 val role  = response.role ?: "MEMBER"
 
-                Log.d(TAG, "Parsed group: id=${group.id}, name=${group.name}, " +
-                        "totalSavings=${group.totalSavings}, mySavings=${group.mySavings}")
-
-                // Show group immediately — don't wait for dashboard
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     myGroups  = listOf(group),
@@ -80,7 +92,7 @@ class HomeViewModel(
 
                 sessionManager.saveMyGroupRole(group.id, role)
 
-                // Fire-and-forget: enrich with dashboard transactions
+                // 3. Fetch Dashboard Data
                 try {
                     val dashboard = apiService.getGroupDashboard(group.id)
                     _uiState.value = _uiState.value.copy(
@@ -94,23 +106,15 @@ class HomeViewModel(
                             )
                         }
                     )
-                    Log.d(TAG, "Dashboard loaded: role=${dashboard.myRole}, " +
-                            "transactions=${dashboard.recentTransactions.size}, " +
-                            "totalBorrowed=${dashboard.totalBorrowed}")
                 } catch (e: Exception) {
                     Log.w(TAG, "Dashboard fetch failed (non-fatal): ${e.message}")
-                    // Group card is already shown — this is non-fatal
                 }
 
             } catch (e: Exception) {
-                // Only reach here if the network call itself fails
-                Log.e(TAG, "getMyGroup FAILED: ${e.javaClass.simpleName}: ${e.message}", e)
+                Log.e(TAG, "Home data load failed: ${e.message}")
                 _uiState.value = _uiState.value.copy(
-                    isLoading          = false,
-                    myGroups           = emptyList(),
-                    myRole             = null,
-                    recentTransactions = emptyList(),
-                    errorMessage       = "Failed to load: ${e.message}"
+                    isLoading = false,
+                    errorMessage = "Failed to load: ${e.message}"
                 )
             }
         }

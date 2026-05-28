@@ -70,7 +70,11 @@ fun RepayLoanScreen(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back_desc))
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = White)
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onSurface
+                )
             )
         }
     ) { padding ->
@@ -78,7 +82,7 @@ fun RepayLoanScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .background(BackgroundGray)
+                .background(MaterialTheme.colorScheme.background)
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
@@ -86,7 +90,7 @@ fun RepayLoanScreen(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = White),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 elevation = CardDefaults.cardElevation(2.dp)
             ) {
                 Column(modifier = Modifier.padding(20.dp)) {
@@ -95,17 +99,17 @@ fun RepayLoanScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(stringResource(R.string.remaining_balance_label), fontSize = 14.sp, color = TextSecondary)
+                        Text(stringResource(R.string.remaining_balance_label), fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Surface(
                             shape = RoundedCornerShape(8.dp),
-                            color = GreenAccent.copy(alpha = 0.1f)
+                            color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f)
                         ) {
                             Text(
                                 stringResource(R.string.status_active_caps),
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = GreenAccent
+                                color = MaterialTheme.colorScheme.secondary
                             )
                         }
                     }
@@ -114,7 +118,7 @@ fun RepayLoanScreen(
                         stringResource(R.string.amount_mk, String.format("%,.2f", loan.remainingBalance)),
                         fontSize = 28.sp,
                         fontWeight = FontWeight.ExtraBold,
-                        color = TextPrimary
+                        color = MaterialTheme.colorScheme.onSurface
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))
@@ -122,15 +126,15 @@ fun RepayLoanScreen(
                     val progress = (1 - (loan.remainingBalance / loan.totalRepayable)).toFloat().coerceIn(0f, 1f)
                     LinearProgressIndicator(
                         progress = { progress },
-                        modifier = Modifier.fillMaxWidth().height(8.dp).background(BackgroundGray, RoundedCornerShape(4.dp)),
-                        color = GreenAccent,
+                        modifier = Modifier.fillMaxWidth().height(8.dp).background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f), RoundedCornerShape(4.dp)),
+                        color = MaterialTheme.colorScheme.secondary,
                         strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
                     )
 
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text(stringResource(R.string.loan_repaid_percent, (progress * 100).toInt()), fontSize = 12.sp, color = TextSecondary)
-                        Text(stringResource(R.string.total_amount_label, String.format("%,.0f", loan.totalRepayable)), fontSize = 12.sp, color = TextSecondary)
+                        Text(stringResource(R.string.loan_repaid_percent, (progress * 100).toInt()), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(R.string.total_amount_label, String.format("%,.0f", loan.totalRepayable)), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
@@ -140,11 +144,11 @@ fun RepayLoanScreen(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = White),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 elevation = CardDefaults.cardElevation(2.dp)
             ) {
                 Column(modifier = Modifier.padding(20.dp)) {
-                    Text(stringResource(R.string.amount_to_repay_label), fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    Text(stringResource(R.string.amount_to_repay_label), fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
                     Spacer(modifier = Modifier.height(8.dp))
                     OutlinedTextField(
                         value = amount,
@@ -163,9 +167,9 @@ fun RepayLoanScreen(
                         ),
                         shape = RoundedCornerShape(12.dp),
                         colors = OutlinedTextFieldDefaults.colors(
-                            unfocusedContainerColor = BackgroundGray,
-                            focusedContainerColor = White,
-                            focusedBorderColor = NavyBlue
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                            focusedContainerColor = MaterialTheme.colorScheme.surface,
+                            focusedBorderColor = MaterialTheme.colorScheme.primary
                         )
                     )
 
@@ -177,14 +181,14 @@ fun RepayLoanScreen(
 
                     Spacer(modifier = Modifier.height(20.dp))
 
-                    Text(stringResource(R.string.phone_number_input_label), fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    Text(stringResource(R.string.phone_number_input_label), fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
                     Spacer(modifier = Modifier.height(8.dp))
                     OutlinedTextField(
                         value = phone,
                         onValueChange = { phone = it },
                         modifier = Modifier.fillMaxWidth(),
                         placeholder = { Text(stringResource(R.string.phone_number_hint)) },
-                        leadingIcon = { Icon(Icons.Default.PhoneAndroid, null, tint = NavyBlue) },
+                        leadingIcon = { Icon(Icons.Default.PhoneAndroid, null, tint = MaterialTheme.colorScheme.primary) },
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Phone,
                             imeAction = ImeAction.Done
@@ -197,9 +201,9 @@ fun RepayLoanScreen(
                         ),
                         shape = RoundedCornerShape(12.dp),
                         colors = OutlinedTextFieldDefaults.colors(
-                            unfocusedContainerColor = BackgroundGray,
-                            focusedContainerColor = White,
-                            focusedBorderColor = NavyBlue
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                            focusedContainerColor = MaterialTheme.colorScheme.surface,
+                            focusedBorderColor = MaterialTheme.colorScheme.primary
                         )
                     )
 
@@ -214,20 +218,20 @@ fun RepayLoanScreen(
                         },
                         modifier = Modifier.fillMaxWidth().height(56.dp),
                         shape = RoundedCornerShape(14.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = NavyBlue),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                         enabled = !uiState.isRepaying && amount.isNotEmpty() && phone.isNotEmpty()
                     ) {
                         if (uiState.isRepaying) {
-                            CircularProgressIndicator(color = White, modifier = Modifier.size(24.dp))
+                            CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(24.dp))
                         } else {
-                            Text(stringResource(R.string.initiate_payment_button), color = White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                            Text(stringResource(R.string.initiate_payment_button), color = MaterialTheme.colorScheme.onPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                         }
                     }
 
                     if (uiState.errorMessage.isNotEmpty()) {
                         Text(
                             uiState.errorMessage,
-                            color = Color.Red,
+                            color = MaterialTheme.colorScheme.error,
                             fontSize = 12.sp,
                             modifier = Modifier.padding(top = 8.dp).fillMaxWidth(),
                             textAlign = TextAlign.Center
@@ -242,12 +246,12 @@ fun RepayLoanScreen(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(Icons.Default.Info, null, tint = Color.Gray, modifier = Modifier.size(16.dp))
+                Icon(Icons.Default.Info, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     stringResource(R.string.stk_push_notice),
                     fontSize = 11.sp,
-                    color = Color.Gray
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
@@ -261,8 +265,8 @@ fun QuickAmountButton(text: String, onClick: () -> Unit, modifier: Modifier = Mo
         modifier = modifier.height(36.dp),
         shape = RoundedCornerShape(8.dp),
         contentPadding = PaddingValues(0.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, NavyBlue.copy(alpha = 0.3f))
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
     ) {
-        Text(text, fontSize = 12.sp, color = NavyBlue)
+        Text(text, fontSize = 12.sp, color = MaterialTheme.colorScheme.primary)
     }
 }
