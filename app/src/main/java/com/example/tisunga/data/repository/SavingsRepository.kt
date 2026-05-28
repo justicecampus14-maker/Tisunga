@@ -2,6 +2,7 @@ package com.example.tisunga.data.repository
 
 import com.example.tisunga.data.model.Contribution
 import com.example.tisunga.data.remote.ApiService
+import com.example.tisunga.data.remote.dto.ContributionRequest
 
 class SavingsRepository(
     private val apiService: ApiService,
@@ -14,14 +15,19 @@ class SavingsRepository(
     }
 
     suspend fun getGroupContributions(groupId: String) = apiService.getGroupContributions(groupId)
+    
     suspend fun makeContribution(contribution: Contribution) = apiService.makeContribution(
-        mapOf(
-            "groupId" to contribution.groupId,
-            "amount" to contribution.amount,
-            "type" to contribution.type
+        ContributionRequest(
+            groupId = contribution.groupId,
+            amount = contribution.amount,
+            phone = contribution.phoneUsed ?: sessionManager.getUserPhone() ?: "",
+            type = contribution.type,
+            externalRef = contribution.externalRef
         )
     )
+    
     suspend fun requestDisbursement(groupId: String) = apiService.requestDisbursement(groupId)
-    suspend fun approveDisbursement(groupId: String, disbursementId: Int) =
-        apiService.approveDisbursement(groupId, disbursementId.toString())
+    
+    suspend fun approveDisbursement(groupId: String, disbursementId: String) =
+        apiService.approveDisbursement(groupId, disbursementId)
 }

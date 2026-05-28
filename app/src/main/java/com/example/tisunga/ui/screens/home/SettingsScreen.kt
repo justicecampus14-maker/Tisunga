@@ -177,6 +177,30 @@ fun SettingsScreen(
                     )
                 }
             }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Section: Information
+            Text(
+                "Information",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
+            ElevatedCard(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Column {
+                    ListItem(
+                        headlineContent = { Text("About Tisunga") },
+                        supportingContent = { Text("App version, mission and developers") },
+                        leadingContent = { Icon(Icons.Default.Info, null) },
+                        trailingContent = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null) },
+                        modifier = Modifier.clickable { navController.navigate(Routes.ABOUT) }
+                    )
+                }
+            }
             
             Spacer(modifier = Modifier.height(40.dp))
         }

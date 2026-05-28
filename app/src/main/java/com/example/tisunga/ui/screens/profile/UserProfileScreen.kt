@@ -7,6 +7,8 @@ import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Person
@@ -15,11 +17,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -34,6 +39,7 @@ import com.example.tisunga.viewmodel.UserProfileViewModel
 fun UserProfileScreen(navController: NavController, viewModel: UserProfileViewModel) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
+    val focusManager = LocalFocusManager.current
     val snackbarHostState = remember { SnackbarHostState() }
 
     var firstName by remember { mutableStateOf("") }
@@ -44,6 +50,12 @@ fun UserProfileScreen(navController: NavController, viewModel: UserProfileViewMo
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         uri?.let { viewModel.uploadAvatar(it, context) }
+    }
+
+    val onUpdate = {
+        if (firstName.isNotBlank() && lastName.isNotBlank()) {
+            viewModel.updateProfile(firstName, lastName, middleName)
+        }
     }
 
     // Effect to sync text fields when data finally arrives from backend
@@ -150,19 +162,28 @@ fun UserProfileScreen(navController: NavController, viewModel: UserProfileViewMo
                     ProfileField(
                         label = stringResource(R.string.first_name_label),
                         value = firstName,
-                        onValueChange = { firstName = it }
+                        onValueChange = { firstName = it },
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                        keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) })
                     )
 
                     ProfileField(
                         label = stringResource(R.string.middle_name_label),
                         value = middleName,
-                        onValueChange = { middleName = it }
+                        onValueChange = { middleName = it },
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                        keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) })
                     )
 
                     ProfileField(
                         label = stringResource(R.string.last_name_label),
                         value = lastName,
-                        onValueChange = { lastName = it }
+                        onValueChange = { lastName = it },
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(onDone = {
+                            focusManager.clearFocus()
+                            onUpdate()
+                        })
                     )
 
                     // Read-only Phone Field
@@ -193,7 +214,7 @@ fun UserProfileScreen(navController: NavController, viewModel: UserProfileViewMo
                 Spacer(modifier = Modifier.height(40.dp))
 
                 Button(
-                    onClick = { viewModel.updateProfile(firstName, lastName, middleName) },
+                    onClick = { onUpdate() },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(56.dp),
@@ -218,7 +239,13 @@ fun UserProfileScreen(navController: NavController, viewModel: UserProfileViewMo
 }
 
 @Composable
-fun ProfileField(label: String, value: String, onValueChange: (String) -> Unit) {
+fun ProfileField(
+    label: String, 
+    value: String, 
+    onValueChange: (String) -> Unit,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    keyboardActions: KeyboardActions = KeyboardActions.Default
+) {
     Column {
         Text(
             text = label,
@@ -240,7 +267,9 @@ fun ProfileField(label: String, value: String, onValueChange: (String) -> Unit) 
                 unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
                 focusedTextColor = MaterialTheme.colorScheme.onSurface
             ),
-            singleLine = true
+            singleLine = true,
+            keyboardOptions = keyboardOptions,
+            keyboardActions = keyboardActions
         )
     }
 }

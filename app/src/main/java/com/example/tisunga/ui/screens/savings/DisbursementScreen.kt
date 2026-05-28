@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
@@ -15,9 +17,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight.Companion.Bold
 import androidx.compose.ui.text.font.FontWeight.Companion.SemiBold
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -43,6 +47,7 @@ fun DisbursementScreen(
     var showRejectDialog by remember { mutableStateOf(false) }
     var dialogType by remember { mutableStateOf("") } // "request" or "approve"
     var rejectionReason by remember { mutableStateOf("") }
+    val focusManager = LocalFocusManager.current
 
     val rawRole = sessionManager.getGroupRole(groupId)?.lowercase() ?: "member"
     val userRole = when (rawRole) {
@@ -232,6 +237,15 @@ fun DisbursementScreen(
 
     // Reject Dialog
     if (showRejectDialog) {
+        val performReject = {
+            if (rejectionReason.isNotBlank()) {
+                uiState.currentDisbursement?.let {
+                    viewModel.rejectDisbursement(groupId, it.id, rejectionReason)
+                }
+                showRejectDialog = false
+            }
+        }
+
         AlertDialog(
             onDismissRequest = { showRejectDialog = false },
             title = { Text(stringResource(R.string.reject_request_title), fontWeight = Bold) },
@@ -243,18 +257,18 @@ fun DisbursementScreen(
                         value = rejectionReason,
                         onValueChange = { rejectionReason = it },
                         placeholder = { Text(stringResource(R.string.enter_reason_hint)) },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(onDone = {
+                            focusManager.clearFocus()
+                            performReject()
+                        })
                     )
                 }
             },
             confirmButton = {
                 Button(
-                    onClick = {
-                        uiState.currentDisbursement?.let {
-                            viewModel.rejectDisbursement(groupId, it.id, rejectionReason)
-                        }
-                        showRejectDialog = false
-                    },
+                    onClick = { performReject() },
                     colors = ButtonDefaults.buttonColors(containerColor = RedAccent),
                     enabled = rejectionReason.isNotBlank()
                 ) {

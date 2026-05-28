@@ -5,11 +5,16 @@ import android.app.TimePickerDialog
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.res.stringResource
@@ -28,6 +33,7 @@ fun CreateMeetingDialog(
     var agenda by remember { mutableStateOf("") }
     
     val context = LocalContext.current
+    val focusManager = LocalFocusManager.current
     val calendar = remember { Calendar.getInstance() }
     
     val selectDateLabel = stringResource(R.string.select_date_label)
@@ -40,6 +46,14 @@ fun CreateMeetingDialog(
     var hour by remember { mutableIntStateOf(calendar.get(Calendar.HOUR_OF_DAY)) }
     var minute by remember { mutableIntStateOf(calendar.get(Calendar.MINUTE)) }
 
+    val canCreate = title.isNotBlank() && selectedDateText != selectDateLabel && location.isNotBlank() && agenda.isNotBlank()
+    val performCreate = {
+        if (canCreate) {
+            val isoDate = buildIsoDateTime(year, month, day, hour, minute)
+            onCreate(title, isoDate, location, agenda)
+        }
+    }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.schedule_meeting_title), fontWeight = FontWeight.Bold) },
@@ -49,7 +63,9 @@ fun CreateMeetingDialog(
                     value = title,
                     onValueChange = { title = it },
                     label = { Text(stringResource(R.string.meeting_title_label)) },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                    keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) })
                 )
                 
                 // Unified Schedule Selection
@@ -81,7 +97,9 @@ fun CreateMeetingDialog(
                     value = location,
                     onValueChange = { location = it },
                     label = { Text(stringResource(R.string.location_label)) },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                    keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) })
                 )
                 
                 OutlinedTextField(
@@ -89,19 +107,19 @@ fun CreateMeetingDialog(
                     onValueChange = { agenda = it },
                     label = { Text(stringResource(R.string.agenda_label)) },
                     modifier = Modifier.fillMaxWidth(),
-                    minLines = 3
+                    minLines = 3,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(onDone = { 
+                        focusManager.clearFocus()
+                        performCreate() 
+                    })
                 )
             }
         },
         confirmButton = {
             Button(
-                onClick = {
-                    if (title.isNotBlank() && selectedDateText != selectDateLabel && location.isNotBlank() && agenda.isNotBlank()) {
-                        val isoDate = buildIsoDateTime(year, month, day, hour, minute)
-                        onCreate(title, isoDate, location, agenda)
-                    }
-                },
-                enabled = title.isNotBlank() && selectedDateText != selectDateLabel && location.isNotBlank() && agenda.isNotBlank(),
+                onClick = { performCreate() },
+                enabled = canCreate,
                 colors = ButtonDefaults.buttonColors(containerColor = GreenAccent)
             ) {
                 Text(stringResource(R.string.schedule_button))

@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material.icons.Icons
@@ -26,8 +28,11 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.*
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -469,6 +474,13 @@ fun CreateMeetingDialog(onDismiss: () -> Unit, onCreate: (String, String, String
     var date by remember { mutableStateOf("") }
     var location by remember { mutableStateOf("") }
     var isDateValid by remember { mutableStateOf(true) }
+    val focusManager = LocalFocusManager.current
+
+    val onConfirm = {
+        if (title.isNotBlank() && date.isNotBlank()) {
+            onCreate(title, agenda, date, location)
+        }
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -479,20 +491,26 @@ fun CreateMeetingDialog(onDismiss: () -> Unit, onCreate: (String, String, String
                     value = title,
                     onValueChange = { title = it },
                     label = { Text(stringResource(R.string.meeting_title_label)) },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                    keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) })
                 )
                 OutlinedTextField(
                     value = agenda,
                     onValueChange = { agenda = it },
                     label = { Text(stringResource(R.string.agenda_label)) },
                     modifier = Modifier.fillMaxWidth(),
-                    minLines = 2
+                    minLines = 2,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                    keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) })
                 )
                 OutlinedTextField(
                     value = location,
                     onValueChange = { location = it },
                     label = { Text(stringResource(R.string.location_label)) },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                    keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) })
                 )
                 
                 Box(modifier = Modifier.fillMaxWidth()) {
@@ -519,18 +537,19 @@ fun CreateMeetingDialog(onDismiss: () -> Unit, onCreate: (String, String, String
                                 Icon(Icons.Default.CalendarMonth, stringResource(R.string.select_date_label))
                             }
                         },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(onDone = {
+                            focusManager.clearFocus()
+                            onConfirm()
+                        })
                     )
                 }
             }
         },
         confirmButton = {
             Button(
-                onClick = {
-                    if (title.isNotBlank() && date.isNotBlank()) {
-                        onCreate(title, agenda, date, location)
-                    }
-                },
+                onClick = { onConfirm() },
                 colors = ButtonDefaults.buttonColors(containerColor = NavyBlue)
             ) {
                 Text(stringResource(R.string.create_button))
@@ -552,6 +571,13 @@ fun CreateEventDialog(onDismiss: () -> Unit, onCreate: (String, String, String, 
     var eventDate by remember { mutableStateOf("") }
     var expanded by remember { mutableStateOf(false) }
     var isDateValid by remember { mutableStateOf(true) }
+    val focusManager = LocalFocusManager.current
+
+    val onConfirm = {
+        if (title.isNotBlank() && eventDate.isNotBlank()) {
+            onCreate(title, desc, eventType, eventDate)
+        }
+    }
 
     val types = listOf("SOCIAL", "CONTRIBUTION", "EMERGENCY", "OTHER")
 
@@ -564,7 +590,9 @@ fun CreateEventDialog(onDismiss: () -> Unit, onCreate: (String, String, String, 
                     value = title,
                     onValueChange = { title = it },
                     label = { Text(stringResource(R.string.event_title_label)) },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                    keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) })
                 )
                 
                 Box {
@@ -605,7 +633,9 @@ fun CreateEventDialog(onDismiss: () -> Unit, onCreate: (String, String, String, 
                     onValueChange = { desc = it },
                     label = { Text(stringResource(R.string.description_label)) },
                     modifier = Modifier.fillMaxWidth(),
-                    minLines = 2
+                    minLines = 2,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                    keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) })
                 )
                 
                 Box(modifier = Modifier.fillMaxWidth()) {
@@ -629,18 +659,19 @@ fun CreateEventDialog(onDismiss: () -> Unit, onCreate: (String, String, String, 
                                 Icon(Icons.Default.CalendarMonth, stringResource(R.string.select_date_label))
                             }
                         },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(onDone = {
+                            focusManager.clearFocus()
+                            onConfirm()
+                        })
                     )
                 }
             }
         },
         confirmButton = {
             Button(
-                onClick = {
-                    if (title.isNotBlank() && eventDate.isNotBlank()) {
-                        onCreate(title, desc, eventType, eventDate)
-                    }
-                },
+                onClick = { onConfirm() },
                 colors = ButtonDefaults.buttonColors(containerColor = NavyBlue)
             ) {
                 Text(stringResource(R.string.create_button))

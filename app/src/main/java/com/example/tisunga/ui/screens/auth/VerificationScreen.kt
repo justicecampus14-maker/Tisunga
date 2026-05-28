@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -15,7 +16,9 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -36,6 +39,7 @@ fun VerificationScreen(
     val uiState by viewModel.uiState.collectAsState()
     var otpCode by remember { mutableStateOf("") }
     val focusRequester = remember { FocusRequester() }
+    val focusManager = LocalFocusManager.current
 
     LaunchedEffect(uiState.isSuccess) {
         if (uiState.isSuccess) {
@@ -50,6 +54,12 @@ fun VerificationScreen(
     
     LaunchedEffect(Unit) {
         focusRequester.requestFocus()
+    }
+
+    val onVerify = {
+        if (otpCode.length == 6 && !uiState.isLoading) {
+            viewModel.verifyOtp(otpCode, purpose)
+        }
     }
 
     Scaffold(
@@ -132,13 +142,22 @@ fun VerificationScreen(
                     .size(1.dp)
                     .alpha(0f)
                     .focusRequester(focusRequester),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword)
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.NumberPassword,
+                    imeAction = ImeAction.Done
+                ),
+                keyboardActions = KeyboardActions(
+                    onDone = {
+                        focusManager.clearFocus()
+                        onVerify()
+                    }
+                )
             )
             
             Spacer(modifier = Modifier.height(48.dp))
             
             Button(
-                onClick = { viewModel.verifyOtp(otpCode, purpose) },
+                onClick = { onVerify() },
                 enabled = otpCode.length == 6 && !uiState.isLoading,
                 modifier = Modifier.fillMaxWidth().height(52.dp),
                 shape = RoundedCornerShape(12.dp),

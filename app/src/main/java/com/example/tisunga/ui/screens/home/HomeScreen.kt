@@ -157,6 +157,20 @@ fun AppDrawerContent(
             colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
         )
 
+        NavigationDrawerItem(
+            icon = { Icon(Icons.Default.Info, contentDescription = null, modifier = Modifier.size(22.dp)) },
+            label = { Text("About Tisunga", fontSize = 15.sp) },
+            selected = false,
+            onClick = {
+                scope.launch {
+                    drawerState.close()
+                    navController.navigate(Routes.ABOUT)
+                }
+            },
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp),
+            colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = Color.Transparent)
+        )
+
         HorizontalDivider(
             modifier = Modifier.padding(vertical = 12.dp, horizontal = 24.dp),
             thickness = 0.5.dp,

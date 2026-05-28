@@ -15,6 +15,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -44,6 +45,13 @@ fun RepayLoanScreen(
     var phone by remember { mutableStateOf(userPhone) }
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
+
+    val onRepay = {
+        val amt = amount.toDoubleOrNull() ?: 0.0
+        if (amt > 0 && phone.isNotEmpty()) {
+            viewModel.repayLoan(loan.id, amt, phone)
+        }
+    }
 
     val snackbarHostState = remember { SnackbarHostState() }
     LaunchedEffect(uiState.successMessage) {
@@ -161,8 +169,7 @@ fun RepayLoanScreen(
                         ),
                         keyboardActions = KeyboardActions(
                             onNext = {
-                                focusManager.clearFocus()
-                                keyboardController?.hide()
+                                focusManager.moveFocus(FocusDirection.Down)
                             }
                         ),
                         shape = RoundedCornerShape(12.dp),
@@ -197,6 +204,7 @@ fun RepayLoanScreen(
                             onDone = {
                                 keyboardController?.hide()
                                 focusManager.clearFocus()
+                                onRepay()
                             }
                         ),
                         shape = RoundedCornerShape(12.dp),
@@ -210,12 +218,7 @@ fun RepayLoanScreen(
                     Spacer(modifier = Modifier.height(32.dp))
 
                     Button(
-                        onClick = {
-                            val amt = amount.toDoubleOrNull() ?: 0.0
-                            if (amt > 0 && phone.isNotEmpty()) {
-                                viewModel.repayLoan(loan.id, amt, phone)
-                            }
-                        },
+                        onClick = { onRepay() },
                         modifier = Modifier.fillMaxWidth().height(56.dp),
                         shape = RoundedCornerShape(14.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),

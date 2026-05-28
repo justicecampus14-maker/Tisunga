@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -14,9 +16,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -37,6 +43,8 @@ fun CreateGroupStep1Screen(navController: NavController, viewModel: GroupViewMod
     var location by remember { mutableStateOf("") }
     var minContribution by remember { mutableStateOf("2000") }
     var maxMembers by remember { mutableStateOf("10") }
+
+    val focusManager = LocalFocusManager.current
 
     val dateFormatter = remember {
         SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).apply {
@@ -95,6 +103,26 @@ fun CreateGroupStep1Screen(navController: NavController, viewModel: GroupViewMod
     val isFormValid = groupName.isNotBlank() && startDate.isNotBlank() && endDate.isNotBlank()
     val fadedColor = Color.Gray.copy(alpha = 0.4f)
 
+    val onContinue = {
+        if (isFormValid) {
+            viewModel.updateDraft {
+                copy(
+                    name = groupName,
+                    description = description,
+                    location = location,
+                    minContribution = minContribution.toDoubleOrNull() ?: 0.0,
+                    savingPeriodMonths = savingPeriod.toIntOrNull() ?: 6,
+                    maxMembers = maxMembers.toIntOrNull() ?: 10,
+                    startDate = startDate,
+                    endDate = endDate,
+                    meetingDay = meetingDay,
+                    meetingTime = meetingTime
+                )
+            }
+            navController.navigate(Routes.GROUP_SUMMARY)
+        }
+    }
+
     Scaffold(
         containerColor = BackgroundGray,
         topBar = {
@@ -112,25 +140,7 @@ fun CreateGroupStep1Screen(navController: NavController, viewModel: GroupViewMod
             Surface(tonalElevation = 8.dp, color = White) {
                 Box(modifier = Modifier.fillMaxWidth().navigationBarsPadding().padding(16.dp)) {
                     Button(
-                        onClick = {
-                            if (isFormValid) {
-                                viewModel.updateDraft {
-                                    copy(
-                                        name = groupName,
-                                        description = description,
-                                        location = location,
-                                        minContribution = minContribution.toDoubleOrNull() ?: 0.0,
-                                        savingPeriodMonths = savingPeriod.toIntOrNull() ?: 6,
-                                        maxMembers = maxMembers.toIntOrNull() ?: 10,
-                                        startDate = startDate,
-                                        endDate = endDate,
-                                        meetingDay = meetingDay,
-                                        meetingTime = meetingTime
-                                    )
-                                }
-                                navController.navigate(Routes.GROUP_SUMMARY)
-                            }
-                        },
+                        onClick = { onContinue() },
                         enabled = isFormValid,
                         modifier = Modifier.fillMaxWidth().height(56.dp),
                         shape = RoundedCornerShape(16.dp),
@@ -158,7 +168,9 @@ fun CreateGroupStep1Screen(navController: NavController, viewModel: GroupViewMod
                         value = groupName,
                         onValueChange = { groupName = it },
                         placeholder = "e.g. Lilongwe Savings Club",
-                        fadedColor = fadedColor
+                        fadedColor = fadedColor,
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                        keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) })
                     )
 
                     // Blended Description Field
@@ -178,7 +190,9 @@ fun CreateGroupStep1Screen(navController: NavController, viewModel: GroupViewMod
                                 unfocusedIndicatorColor = Color.Transparent,
                                 cursorColor = NavyBlue
                             ),
-                            textStyle = LocalTextStyle.current.copy(fontSize = 14.sp)
+                            textStyle = LocalTextStyle.current.copy(fontSize = 14.sp),
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                            keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) })
                         )
                     }
 
@@ -187,7 +201,9 @@ fun CreateGroupStep1Screen(navController: NavController, viewModel: GroupViewMod
                         value = location,
                         onValueChange = { location = it },
                         placeholder = "e.g. Area 47, Lilongwe",
-                        fadedColor = fadedColor
+                        fadedColor = fadedColor,
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                        keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) })
                     )
                 }
             }
@@ -202,7 +218,9 @@ fun CreateGroupStep1Screen(navController: NavController, viewModel: GroupViewMod
                                 value = minContribution,
                                 onValueChange = { minContribution = it },
                                 placeholder = "2000",
-                                fadedColor = fadedColor
+                                fadedColor = fadedColor,
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
+                                keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) })
                             )
                         }
                         Box(modifier = Modifier.weight(1f)) {
@@ -211,7 +229,9 @@ fun CreateGroupStep1Screen(navController: NavController, viewModel: GroupViewMod
                                 value = maxMembers,
                                 onValueChange = { maxMembers = it },
                                 placeholder = "10",
-                                fadedColor = fadedColor
+                                fadedColor = fadedColor,
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
+                                keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() })
                             )
                         }
                     }
@@ -350,7 +370,15 @@ fun SectionCard(title: String, icon: ImageVector, content: @Composable () -> Uni
 }
 
 @Composable
-fun CustomInputField(label: String, value: String, onValueChange: (String) -> Unit, placeholder: String, fadedColor: Color) {
+fun CustomInputField(
+    label: String, 
+    value: String, 
+    onValueChange: (String) -> Unit, 
+    placeholder: String, 
+    fadedColor: Color,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    keyboardActions: KeyboardActions = KeyboardActions.Default
+) {
     Column {
         Text(label, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = TextSecondary)
         Spacer(modifier = Modifier.height(6.dp))
@@ -367,7 +395,9 @@ fun CustomInputField(label: String, value: String, onValueChange: (String) -> Un
                 focusedContainerColor = BackgroundGray.copy(alpha = 0.3f)
             ),
             singleLine = true,
-            textStyle = LocalTextStyle.current.copy(fontSize = 14.sp)
+            textStyle = LocalTextStyle.current.copy(fontSize = 14.sp),
+            keyboardOptions = keyboardOptions,
+            keyboardActions = keyboardActions
         )
     }
 }

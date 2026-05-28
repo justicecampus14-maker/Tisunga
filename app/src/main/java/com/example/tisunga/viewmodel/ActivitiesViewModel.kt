@@ -10,6 +10,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import retrofit2.HttpException
+import java.net.ConnectException
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -36,6 +40,36 @@ class ActivitiesViewModel(private val savedStateHandle: SavedStateHandle) : View
     private fun saveState() {
         savedStateHandle.set("meetings", _meetings.value)
         savedStateHandle.set("events", _events.value)
+    }
+
+    private fun handleError(e: Exception): String {
+        val rawMessage = when (e) {
+            is ConnectException, is UnknownHostException -> "Server connection failed. Please check your internet."
+            is SocketTimeoutException -> "Connection timed out. Try again later."
+            is HttpException -> {
+                try {
+                    val errorBody = e.response()?.errorBody()?.string()
+                    val json = com.google.gson.JsonParser.parseString(errorBody).asJsonObject
+                    if (json.has("message")) json.get("message").asString
+                    else if (json.has("error")) json.get("error").asString
+                    else "Server error (${e.code()})"
+                } catch (_: Exception) { "Server error (${e.code()})" }
+            }
+            else -> e.message
+        }
+        
+        val msg = rawMessage ?: "An unexpected error occurred"
+        
+        return when {
+            msg.contains("prisma", ignoreCase = true) -> "A database error occurred."
+            msg.contains("Internal Server Error", ignoreCase = true) -> "Something went wrong on our end."
+            msg.contains("where minimum is", ignoreCase = true) -> {
+                val value = msg.substringAfter("where minimum is").trim().takeWhile { it.isDigit() || it == '.' || it == ',' }
+                if (value.isNotEmpty()) "The minimum value required is $value" 
+                else "The value entered is below the required minimum."
+            }
+            else -> msg
+        }
     }
 
     fun clearError() { _error.value = null }
@@ -68,7 +102,7 @@ class ActivitiesViewModel(private val savedStateHandle: SavedStateHandle) : View
             _meetings.value = fetchedMeetings.distinctBy { it.id }
             saveState()
         } catch (e: Exception) {
-            e.printStackTrace()
+            // Non-fatal error for silent failure if meetings fail but events might succeed
         }
         
         try {
@@ -76,8 +110,7 @@ class ActivitiesViewModel(private val savedStateHandle: SavedStateHandle) : View
             _events.value = fetchedEvents.distinctBy { it.id }
             saveState()
         } catch (e: Exception) {
-            e.printStackTrace()
-            _error.value = "Failed to load events: ${e.message}"
+            _error.value = handleError(e)
         }
     }
 
@@ -120,8 +153,7 @@ class ActivitiesViewModel(private val savedStateHandle: SavedStateHandle) : View
                 _meetings.value = (listOf(newMeeting) + _meetings.value).distinctBy { it.id }
                 saveState()
             } catch (e: Exception) {
-                e.printStackTrace()
-                _error.value = "Failed to create meeting: ${e.message}"
+                _error.value = handleError(e)
             } finally {
                 _isLoading.value = false
             }
@@ -157,8 +189,7 @@ class ActivitiesViewModel(private val savedStateHandle: SavedStateHandle) : View
                 _events.value = (listOf(newEvent) + _events.value).distinctBy { it.id }
                 saveState()
             } catch (e: Exception) {
-                e.printStackTrace()
-                _error.value = "Create Event Failed: ${e.message}"
+                _error.value = handleError(e)
             } finally {
                 _isLoading.value = false
             }

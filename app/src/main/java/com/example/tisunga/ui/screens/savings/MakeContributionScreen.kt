@@ -12,6 +12,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -40,12 +41,22 @@ fun MakeContributionScreen(
     val keyboardController = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
     
+    // Backend expects "SAVINGS" for regular contributions
     val contributionTypes = listOf(
         "SAVINGS" to stringResource(R.string.regular_contribution_label),
         "SOCIAL_FUND" to stringResource(R.string.social_welfare_label)
     )
     var expanded by remember { mutableStateOf(false) }
     var selectedType by remember { mutableStateOf(contributionTypes[0]) }
+
+    val onContribute = {
+        val amtVal = amount.toDoubleOrNull() ?: 0.0
+        // Clean phone number: keep the '+' if present, but remove spaces/dashes
+        val cleanPhone = phone.trim().replace(" ", "").replace("-", "")
+        if (amtVal > 0 && cleanPhone.isNotEmpty()) {
+            viewModel.makeContribution(groupId, amtVal, cleanPhone, selectedType.first)
+        }
+    }
 
     if (uiState.showPendingDialog) {
         AlertDialog(
@@ -137,12 +148,20 @@ fun MakeContributionScreen(
                     Text(stringResource(R.string.phone_number_label), fontSize = 14.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface)
                     OutlinedTextField(
                         value = phone,
-                        onValueChange = { phone = it },
+                        onValueChange = { input -> 
+                            // Allow digits, plus, and spaces
+                            if (input.all { it.isDigit() || it == '+' || it == ' ' || it == '-' }) {
+                                phone = input
+                            }
+                        },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Phone,
                             imeAction = ImeAction.Next
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onNext = { focusManager.moveFocus(FocusDirection.Down) }
                         ),
                         placeholder = { Text(stringResource(R.string.phone_placeholder)) }
                     )
@@ -152,7 +171,7 @@ fun MakeContributionScreen(
                     Text(stringResource(R.string.amount_mk_input_label), fontSize = 14.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface)
                     OutlinedTextField(
                         value = amount,
-                        onValueChange = { if (it.all { char -> char.isDigit() }) amount = it },
+                        onValueChange = { if (it.isEmpty() || it.all { char -> char.isDigit() || char == '.' }) amount = it },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
                         keyboardOptions = KeyboardOptions(
@@ -163,6 +182,7 @@ fun MakeContributionScreen(
                             onDone = { 
                                 focusManager.clearFocus()
                                 keyboardController?.hide()
+                                onContribute()
                             }
                         ),
                         placeholder = { Text(stringResource(R.string.enter_amount_hint)) }
@@ -186,12 +206,7 @@ fun MakeContributionScreen(
                     }
 
                     Button(
-                        onClick = { 
-                            val amtVal = amount.toDoubleOrNull() ?: 0.0
-                            if (amtVal > 0 && phone.isNotEmpty()) {
-                                viewModel.makeContribution(groupId, amtVal, phone, selectedType.first)
-                            }
-                        },
+                        onClick = { onContribute() },
                         modifier = Modifier.fillMaxWidth().height(52.dp),
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),

@@ -12,6 +12,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import retrofit2.HttpException
+import java.net.ConnectException
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 
 private const val TAG = "HomeViewModel"
 
@@ -35,6 +39,38 @@ class HomeViewModel(
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
     private val apiService = ApiClient.getClient()
+
+    private fun handleError(e: Exception): String {
+        val rawMessage = when (e) {
+            is ConnectException, is UnknownHostException -> "Server connection failed. Please check your internet."
+            is SocketTimeoutException -> "Connection timed out. Try again later."
+            is HttpException -> {
+                try {
+                    val errorBody = e.response()?.errorBody()?.string()
+                    val json = com.google.gson.JsonParser.parseString(errorBody).asJsonObject
+                    if (json.has("message")) json.get("message").asString
+                    else if (json.has("error")) json.get("error").asString
+                    else "Server error (${e.code()})"
+                } catch (_: Exception) { "Server error (${e.code()})" }
+            }
+            else -> e.message
+        }
+        
+        val msg = rawMessage ?: "An unexpected error occurred"
+        
+        return when {
+            msg.contains("prisma", ignoreCase = true) -> "A database error occurred."
+            msg.contains("Internal Server Error", ignoreCase = true) -> "Something went wrong on our end."
+            msg.contains("Cannot ", ignoreCase = true) && msg.contains("/", ignoreCase = true) -> "The requested service is currently unavailable."
+            msg.contains("route", ignoreCase = true) -> "Connection issue. Please try again."
+            msg.contains("where minimum is", ignoreCase = true) -> {
+                val value = msg.substringAfter("where minimum is").trim().takeWhile { it.isDigit() || it == '.' || it == ',' }
+                if (value.isNotEmpty()) "The minimum amount required is MWK $value" 
+                else "Amount is below the minimum limit."
+            }
+            else -> msg
+        }
+    }
 
     fun loadHomeData() {
         viewModelScope.launch {
@@ -66,10 +102,6 @@ class HomeViewModel(
 
                 // 2. Fetch Group Data
                 val response = apiService.getMyGroup()
-
-                Log.d(TAG, "getMyGroup response: hasNoGroup=${response.hasNoGroup()}, " +
-                        "groupId=${response.groupId}, groupName=${response.groupName}, " +
-                        "group=${response.group?.id}, role=${response.role}")
 
                 if (response.hasNoGroup()) {
                     _uiState.value = _uiState.value.copy(
@@ -114,7 +146,7 @@ class HomeViewModel(
                 Log.e(TAG, "Home data load failed: ${e.message}")
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    errorMessage = "Failed to load: ${e.message}"
+                    errorMessage = handleError(e)
                 )
             }
         }

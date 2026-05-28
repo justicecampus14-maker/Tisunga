@@ -10,6 +10,7 @@ import com.example.tisunga.data.remote.ApiClient
 import com.example.tisunga.data.remote.dto.AttendanceEntry
 import com.example.tisunga.data.remote.dto.BulkAttendanceRequest
 import com.example.tisunga.data.remote.dto.MeetingDetailResponse
+import com.example.tisunga.utils.NetworkErrorHandler
 import com.example.tisunga.utils.SessionManager
 import android.content.Context
 import android.net.Uri
@@ -56,7 +57,7 @@ class MeetingViewModel(
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading    = false,
-                    errorMessage = e.message ?: "Failed to load meetings"
+                    errorMessage = NetworkErrorHandler.getSafeMessage(e)
                 )
             }
         }
@@ -110,13 +111,13 @@ class MeetingViewModel(
                     } else {
                         _uiState.value = _uiState.value.copy(
                             isLoading    = false,
-                            errorMessage = e.message ?: "Meeting not found"
+                            errorMessage = "Meeting not found"
                         )
                     }
                 } catch (e2: Exception) {
                     _uiState.value = _uiState.value.copy(
                         isLoading    = false,
-                        errorMessage = e.message ?: "Failed to load meeting details"
+                        errorMessage = NetworkErrorHandler.getSafeMessage(e)
                     )
                 }
             }
@@ -151,7 +152,7 @@ class MeetingViewModel(
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading    = false,
-                    errorMessage = e.message ?: "Failed to create meeting"
+                    errorMessage = NetworkErrorHandler.getSafeMessage(e)
                 )
             }
         }
@@ -196,7 +197,7 @@ class MeetingViewModel(
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading    = false,
-                    errorMessage = e.message ?: "Failed to update status"
+                    errorMessage = NetworkErrorHandler.getSafeMessage(e)
                 )
             }
         }
@@ -255,7 +256,7 @@ class MeetingViewModel(
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    errorMessage = e.message ?: "Failed to complete meeting"
+                    errorMessage = NetworkErrorHandler.getSafeMessage(e)
                 )
             }
         }
@@ -305,7 +306,7 @@ class MeetingViewModel(
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    errorMessage = e.message ?: "Failed to upload image"
+                    errorMessage = NetworkErrorHandler.getSafeMessage(e)
                 )
             }
         }
@@ -349,7 +350,7 @@ class MeetingViewModel(
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    errorMessage = e.message ?: "Failed to update notes"
+                    errorMessage = NetworkErrorHandler.getSafeMessage(e)
                 )
             }
         }
@@ -373,7 +374,7 @@ class MeetingViewModel(
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading    = false,
-                    errorMessage = e.message ?: "Failed to update agenda"
+                    errorMessage = NetworkErrorHandler.getSafeMessage(e)
                 )
             }
         }
@@ -397,7 +398,7 @@ class MeetingViewModel(
                 getMeetingAttendance(groupId, meetingId)
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
-                    errorMessage = e.message ?: "Failed to mark attendance"
+                    errorMessage = NetworkErrorHandler.getSafeMessage(e)
                 )
             }
         }
@@ -443,7 +444,7 @@ class MeetingViewModel(
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading    = false,
-                    errorMessage = e.message ?: "Failed to submit attendance"
+                    errorMessage = NetworkErrorHandler.getSafeMessage(e)
                 )
             }
         }
@@ -462,7 +463,7 @@ class MeetingViewModel(
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading    = false,
-                    errorMessage = e.message ?: "Failed to load attendance"
+                    errorMessage = NetworkErrorHandler.getSafeMessage(e)
                 )
             }
         }
@@ -481,7 +482,7 @@ class MeetingViewModel(
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading    = false,
-                    errorMessage = e.message ?: "Failed to send reminder"
+                    errorMessage = NetworkErrorHandler.getSafeMessage(e)
                 )
             }
         }

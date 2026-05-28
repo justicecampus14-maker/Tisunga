@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tisunga.data.model.Loan
 import com.example.tisunga.data.remote.ApiClient
+import com.example.tisunga.data.remote.dto.ApplyLoanRequest
 import com.example.tisunga.data.remote.dto.RejectLoanRequest
 import com.example.tisunga.data.remote.dto.RepayLoanRequest
 import com.example.tisunga.utils.SessionManager
@@ -12,6 +13,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import retrofit2.HttpException
+import java.net.ConnectException
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 import kotlin.math.pow
 
 data class LoanUiState(
@@ -41,6 +46,36 @@ class LoanViewModel(
     val uiState: StateFlow<LoanUiState> = _uiState.asStateFlow()
     private val apiService = ApiClient.getClient()
 
+    private fun handleError(e: Exception): String {
+        val rawMessage = when (e) {
+            is ConnectException, is UnknownHostException -> "Server connection failed. Please check your internet."
+            is SocketTimeoutException -> "Connection timed out. Try again later."
+            is HttpException -> {
+                try {
+                    val errorBody = e.response()?.errorBody()?.string()
+                    val json = com.google.gson.JsonParser.parseString(errorBody).asJsonObject
+                    if (json.has("message")) json.get("message").asString
+                    else if (json.has("error")) json.get("error").asString
+                    else "Server error (${e.code()})"
+                } catch (_: Exception) { "Server error (${e.code()})" }
+            }
+            else -> e.message
+        }
+        
+        val msg = rawMessage ?: "An unexpected error occurred"
+        
+        return when {
+            msg.contains("prisma", ignoreCase = true) -> "A database error occurred."
+            msg.contains("Internal Server Error", ignoreCase = true) -> "Something went wrong on our end."
+            msg.contains("where minimum is", ignoreCase = true) -> {
+                val value = msg.substringAfter("where minimum is").trim().takeWhile { it.isDigit() || it == '.' || it == ',' }
+                if (value.isNotEmpty()) "The minimum amount required is MWK $value" 
+                else "Amount is below the minimum limit."
+            }
+            else -> msg
+        }
+    }
+
     // ── Data Fetching ─────────────────────────────────────────────────────────
 
     fun getMyLoans() {
@@ -50,7 +85,7 @@ class LoanViewModel(
                 val loans = apiService.getMyLoansApi()
                 _uiState.value = _uiState.value.copy(isLoading = false, myLoans = loans)
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(isLoading = false, errorMessage = e.message ?: "Failed to load my loans")
+                _uiState.value = _uiState.value.copy(isLoading = false, errorMessage = handleError(e))
             }
         }
     }
@@ -62,7 +97,7 @@ class LoanViewModel(
                 val loans = apiService.getGroupLoans(groupId)
                 _uiState.value = _uiState.value.copy(isLoading = false, groupLoans = loans)
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(isLoading = false, errorMessage = e.message ?: "Failed to load group loans")
+                _uiState.value = _uiState.value.copy(isLoading = false, errorMessage = handleError(e))
             }
         }
     }
@@ -79,7 +114,7 @@ class LoanViewModel(
                     memberLoansName = response.borrowerName
                 )
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(isLoading = false, errorMessage = e.message ?: "Failed")
+                _uiState.value = _uiState.value.copy(isLoading = false, errorMessage = handleError(e))
             }
         }
     }
@@ -90,13 +125,13 @@ class LoanViewModel(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = "", isSuccess = false)
             try {
-                val body = mapOf(
-                    "groupId" to groupId,
-                    "amount" to amount,
-                    "durationMonths" to durationMonths,
-                    "purpose" to purpose
+                val body = ApplyLoanRequest(
+                    groupId = groupId,
+                    amount = amount,
+                    durationMonths = durationMonths,
+                    purpose = purpose
                 )
-                apiService.applyForLoan(body)
+                apiService.applyForLoanTyped(body)
                 _uiState.value = _uiState.value.copy(
                     isLoading = false, 
                     isSuccess = true,
@@ -104,7 +139,7 @@ class LoanViewModel(
                 )
                 getMyLoans()
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(isLoading = false, errorMessage = e.message ?: "Error")
+                _uiState.value = _uiState.value.copy(isLoading = false, errorMessage = handleError(e))
             }
         }
     }
@@ -121,7 +156,7 @@ class LoanViewModel(
                 )
                 getGroupLoans(groupId)
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(isApproving = null, errorMessage = e.message ?: "Approval failed")
+                _uiState.value = _uiState.value.copy(isApproving = null, errorMessage = handleError(e))
             }
         }
     }
@@ -138,7 +173,7 @@ class LoanViewModel(
                 )
                 getGroupLoans(groupId)
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(isRejecting = null, errorMessage = e.message ?: "Rejection failed")
+                _uiState.value = _uiState.value.copy(isRejecting = null, errorMessage = handleError(e))
             }
         }
     }
@@ -155,7 +190,7 @@ class LoanViewModel(
                 )
                 getMyLoans()
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(isRepaying = false, errorMessage = e.message ?: "Repayment failed")
+                _uiState.value = _uiState.value.copy(isRepaying = false, errorMessage = handleError(e))
             }
         }
     }

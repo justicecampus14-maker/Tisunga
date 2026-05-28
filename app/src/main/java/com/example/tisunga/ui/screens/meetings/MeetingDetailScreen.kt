@@ -4,12 +4,17 @@ import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
@@ -17,15 +22,18 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.compose.ui.platform.LocalContext
-import android.widget.Toast
-import androidx.compose.ui.res.stringResource
+import coil.compose.AsyncImage
 import com.example.tisunga.R
 import com.example.tisunga.data.model.MeetingAttendance
 import com.example.tisunga.ui.components.StatusBadge
@@ -46,11 +54,9 @@ fun MeetingDetailScreen(
     val meeting = uiState.selectedMeeting
     val context = LocalContext.current
     val sessionManager = remember { com.example.tisunga.utils.SessionManager(context) }
-    val navBackStackEntry by navController.currentBackStackEntryAsState()
     
     var showCompleteDialog by remember { mutableStateOf(false) }
     var showCancelDialog by remember { mutableStateOf(false) }
-    var isAttendanceExpanded by remember { mutableStateOf(false) }
     
     var isEditingNotes by remember { mutableStateOf(false) }
     var discussionText by remember(meetingId) { mutableStateOf("") }
@@ -90,7 +96,6 @@ fun MeetingDetailScreen(
             Toast.makeText(context, uiState.successMessage, Toast.LENGTH_SHORT).show()
             viewModel.resetState()
         }
-        // Do NOT resetState() here for errorMessage, as we want to show it in the UI with a Retry button
         if (uiState.errorMessage.isNotEmpty()) {
             Toast.makeText(context, uiState.errorMessage, Toast.LENGTH_LONG).show()
         }
@@ -235,7 +240,7 @@ fun MeetingDetailScreen(
                 }
             }
         } else {
-            // Error or Initial State
+            // Error or Not Found State
             Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(24.dp)) {
                     if (uiState.errorMessage.isNotEmpty()) {
@@ -252,17 +257,13 @@ fun MeetingDetailScreen(
                             Text("Retry")
                         }
                     } else {
-                        // If no meeting and no error, we are likely still loading or it truly doesn't exist.
-                        // Since we cleared state on entry, it's normal for it to be null for a few ms.
+                        // Not loading, no meeting, no error
                         CircularProgressIndicator(color = GreenAccent)
                         
-                        // If after some time it's still null and not loading, it might be a 404
                         var showNotFound by remember { mutableStateOf(false) }
                         LaunchedEffect(Unit) {
                             kotlinx.coroutines.delay(3000)
-                            if (meeting == null && !uiState.isLoading) {
-                                showNotFound = true
-                            }
+                            showNotFound = true
                         }
                         
                         if (showNotFound) {
@@ -294,6 +295,7 @@ fun MeetingHeaderCard(
 ) {
     var isEditing by remember { mutableStateOf(false) }
     var editedAgenda by remember { mutableStateOf(agenda) }
+    val focusManager = LocalFocusManager.current
 
     LaunchedEffect(agenda) {
         editedAgenda = agenda
@@ -314,7 +316,6 @@ fun MeetingHeaderCard(
                 StatusBadge(status)
             }
             
-            // Description (Agenda)
             Spacer(modifier = Modifier.height(12.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -352,7 +353,13 @@ fun MeetingHeaderCard(
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = GreenAccent,
                         cursorColor = GreenAccent
-                    )
+                    ),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(onDone = {
+                        focusManager.clearFocus()
+                        onSaveAgenda(editedAgenda)
+                        isEditing = false
+                    })
                 )
             } else {
                 Text(
@@ -363,7 +370,6 @@ fun MeetingHeaderCard(
                 )
             }
 
-            // Location
             if (!location.isNullOrBlank()) {
                 Spacer(modifier = Modifier.height(16.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -373,13 +379,31 @@ fun MeetingHeaderCard(
                 }
             }
 
-            // Date
             Spacer(modifier = Modifier.height(8.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Default.CalendarToday, contentDescription = null, modifier = Modifier.size(16.dp), tint = TextSecondary)
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(formatDate(scheduledAt), color = TextSecondary, fontSize = 14.sp)
             }
+        }
+    }
+}
+
+@Composable
+fun MeetingNotesCard(notes: String) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = stringResource(R.string.meeting_notes_label),
+                fontWeight = FontWeight.Bold,
+                fontSize = 16.sp
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(text = notes, fontSize = 14.sp, color = TextPrimary)
         }
     }
 }
@@ -401,6 +425,7 @@ fun MeetingDiscussionCard(
     isChair: Boolean = false
 ) {
     val hasChanges = notes != originalNotes
+    val focusManager = LocalFocusManager.current
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -443,11 +468,21 @@ fun MeetingDiscussionCard(
                             .heightIn(min = 40.dp),
                         textStyle = LocalTextStyle.current.copy(color = TextPrimary, fontSize = 14.sp),
                         decorationBox = { innerTextField ->
-                            if (notes.isEmpty()) {
-                                Text("Type meeting discussion/notes here...", color = TextSecondary, fontSize = 14.sp)
+                            Box {
+                                if (notes.isEmpty()) {
+                                    Text("Type meeting discussion/notes here...", color = TextSecondary, fontSize = 14.sp)
+                                }
+                                innerTextField()
                             }
-                            innerTextField()
-                        }
+                        },
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(onDone = {
+                            if (hasChanges) {
+                                onSave()
+                                onEditingChange(false)
+                            }
+                            focusManager.clearFocus()
+                        })
                     )
                     
                     Row(
@@ -545,39 +580,39 @@ fun MeetingDiscussionCard(
                 }
             }
 
-                if (isChair && !imageUrl.isNullOrBlank()) {
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = "Uploaded Minutes:",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 12.sp,
-                        color = TextSecondary,
-                        modifier = Modifier.padding(bottom = 4.dp)
-                    )
-                    
-                    val fullImageUrl = if (imageUrl.startsWith("http")) imageUrl 
-                                     else "${com.example.tisunga.utils.Constants.BASE_URL.removeSuffix("api/v1/")}uploads/meetings/$imageUrl"
+            if (isChair && !imageUrl.isNullOrBlank()) {
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = "Uploaded Minutes:",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 12.sp,
+                    color = TextSecondary,
+                    modifier = Modifier.padding(bottom = 4.dp)
+                )
+                
+                val fullImageUrl = if (imageUrl.startsWith("http")) imageUrl 
+                                 else "${com.example.tisunga.utils.Constants.BASE_URL.removeSuffix("api/v1/")}uploads/meetings/$imageUrl"
 
-                    AsyncImage(
-                        model = fullImageUrl,
-                        contentDescription = "Meeting Minutes",
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(200.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .border(1.dp, BackgroundGray, RoundedCornerShape(8.dp)),
-                        contentScale = ContentScale.Fit
-                    )
-                    
-                    if (isEditable) {
-                        TextButton(
-                            onClick = onImagePick,
-                            modifier = Modifier.align(Alignment.End)
-                        ) {
-                            Text("Replace Image", fontSize = 12.sp, color = GreenAccent)
-                        }
+                AsyncImage(
+                    model = fullImageUrl,
+                    contentDescription = "Meeting Minutes",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .border(1.dp, BackgroundGray, RoundedCornerShape(8.dp)),
+                    contentScale = ContentScale.Fit
+                )
+                
+                if (isEditable) {
+                    TextButton(
+                        onClick = onImagePick,
+                        modifier = Modifier.align(Alignment.End)
+                    ) {
+                        Text("Replace Image", fontSize = 12.sp, color = GreenAccent)
                     }
                 }
+            }
         }
     }
 }
@@ -611,40 +646,6 @@ fun MeetingActionsCard(onComplete: () -> Unit, onCancel: () -> Unit) {
                     shape = RoundedCornerShape(8.dp)
                 ) {
                     Text(stringResource(R.string.cancel_button), color = Color.White)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun MeetingAttendanceSummaryCard(present: Int, total: Int, percent: Int) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(stringResource(R.string.attendance_overview_title), fontWeight = FontWeight.Bold, fontSize = 16.sp)
-            Spacer(modifier = Modifier.height(12.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column {
-                    Text(stringResource(R.string.present_count_label, present, total), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = GreenAccent)
-                    Text(stringResource(R.string.attendance_rate_label), fontSize = 12.sp, color = TextSecondary)
-                }
-                Box(contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(
-                        progress = { percent / 100f },
-                        modifier = Modifier.size(60.dp),
-                        color = GreenAccent,
-                        trackColor = BackgroundGray,
-                        strokeWidth = 6.dp
-                    )
-                    Text("$percent%", fontSize = 14.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }

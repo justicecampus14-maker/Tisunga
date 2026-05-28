@@ -7,6 +7,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Info
@@ -17,8 +19,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -41,6 +46,7 @@ fun AddMembersScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+    val focusManager = LocalFocusManager.current
 
     var phoneSearch  by remember { mutableStateOf("") }
     var selectedRole by remember { mutableStateOf("MEMBER") }
@@ -50,6 +56,13 @@ fun AddMembersScreen(
     LaunchedEffect(groupId) {
         if (uiState.selectedGroup == null || uiState.selectedGroup?.id != groupId) {
             viewModel.getGroupDashboard(groupId)
+        }
+    }
+
+    val isPhoneValid = phoneSearch.length == 10 && (phoneSearch.startsWith("09") || phoneSearch.startsWith("08"))
+    val onSearch = {
+        if (isPhoneValid) {
+            viewModel.searchMemberByPhone(phoneSearch)
         }
     }
 
@@ -116,8 +129,6 @@ fun AddMembersScreen(
             // Search Section
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    val isPhoneValid = phoneSearch.length == 10 && (phoneSearch.startsWith("09") || phoneSearch.startsWith("08"))
-                    
                     Text("FIND MEMBER", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = TextSecondary, letterSpacing = 1.sp)
                     OutlinedTextField(
                         value = phoneSearch,
@@ -130,7 +141,7 @@ fun AddMembersScreen(
                                 CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp, color = NavyBlue)
                             } else {
                                 TextButton(
-                                    onClick = { if (isPhoneValid) viewModel.searchMemberByPhone(phoneSearch) }, 
+                                    onClick = { onSearch() }, 
                                     enabled = isPhoneValid && !uiState.isLoading
                                 ) {
                                     Text("SEARCH", fontWeight = FontWeight.Bold, color = if (isPhoneValid) NavyBlue else Color.LightGray)
@@ -144,6 +155,16 @@ fun AddMembersScreen(
                             focusedBorderColor = NavyBlue,
                             unfocusedContainerColor = White,
                             focusedContainerColor = White
+                        ),
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Phone,
+                            imeAction = ImeAction.Search
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onSearch = {
+                                focusManager.clearFocus()
+                                onSearch()
+                            }
                         ),
                         supportingText = {
                             if (phoneSearch.isNotEmpty() && !isPhoneValid && phoneSearch.length == 10) {

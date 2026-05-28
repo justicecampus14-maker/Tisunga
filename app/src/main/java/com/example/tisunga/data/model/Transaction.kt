@@ -5,8 +5,11 @@ import com.google.gson.annotations.SerializedName
 
 enum class TransactionType {
     @SerializedName("SAVINGS") SAVINGS,
+    @SerializedName("CONTRIBUTION") CONTRIBUTION,
     @SerializedName("LOAN_OUT") LOAN_OUT,
     @SerializedName("LOAN_IN") LOAN_IN,
+    @SerializedName("LOAN_REPAYMENT") LOAN_REPAYMENT,
+    @SerializedName("LOAN_DISBURSEMENT") LOAN_DISBURSEMENT,
     @SerializedName("SOCIAL_FUND") SOCIAL_FUND,
     @SerializedName("SHARE_PURCHASE") SHARE_PURCHASE,
     @SerializedName("EXPENSE") EXPENSE,

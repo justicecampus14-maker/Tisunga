@@ -7,7 +7,9 @@ import com.example.tisunga.data.model.Contribution
 import com.example.tisunga.data.model.Disbursement
 import com.example.tisunga.data.model.MemberSharePayout
 import com.example.tisunga.data.remote.ApiClient
+import com.example.tisunga.data.remote.dto.ContributionRequest
 import com.example.tisunga.data.remote.dto.RejectDisbursementRequest
+import com.example.tisunga.utils.NetworkErrorHandler
 import com.example.tisunga.utils.SessionManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -64,14 +66,6 @@ class SavingsViewModel(
 
     // ── Main Savings Screen loader ────────────────────────────────────────────
 
-    /**
-     * Loads everything the Savings screen needs:
-     *   1. GET /groups/{groupId}/dashboard   → totalSavings, mySavings, memberCount
-     *      (backend now computes reliable totals from confirmed contributions when
-     *       group.totalSavings is 0 due to webhook not having fired)
-     *   2. GET /groups/{groupId}/members/savings → per-member savings list
-     *      (NEW endpoint — replaces the disbursement workaround)
-     */
     fun loadSavingsData(groupId: String) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = "")
@@ -82,9 +76,6 @@ class SavingsViewModel(
                 val myPersonal  = dashboard.mySavings
                 val count       = dashboard.group?.memberCount  ?: 0
 
-                // ── Per-member savings via the new dedicated endpoint ──────────
-                // This replaces the old disbursement-data workaround which only
-                // returned data when an active disbursement existed.
                 val memberRows: List<MemberSavingsRow> = try {
                     apiService.getMemberSavings(groupId).map { dto ->
                         MemberSavingsRow(
@@ -96,8 +87,6 @@ class SavingsViewModel(
                         )
                     }
                 } catch (e: Exception) {
-                    // Endpoint not yet deployed — fall back to an empty list so the
-                    // screen still renders the group-total and my-savings cards.
                     emptyList()
                 }
 
@@ -126,13 +115,12 @@ class SavingsViewModel(
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading    = false,
-                    errorMessage = e.message ?: "Failed to load savings"
+                    errorMessage = NetworkErrorHandler.getSafeMessage(e)
                 )
             }
         }
     }
 
-    /** Alias kept for compatibility with call-sites that used this name */
     fun getGroupSavingsData(groupId: String) = loadSavingsData(groupId)
 
     // ── Contribution history ──────────────────────────────────────────────────
@@ -144,7 +132,10 @@ class SavingsViewModel(
                 val contributions = savingsRepository.getMyContributions()
                 _uiState.value = _uiState.value.copy(isLoading = false, contributions = contributions)
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(isLoading = false)
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    errorMessage = NetworkErrorHandler.getSafeMessage(e)
+                )
             }
         }
     }
@@ -159,8 +150,6 @@ class SavingsViewModel(
                     return@launch
                 }
 
-                // Try fetching from the group-contributions endpoint as a fallback or if groupId is provided,
-                // as the user-specific endpoint is currently reporting 404 in some environments.
                 val contributions = if (!groupId.isNullOrEmpty()) {
                     try {
                         apiService.getGroupContributions(groupId).filter { it.userId == userId }
@@ -175,7 +164,7 @@ class SavingsViewModel(
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading    = false,
-                    errorMessage = e.message ?: "Failed to load history"
+                    errorMessage = NetworkErrorHandler.getSafeMessage(e)
                 )
             }
         }
@@ -190,7 +179,7 @@ class SavingsViewModel(
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading    = false,
-                    errorMessage = e.message ?: "Failed to load group history"
+                    errorMessage = NetworkErrorHandler.getSafeMessage(e)
                 )
             }
         }
@@ -201,10 +190,11 @@ class SavingsViewModel(
             _uiState.value = _uiState.value.copy(isLoading = true)
             try {
                 apiService.makeContribution(
-                    mapOf(
-                        "groupId" to contribution.groupId,
-                        "amount"  to contribution.amount,
-                        "type"    to contribution.type
+                    ContributionRequest(
+                        groupId = contribution.groupId,
+                        amount  = contribution.amount,
+                        phone   = contribution.phoneUsed ?: sessionManager.getUserPhone() ?: "",
+                        type    = contribution.type
                     )
                 )
                 _uiState.value = _uiState.value.copy(
@@ -218,7 +208,7 @@ class SavingsViewModel(
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading    = false,
-                    errorMessage = e.message ?: "Failed to make contribution"
+                    errorMessage = NetworkErrorHandler.getSafeMessage(e)
                 )
             }
         }
@@ -249,7 +239,7 @@ class SavingsViewModel(
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading    = false,
-                    errorMessage = e.message ?: "Failed to request disbursement"
+                    errorMessage = NetworkErrorHandler.getSafeMessage(e)
                 )
             }
         }
@@ -270,7 +260,7 @@ class SavingsViewModel(
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading    = false,
-                    errorMessage = e.message ?: "Failed to approve disbursement"
+                    errorMessage = NetworkErrorHandler.getSafeMessage(e)
                 )
             }
         }
@@ -293,7 +283,7 @@ class SavingsViewModel(
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading    = false,
-                    errorMessage = e.message ?: "Failed to reject disbursement"
+                    errorMessage = NetworkErrorHandler.getSafeMessage(e)
                 )
             }
         }
@@ -306,8 +296,6 @@ class SavingsViewModel(
             errorMessage   = ""
         )
     }
-
-    // ── Mapping helpers ───────────────────────────────────────────────────────
 
     private fun com.example.tisunga.data.remote.dto.DisbursementResponse.toDomain() = Disbursement(
         id              = id,

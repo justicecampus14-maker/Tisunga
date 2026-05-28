@@ -7,6 +7,7 @@ import com.example.tisunga.data.model.Contribution
 import com.example.tisunga.data.remote.ApiClient
 import com.example.tisunga.data.remote.dto.ContributionInitResponse
 import com.example.tisunga.data.repository.ContributionRepository
+import com.example.tisunga.utils.NetworkErrorHandler
 import com.example.tisunga.utils.SessionManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -47,7 +48,7 @@ class ContributionViewModel(
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    errorMessage = e.message ?: "Failed to initiate contribution"
+                    errorMessage = NetworkErrorHandler.getSafeMessage(e)
                 )
             }
         }
@@ -62,7 +63,7 @@ class ContributionViewModel(
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    errorMessage = e.message ?: "Failed to load your history"
+                    errorMessage = NetworkErrorHandler.getSafeMessage(e)
                 )
             }
         }
@@ -77,7 +78,7 @@ class ContributionViewModel(
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    errorMessage = e.message ?: "Failed to load group history"
+                    errorMessage = NetworkErrorHandler.getSafeMessage(e)
                 )
             }
         }

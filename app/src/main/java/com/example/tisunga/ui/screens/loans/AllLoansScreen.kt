@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -19,8 +21,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -53,6 +57,7 @@ fun AllLoansScreen(
     val drawerState       = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope             = rememberCoroutineScope()
     val snackbarHost      = remember { SnackbarHostState() }
+    val focusManager      = LocalFocusManager.current
 
     val pullToRefreshState = rememberPullToRefreshState()
 
@@ -108,6 +113,14 @@ fun AllLoansScreen(
 
     // Reject dialog
     if (rejectingLoanId != null) {
+        val performReject = {
+            if (rejectReason.isNotBlank()) {
+                rejectingLoanId?.let { viewModel.rejectLoan(it, rejectReason, groupId) }
+                rejectingLoanId = null
+                rejectReason = ""
+            }
+        }
+
         AlertDialog(
             onDismissRequest = { 
                 rejectingLoanId = null 
@@ -127,17 +140,18 @@ fun AllLoansScreen(
                         placeholder = { Text(stringResource(R.string.enter_reason_hint)) },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(10.dp),
-                        minLines = 2
+                        minLines = 2,
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(onDone = {
+                            focusManager.clearFocus()
+                            performReject()
+                        })
                     )
                 }
             },
             confirmButton = {
                 Button(
-                    onClick = {
-                        rejectingLoanId?.let { viewModel.rejectLoan(it, rejectReason, groupId) }
-                        rejectingLoanId = null
-                        rejectReason = ""
-                    },
+                    onClick = { performReject() },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
                     enabled = rejectReason.isNotBlank()
                 ) { Text(stringResource(R.string.reject_button_label), color = Color.White) }

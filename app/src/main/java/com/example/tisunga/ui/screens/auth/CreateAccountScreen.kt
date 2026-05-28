@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -13,8 +14,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -41,6 +44,21 @@ fun CreateAccountScreen(navController: NavController, viewModel: AuthViewModel) 
         if (uiState.isSuccess) {
             navController.navigate("verification/REGISTRATION")
             viewModel.resetState()
+        }
+    }
+
+    val invalidPhoneMsg = stringResource(R.string.error_invalid_phone_format)
+    val performRegistration = {
+        focusManager.clearFocus()
+        val isValidPrefix = phone.startsWith("09") || phone.startsWith("08")
+        if (phone.length == 10 && isValidPrefix) {
+            if (firstName.isNotEmpty() && lastName.isNotEmpty()) {
+                viewModel.register(firstName, middleName, lastName, phone)
+            } else {
+                showError = true
+            }
+        } else {
+            phoneError = invalidPhoneMsg
         }
     }
 
@@ -89,7 +107,13 @@ fun CreateAccountScreen(navController: NavController, viewModel: AuthViewModel) 
                             unfocusedContainerColor = BackgroundGray,
                             focusedContainerColor = BackgroundGray
                         ),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Phone,
+                            imeAction = ImeAction.Next
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onNext = { focusManager.moveFocus(FocusDirection.Down) }
+                        ),
                         singleLine = true,
                         isError = phoneError.isNotEmpty()
                     )
@@ -120,6 +144,12 @@ fun CreateAccountScreen(navController: NavController, viewModel: AuthViewModel) 
                             unfocusedContainerColor = BackgroundGray,
                             focusedContainerColor = BackgroundGray
                         ),
+                        keyboardOptions = KeyboardOptions(
+                            imeAction = ImeAction.Next
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onNext = { focusManager.moveFocus(FocusDirection.Down) }
+                        ),
                         singleLine = true
                     )
                     
@@ -140,6 +170,12 @@ fun CreateAccountScreen(navController: NavController, viewModel: AuthViewModel) 
                             unfocusedContainerColor = BackgroundGray,
                             focusedContainerColor = BackgroundGray
                         ),
+                        keyboardOptions = KeyboardOptions(
+                            imeAction = ImeAction.Done
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onDone = { performRegistration() }
+                        ),
                         singleLine = true
                     )
                     
@@ -155,22 +191,8 @@ fun CreateAccountScreen(navController: NavController, viewModel: AuthViewModel) 
                     
                     Spacer(modifier = Modifier.height(24.dp))
                     
-                    val invalidPhoneMsg = stringResource(R.string.error_invalid_phone_format)
-                    
                     Button(
-                        onClick = { 
-                            focusManager.clearFocus()
-                            val isValidPrefix = phone.startsWith("09") || phone.startsWith("08")
-                            if (phone.length == 10 && isValidPrefix) {
-                                if (firstName.isNotEmpty() && lastName.isNotEmpty()) {
-                                    viewModel.register(firstName, middleName, lastName, phone)
-                                } else {
-                                    showError = true
-                                }
-                            } else {
-                                phoneError = invalidPhoneMsg
-                            }
-                        },
+                        onClick = { performRegistration() },
                         enabled = phone.length == 10 && firstName.isNotEmpty() && lastName.isNotEmpty() && !uiState.isLoading,
                         modifier = Modifier.fillMaxWidth().height(52.dp),
                         shape = RoundedCornerShape(12.dp),

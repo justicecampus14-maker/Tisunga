@@ -36,18 +36,33 @@ class AuthViewModel(private val sessionManager: SessionManager) : ViewModel() {
     private val repo = AuthRepository(ApiClient.getClient())
 
     private fun handleError(e: Exception): String {
-        return when (e) {
-            is ConnectException, is UnknownHostException -> "Server connection failed."
-            is SocketTimeoutException -> "Connection timed out."
+        val rawMessage = when (e) {
+            is ConnectException, is UnknownHostException -> "Server connection failed. Please check your internet."
+            is SocketTimeoutException -> "Connection timed out. Try again later."
             is HttpException -> {
                 try {
                     val errorBody = e.response()?.errorBody()?.string()
                     val json = com.google.gson.JsonParser.parseString(errorBody).asJsonObject
                     if (json.has("message")) json.get("message").asString
+                    else if (json.has("error")) json.get("error").asString
                     else "Server error (${e.code()})"
                 } catch (_: Exception) { "Server error (${e.code()})" }
             }
-            else -> e.message ?: "An unexpected error occurred"
+            else -> e.message
+        }
+        
+        val msg = rawMessage ?: "An unexpected error occurred"
+        
+        // Sanitize technical/backend details to protect user from confusing technical info
+        return when {
+            msg.contains("prisma", ignoreCase = true) -> "A database error occurred. Please try again later."
+            msg.contains("Internal Server Error", ignoreCase = true) -> "Something went wrong on our end."
+            msg.contains("where minimum is", ignoreCase = true) -> {
+                val value = msg.substringAfter("where minimum is").trim().takeWhile { it.isDigit() || it == '.' || it == ',' }
+                if (value.isNotEmpty()) "The minimum amount required is MWK $value" 
+                else "The amount entered is below the allowed minimum."
+            }
+            else -> msg
         }
     }
 
@@ -91,7 +106,7 @@ class AuthViewModel(private val sessionManager: SessionManager) : ViewModel() {
                 repo.resendOtp(userId, purpose)
                 _uiState.value = _uiState.value.copy(successMessage = "Code resent")
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(errorMessage = e.message ?: "Failed to resend")
+                _uiState.value = _uiState.value.copy(errorMessage = handleError(e))
             }
         }
     }
