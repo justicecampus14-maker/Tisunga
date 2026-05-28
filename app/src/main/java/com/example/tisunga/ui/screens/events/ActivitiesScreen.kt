@@ -241,9 +241,10 @@ fun MeetingsContent(
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             items(meetings) { m ->
+                val status = m.status.uppercase()
                 val show = when (filter) {
-                    "UPCOMING" -> m.status.uppercase() == "UPCOMING" || m.status.uppercase() == "OPEN"
-                    "CLOSED" -> m.status.uppercase() == "CLOSED" || m.status.uppercase() == "COMPLETED"
+                    "UPCOMING" -> status == "SCHEDULED" || status == "ONGOING"
+                    "CLOSED" -> status == "COMPLETED" || status == "CANCELLED" || status == "CLOSED"
                     else -> true
                 }
                 if (show) {
@@ -307,7 +308,6 @@ fun MeetingCard(m: Meeting, onClick: () -> Unit) {
                         }
                     }
 
-                    val dateStr = try { m.scheduledAt.take(16).replace("T", " ") } catch (e: Exception) { m.scheduledAt }
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.padding(top = 2.dp)
@@ -320,7 +320,7 @@ fun MeetingCard(m: Meeting, onClick: () -> Unit) {
                         )
                         Spacer(Modifier.width(4.dp))
                         Text(
-                            text = dateStr,
+                            text = FormatUtils.formatDateTime(m.scheduledAt),
                             fontSize = 12.sp,
                             color = Color.Gray
                         )
@@ -388,9 +388,10 @@ fun EventsContent(
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             items(events) { e ->
+                val status = e.status.uppercase()
                 val show = when (filter) {
-                    "UPCOMING" -> e.status.uppercase() == "UPCOMING" || e.status.uppercase() == "OPEN"
-                    "CLOSED" -> e.status.uppercase() == "CLOSED" || e.status.uppercase() == "COMPLETED"
+                    "UPCOMING" -> status == "UPCOMING" || status == "OPEN" || status == "ONGOING"
+                    "CLOSED" -> status == "CLOSED" || status == "COMPLETED" || status == "CANCELLED"
                     else -> true
                 }
                 if (show) {
@@ -440,9 +441,10 @@ fun EventCard(e: Event) {
 
 @Composable
 fun StatusBadge(status: String) {
-    val color = when (status.uppercase()) {
-        "UPCOMING", "OPEN" -> GreenAccent
-        "CLOSED", "COMPLETED" -> Color.Gray
+    val statusUpper = status.uppercase()
+    val color = when (statusUpper) {
+        "SCHEDULED", "ONGOING", "OPEN", "UPCOMING" -> GreenAccent
+        "COMPLETED", "CLOSED" -> Color.Gray
         "CANCELLED" -> RedAccent
         else -> NavyBlue
     }
@@ -526,7 +528,7 @@ fun CreateMeetingDialog(onDismiss: () -> Unit, onCreate: (String, String, String
             Button(
                 onClick = {
                     if (title.isNotBlank() && date.isNotBlank()) {
-                        onCreate(title, agenda, date.replace(" ", "T"), location)
+                        onCreate(title, agenda, date, location)
                     }
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = NavyBlue)

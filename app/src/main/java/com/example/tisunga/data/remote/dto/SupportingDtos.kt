@@ -19,7 +19,9 @@ data class MeetingDetailResponse(
     @SerializedName("scheduledAt")       val scheduledAt: String,
     @SerializedName("status")            val status: String,
     @SerializedName("notes")             val notes: String? = null,
-    @SerializedName("imageUrl")          val imageUrl: String? = null, // Fixed: image -> imageUrl
+    @SerializedName("image")             val image: String? = null,
+    @SerializedName("imageUrl")          val imageUrl: String? = null,
+    @SerializedName("images")            val images: List<String> = emptyList(),
     @SerializedName("creatorName")       val creatorName: String? = null,
     @SerializedName("attendance")        val attendance: List<MeetingAttendance> = emptyList(),
     @SerializedName("presentCount")      val presentCount: Int = 0,
@@ -37,8 +39,9 @@ data class BulkAttendanceRequest(
 )
 
 data class AttendanceEntry(
+    @SerializedName("id")     val id: String? = null,
     @SerializedName("userId") val userId: String,
-    @SerializedName("status") val status: String,   // "PRESENT" | "ABSENT" | "EXCUSED" | "LATE"
+    @SerializedName("status") val status: String,   // "PRESENT" | "LATE" | "ABSENT" | "EXCUSED"
     @SerializedName("note")   val note: String? = null
 )
 

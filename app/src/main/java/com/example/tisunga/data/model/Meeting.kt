@@ -14,7 +14,8 @@ data class Meeting(
     val scheduledAt: String,          // ISO date string e.g. "2025-05-10T10:00:00.000Z"
     val status: String,               // "SCHEDULED" | "ONGOING" | "COMPLETED" | "CANCELLED"
     val notes: String? = null,
-    val imageUrl: String? = null,     // Match backend field
+    val image: String? = null,
+    val imageUrl: String? = null,
     val notifiedAt: String? = null,
     val createdAt: String? = null,
     val creatorName: String? = null,

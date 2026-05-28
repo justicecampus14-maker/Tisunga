@@ -40,19 +40,17 @@ fun AttendanceScreen(
     }
 
     LaunchedEffect(uiState.attendance) {
-        uiState.attendance.forEach {
-            if (!attendanceEntries.containsKey(it.userId)) {
-                attendanceEntries[it.userId] = it.status.uppercase()
+        if (uiState.attendance.isNotEmpty()) {
+            uiState.attendance.forEach {
+                if (!attendanceEntries.containsKey(it.userId) || attendanceEntries[it.userId] == "PENDING") {
+                    attendanceEntries[it.userId] = it.status.uppercase().ifBlank { "PENDING" }
+                }
             }
         }
     }
 
-    // Refresh Local Map if it's empty and we have data
-    if (attendanceEntries.isEmpty() && uiState.attendance.isNotEmpty()) {
-        uiState.attendance.forEach {
-            attendanceEntries[it.userId] = it.status.uppercase()
-        }
-    }
+    // Remove the redundant if(attendanceEntries.isEmpty()...) block below to avoid conflicts
+
 
     LaunchedEffect(uiState.isSuccess) {
         if (uiState.isSuccess) {
@@ -76,8 +74,12 @@ fun AttendanceScreen(
         bottomBar = {
             Button(
                 onClick = {
-                    val entries = attendanceEntries.map { (userId, status) ->
-                        AttendanceEntry(userId, status)
+                    val entries = uiState.attendance.map { attendance ->
+                        AttendanceEntry(
+                            id = attendance.id,
+                            userId = attendance.userId,
+                            status = attendanceEntries[attendance.userId] ?: attendance.status
+                        )
                     }
                     viewModel.submitBulkAttendance(groupId, meetingId, entries)
                 },
@@ -197,17 +199,19 @@ fun AttendanceMarkRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                listOf("PRESENT", "ABSENT", "EXCUSED").forEach { status ->
+                listOf("PRESENT", "LATE", "ABSENT", "EXCUSED").forEach { status ->
                     val isSelected = currentStatus.uppercase() == status
                     val color = when (status) {
                         "PRESENT" -> GreenAccent
+                        "LATE" -> OrangeTag
                         "ABSENT" -> RedAccent
-                        "EXCUSED" -> OrangeTag
+                        "EXCUSED" -> Color.Gray
                         else -> TextSecondary
                     }
                     
                     val label = when (status) {
                         "PRESENT" -> stringResource(R.string.status_present)
+                        "LATE" -> stringResource(R.string.status_late)
                         "ABSENT" -> stringResource(R.string.status_absent)
                         "EXCUSED" -> stringResource(R.string.status_excused)
                         else -> status
