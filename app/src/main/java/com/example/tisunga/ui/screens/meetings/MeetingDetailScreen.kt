@@ -1,10 +1,19 @@
 package com.example.tisunga.ui.screens.meetings
 
+import android.net.Uri
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
@@ -12,21 +21,26 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalSavedStateRegistryOwner
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.compose.ui.platform.LocalContext
-import android.widget.Toast
-import androidx.compose.ui.res.stringResource
+import coil.compose.AsyncImage
 import com.example.tisunga.R
+import com.example.tisunga.ViewModelFactory
 import com.example.tisunga.data.model.MeetingAttendance
 import com.example.tisunga.ui.components.StatusBadge
 import com.example.tisunga.ui.components.TisungaConfirmDialog
 import com.example.tisunga.ui.theme.*
 import com.example.tisunga.utils.FormatUtils.formatDate
+import com.example.tisunga.utils.SessionManager
 import com.example.tisunga.viewmodel.MeetingViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -35,38 +49,46 @@ fun MeetingDetailScreen(
     navController: NavController,
     groupId: String,
     meetingId: String,
-    viewModel: MeetingViewModel
+    viewModel: MeetingViewModel = viewModel(
+        factory = ViewModelFactory(
+            SessionManager(LocalContext.current),
+            LocalSavedStateRegistryOwner.current
+        )
+    )
 ) {
+    val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
     val meeting = uiState.selectedMeeting
-    val context = LocalContext.current
-    val sessionManager = remember { com.example.tisunga.utils.SessionManager(context) }
-    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val sessionManager = remember { SessionManager(context) }
     
     var showCompleteDialog by remember { mutableStateOf(false) }
     var showCancelDialog by remember { mutableStateOf(false) }
+    var isAttendanceExpanded by remember { mutableStateOf(false) }
+    
+    var discussionText by remember(meetingId, meeting?.notes) { mutableStateOf(meeting?.notes ?: "") }
+    var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
+    
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        selectedImageUri = uri
+    }
 
     val groupRole = sessionManager.getGroupRole(groupId)?.uppercase() ?: "MEMBER"
     val isChair = groupRole == "CHAIR" || groupRole == "CHAIRPERSON" || groupRole == "SECRETARY" || groupRole == "ADMIN"
 
-    LaunchedEffect(groupId, meetingId, navBackStackEntry) {
-        // Refresh data whenever we are on this screen
-        if (navBackStackEntry?.destination?.route?.startsWith("meeting_detail") == true) {
-            viewModel.getMeeting(groupId, meetingId)
-        }
+    LaunchedEffect(groupId, meetingId) {
+        viewModel.getMeeting(groupId, meetingId)
     }
 
-    LaunchedEffect(uiState.isSuccess, uiState.errorMessage, navBackStackEntry) {
-        val isCurrent = navBackStackEntry?.destination?.route?.startsWith("meeting_detail") == true
-        if (isCurrent) {
-            if (uiState.isSuccess && uiState.successMessage.isNotEmpty()) {
-                Toast.makeText(context, uiState.successMessage, Toast.LENGTH_SHORT).show()
-                viewModel.resetState()
-            }
-            if (uiState.errorMessage.isNotEmpty()) {
-                Toast.makeText(context, uiState.errorMessage, Toast.LENGTH_LONG).show()
-                viewModel.resetState()
-            }
+    LaunchedEffect(uiState.isSuccess, uiState.errorMessage) {
+        if (uiState.isSuccess && uiState.successMessage.isNotEmpty()) {
+            Toast.makeText(context, uiState.successMessage, Toast.LENGTH_SHORT).show()
+            viewModel.resetState()
+        }
+        if (uiState.errorMessage.isNotEmpty()) {
+            Toast.makeText(context, uiState.errorMessage, Toast.LENGTH_LONG).show()
+            viewModel.resetState()
         }
     }
 
@@ -88,7 +110,7 @@ fun MeetingDetailScreen(
                 ExtendedFloatingActionButton(
                     onClick = { 
                         viewModel.resetState()
-                        navController.navigate("attendance/$groupId/${meeting?.id}") 
+                        navController.navigate("attendance/$groupId/$meetingId") 
                     },
                     containerColor = GreenAccent,
                     contentColor = Color.White,
@@ -104,7 +126,7 @@ fun MeetingDetailScreen(
                 message = stringResource(R.string.complete_meeting_msg),
                 onConfirm = {
                     showCompleteDialog = false
-                    viewModel.updateStatus(groupId, meetingId, "COMPLETED")
+                    viewModel.completeMeeting(groupId, meetingId, discussionText, selectedImageUri, context)
                 },
                 onDismiss = { showCompleteDialog = false }
             )
@@ -142,18 +164,8 @@ fun MeetingDetailScreen(
                         status = meeting.status,
                         scheduledAt = meeting.scheduledAt,
                         location = meeting.location,
-                        agenda = meeting.agenda ?: "",
-                        isEditable = isChair && (meeting.status.uppercase() == "SCHEDULED" || meeting.status.uppercase() == "ONGOING"),
-                        onSaveAgenda = { newAgenda ->
-                            viewModel.updateMeetingAgenda(groupId, meetingId, newAgenda)
-                        }
+                        agenda = meeting.agenda ?: ""
                     )
-                }
-
-                if (!meeting.notes.isNullOrBlank()) {
-                    item {
-                        MeetingNotesCard(meeting.notes)
-                    }
                 }
 
                 val statusUpper = meeting.status.uppercase()
@@ -167,20 +179,49 @@ fun MeetingDetailScreen(
                 }
 
                 item {
-                    MeetingAttendanceSummaryCard(meeting.presentCount, meeting.totalCount, meeting.attendancePercent)
-                }
-
-                item {
-                    Text(
-                        stringResource(R.string.attendance_list_title),
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(vertical = 8.dp)
+                    MeetingDiscussionCard(
+                        notes = discussionText,
+                        onNotesChange = { discussionText = it },
+                        isEditable = isChair && (statusUpper == "SCHEDULED" || statusUpper == "ONGOING"),
+                        onSave = { 
+                            viewModel.updateMeetingNotes(groupId, meetingId, discussionText) 
+                        },
+                        onImagePick = { imagePickerLauncher.launch("image/*") },
+                        onImageRemove = { selectedImageUri = null },
+                        imageUri = selectedImageUri,
+                        imageUrl = meeting.imageUrl
                     )
                 }
 
-                items(meeting.attendance, key = { it.userId }) { attendance ->
-                    AttendanceMemberItem(attendance)
+                val isAttendanceTaken = meeting.totalCount > 0 && 
+                    meeting.status.uppercase().trim() != "SCHEDULED" &&
+                    meeting.attendance.any { it.status.isNotBlank() && it.status.uppercase().trim() != "PENDING" }
+
+                item {
+                    MeetingAttendanceSummaryCard(
+                        present = meeting.presentCount,
+                        total = meeting.totalCount,
+                        percent = meeting.attendancePercent,
+                        isExpanded = isAttendanceExpanded,
+                        isAttendanceTaken = isAttendanceTaken,
+                        hasMembers = meeting.attendance.isNotEmpty(),
+                        onExpandClick = { isAttendanceExpanded = !isAttendanceExpanded }
+                    )
+                }
+
+                if (isAttendanceExpanded && meeting.attendance.isNotEmpty()) {
+                    item {
+                        Text(
+                            stringResource(R.string.attendance_list_title),
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(vertical = 8.dp)
+                        )
+                    }
+
+                    items(meeting.attendance, key = { it.userId }) { attendance ->
+                        AttendanceMemberItem(attendance)
+                    }
                 }
                 
                 item {
@@ -197,17 +238,8 @@ fun MeetingHeaderCard(
     status: String,
     scheduledAt: String,
     location: String?,
-    agenda: String,
-    isEditable: Boolean = false,
-    onSaveAgenda: (String) -> Unit = {}
+    agenda: String
 ) {
-    var isEditing by remember { mutableStateOf(false) }
-    var editedAgenda by remember { mutableStateOf(agenda) }
-
-    LaunchedEffect(agenda) {
-        editedAgenda = agenda
-    }
-
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
@@ -223,56 +255,23 @@ fun MeetingHeaderCard(
                 StatusBadge(status)
             }
             
-            // Description (Agenda)
             Spacer(modifier = Modifier.height(12.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Description, contentDescription = null, modifier = Modifier.size(18.dp), tint = GreenAccent)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(stringResource(R.string.agenda_label), fontWeight = FontWeight.Bold, fontSize = 15.sp, color = GreenAccent)
-                }
-
-                if (isEditable) {
-                    IconButton(onClick = {
-                        if (isEditing) {
-                            onSaveAgenda(editedAgenda)
-                        }
-                        isEditing = !isEditing
-                    }, modifier = Modifier.size(32.dp)) {
-                        Icon(
-                            imageVector = if (isEditing) Icons.Default.Save else Icons.Default.Edit,
-                            contentDescription = null,
-                            tint = GreenAccent,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-                }
+                Icon(Icons.Default.Description, contentDescription = null, modifier = Modifier.size(18.dp), tint = GreenAccent)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(stringResource(R.string.agenda_label), fontWeight = FontWeight.Bold, fontSize = 15.sp, color = GreenAccent)
             }
             
-            if (isEditing) {
-                OutlinedTextField(
-                    value = editedAgenda,
-                    onValueChange = { editedAgenda = it },
-                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = GreenAccent,
-                        cursorColor = GreenAccent
-                    )
-                )
-            } else {
-                Text(
-                    text = agenda.ifBlank { "No agenda specified." },
-                    color = TextPrimary,
-                    modifier = Modifier.padding(top = 4.dp),
-                    fontSize = 14.sp
-                )
-            }
+            Text(
+                text = agenda.ifBlank { "No agenda specified." },
+                color = TextPrimary,
+                modifier = Modifier.padding(top = 4.dp),
+                fontSize = 14.sp
+            )
 
-            // Location
             if (!location.isNullOrBlank()) {
                 Spacer(modifier = Modifier.height(16.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -282,7 +281,6 @@ fun MeetingHeaderCard(
                 }
             }
 
-            // Date
             Spacer(modifier = Modifier.height(8.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Default.CalendarToday, contentDescription = null, modifier = Modifier.size(16.dp), tint = TextSecondary)
@@ -294,53 +292,145 @@ fun MeetingHeaderCard(
 }
 
 @Composable
-fun MeetingNotesCard(notes: String) {
+fun MeetingActionsCard(
+    onComplete: () -> Unit,
+    onCancel: () -> Unit
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.Description, contentDescription = null, modifier = Modifier.size(20.dp), tint = OrangeTag)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(stringResource(R.string.meeting_notes_label), fontWeight = FontWeight.Bold, fontSize = 16.sp)
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(notes, color = TextPrimary)
-        }
-    }
-}
-
-@Composable
-fun MeetingActionsCard(onComplete: () -> Unit, onCancel: () -> Unit) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(stringResource(R.string.admin_actions_title), fontWeight = FontWeight.Bold, fontSize = 16.sp)
-            Spacer(modifier = Modifier.height(12.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+        Row(
+            modifier = Modifier.padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Button(
+                onClick = onComplete,
+                modifier = Modifier.weight(1f),
+                colors = ButtonDefaults.buttonColors(containerColor = GreenAccent),
+                shape = RoundedCornerShape(8.dp)
             ) {
-                Button(
-                    onClick = onComplete,
-                    modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColors(containerColor = GreenAccent),
-                    shape = RoundedCornerShape(8.dp)
+                Text("Complete Meeting")
+            }
+            OutlinedButton(
+                onClick = onCancel,
+                modifier = Modifier.weight(1f),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Red),
+                border = BorderStroke(1.dp, Color.Red),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Text("Cancel")
+            }
+        }
+    }
+}
+
+@Composable
+fun MeetingDiscussionCard(
+    notes: String,
+    onNotesChange: (String) -> Unit,
+    isEditable: Boolean,
+    onSave: () -> Unit,
+    onImagePick: () -> Unit,
+    onImageRemove: () -> Unit,
+    imageUri: Uri? = null,
+    imageUrl: String? = null
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = stringResource(R.string.meeting_notes_label),
+                fontWeight = FontWeight.Bold,
+                fontSize = 16.sp
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            
+            if (isEditable) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .border(1.dp, Color.LightGray, RoundedCornerShape(8.dp))
+                        .padding(8.dp)
                 ) {
-                    Text(stringResource(R.string.complete_button), color = Color.White)
+                    BasicTextField(
+                        value = notes,
+                        onValueChange = onNotesChange,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 40.dp),
+                        textStyle = LocalTextStyle.current.copy(color = TextPrimary, fontSize = 14.sp),
+                        decorationBox = { innerTextField ->
+                            if (notes.isEmpty()) {
+                                Text("Type meeting discussion/notes here...", color = TextSecondary, fontSize = 14.sp)
+                            }
+                            innerTextField()
+                        }
+                    )
+                    
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        IconButton(onClick = onImagePick) {
+                            Icon(Icons.Default.PhotoCamera, contentDescription = "Add image", tint = GreenAccent)
+                        }
+                        if (notes.isNotBlank()) {
+                            Button(
+                                onClick = onSave,
+                                colors = ButtonDefaults.buttonColors(containerColor = GreenAccent),
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                                shape = RoundedCornerShape(4.dp)
+                            ) {
+                                Text("Save Notes", fontSize = 12.sp)
+                            }
+                        }
+                    }
                 }
-                Button(
-                    onClick = onCancel,
-                    modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColors(containerColor = RedAccent),
-                    shape = RoundedCornerShape(8.dp)
+            } else if (notes.isNotBlank()) {
+                Text(notes, color = TextPrimary, fontSize = 14.sp)
+            } else {
+                Text("No notes available for this meeting.", color = TextSecondary, fontSize = 14.sp, style = androidx.compose.ui.text.TextStyle(fontStyle = androidx.compose.ui.text.font.FontStyle.Italic))
+            }
+
+            // Image display logic
+            if (imageUri != null || !imageUrl.isNullOrBlank()) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp)
+                        .clip(RoundedCornerShape(8.dp))
                 ) {
-                    Text(stringResource(R.string.cancel_button), color = Color.White)
+                    AsyncImage(
+                        model = imageUri ?: imageUrl,
+                        contentDescription = "Meeting photo",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                    
+                    if (isEditable && imageUri != null) {
+                        Surface(
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .padding(8.dp)
+                                .clickable { onImageRemove() },
+                            shape = CircleShape,
+                            color = Color.Black.copy(alpha = 0.5f)
+                        ) {
+                            Icon(
+                                Icons.Default.Close,
+                                contentDescription = "Remove",
+                                tint = Color.White,
+                                modifier = Modifier.padding(4.dp).size(16.dp)
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -348,34 +438,72 @@ fun MeetingActionsCard(onComplete: () -> Unit, onCancel: () -> Unit) {
 }
 
 @Composable
-fun MeetingAttendanceSummaryCard(present: Int, total: Int, percent: Int) {
+fun MeetingAttendanceSummaryCard(
+    present: Int,
+    total: Int,
+    percent: Int,
+    isExpanded: Boolean,
+    isAttendanceTaken: Boolean,
+    hasMembers: Boolean,
+    onExpandClick: () -> Unit
+) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(enabled = hasMembers) { onExpandClick() },
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(stringResource(R.string.attendance_overview_title), fontWeight = FontWeight.Bold, fontSize = 16.sp)
-            Spacer(modifier = Modifier.height(12.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column {
-                    Text(stringResource(R.string.present_count_label, present, total), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = GreenAccent)
-                    Text(stringResource(R.string.attendance_rate_label), fontSize = 12.sp, color = TextSecondary)
-                }
-                Box(contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(
-                        progress = { percent / 100f },
-                        modifier = Modifier.size(60.dp),
-                        color = GreenAccent,
-                        trackColor = BackgroundGray,
-                        strokeWidth = 6.dp
+                Text(stringResource(R.string.attendance_overview_title), fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                if (hasMembers) {
+                    Icon(
+                        if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                        contentDescription = null,
+                        tint = TextSecondary
                     )
-                    Text("$percent%", fontSize = 14.sp, fontWeight = FontWeight.Bold)
                 }
+            }
+            
+            Spacer(modifier = Modifier.height(12.dp))
+            
+            if (isAttendanceTaken) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        LinearProgressIndicator(
+                            progress = { percent / 100f },
+                            modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)),
+                            color = GreenAccent,
+                            trackColor = BackgroundGray,
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text("$present out of $total members present", fontSize = 14.sp, color = TextSecondary)
+                    }
+                    
+                    Box(
+                        modifier = Modifier
+                            .padding(start = 16.dp)
+                            .size(50.dp)
+                            .border(2.dp, GreenAccent, CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("$percent%", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = GreenAccent)
+                    }
+                }
+            } else {
+                Text(
+                    text = if (total > 0) "Attendance has not been marked yet." else "No members in this group.",
+                    color = TextSecondary,
+                    fontSize = 14.sp
+                )
             }
         }
     }
@@ -383,44 +511,68 @@ fun MeetingAttendanceSummaryCard(present: Int, total: Int, percent: Int) {
 
 @Composable
 fun AttendanceMemberItem(attendance: MeetingAttendance) {
-    val user = attendance.user ?: return
-    val status = attendance.status.uppercase()
-    
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(8.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        border = BorderStroke(1.dp, BackgroundGray)
     ) {
         Row(
             modifier = Modifier.padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text("${user.firstName} ${user.lastName}", fontWeight = FontWeight.Bold)
-                Text(user.phone, fontSize = 12.sp, color = TextSecondary)
-            }
-            
-            val (statusColor, statusLabel) = when (status) {
-                "PRESENT" -> GreenAccent to stringResource(R.string.status_present)
-                "ABSENT" -> RedAccent to stringResource(R.string.status_absent)
-                "EXCUSED" -> OrangeTag to stringResource(R.string.status_excused)
-                else -> TextSecondary to status
-            }
-            
-            Surface(
-                color = statusColor.copy(alpha = 0.1f),
-                shape = RoundedCornerShape(16.dp)
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(GreenAccent.copy(alpha = 0.1f)),
+                contentAlignment = Alignment.Center
             ) {
-                Text(
-                    statusLabel,
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                    color = statusColor,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 11.sp
-                )
+                val user = attendance.user
+                if (user != null) {
+                    if (!user.avatarUrl.isNullOrBlank()) {
+                        AsyncImage(
+                            model = user.avatarUrl,
+                            contentDescription = null,
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        Text(
+                            text = user.firstName.take(1),
+                            color = GreenAccent,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                } else {
+                    Text(
+                        text = "?",
+                        color = GreenAccent,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
+            
+            Spacer(modifier = Modifier.width(12.dp))
+            
+            Column(modifier = Modifier.weight(1f)) {
+                val fullName = if (attendance.user != null) {
+                    "${attendance.user.firstName} ${attendance.user.lastName}"
+                } else {
+                    "Unknown Member"
+                }
+                Text(
+                    text = fullName,
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 15.sp
+                )
+                if (!attendance.note.isNullOrBlank()) {
+                    Text(attendance.note, fontSize = 12.sp, color = TextSecondary)
+                }
+            }
+            
+            StatusBadge(attendance.status)
         }
     }
 }

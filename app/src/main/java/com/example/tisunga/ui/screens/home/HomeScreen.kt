@@ -11,6 +11,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -19,6 +21,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -176,6 +179,7 @@ fun AppDrawerContent(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     navController: NavController,
@@ -187,6 +191,23 @@ fun HomeScreen(
     val notificationState by notificationViewModel.uiState.collectAsState()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+
+    val pullToRefreshState = rememberPullToRefreshState()
+
+    // Trigger data load on pull
+    LaunchedEffect(pullToRefreshState.isRefreshing) {
+        if (pullToRefreshState.isRefreshing) {
+            viewModel.loadHomeData()
+            notificationViewModel.load()
+        }
+    }
+
+    // Sync PullToRefresh indicator with ViewModel loading state
+    LaunchedEffect(uiState.isLoading) {
+        if (!uiState.isLoading) {
+            pullToRefreshState.endRefresh()
+        }
+    }
 
     LaunchedEffect(Unit) {
         viewModel.loadHomeData()
@@ -218,43 +239,56 @@ fun HomeScreen(
             )
         }
     ) {
-        if (uiState.isLoading && uiState.myGroups.isEmpty()) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-            }
-        } else {
-            Scaffold(
-                topBar = {
-                    HomeHeader(
-                        userPhone   = uiState.userPhone,
-                        unreadCount = notificationState.unreadCount,
-                        navController = navController,
-                        onMenuClick = { scope.launch { drawerState.open() } }
-                    )
-                },
-                bottomBar  = { BottomNavBar(navController) },
-                containerColor = MaterialTheme.colorScheme.background
-            ) { padding ->
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(padding)
-                        .verticalScroll(rememberScrollState())
-                ) {
-                    if (myGroup != null) {
-                        val lastUpdated = FormatUtils.formatDateTime(uiState.recentTransactions.firstOrNull()?.createdAt)
-                        GroupInfoCard(myGroup, lastUpdated)
-                    } else {
-                        BannerSection()
+        Scaffold(
+            topBar = {
+                HomeHeader(
+                    userPhone   = uiState.userPhone,
+                    unreadCount = notificationState.unreadCount,
+                    navController = navController,
+                    onMenuClick = { scope.launch { drawerState.open() } }
+                )
+            },
+            bottomBar  = { BottomNavBar(navController) },
+            containerColor = MaterialTheme.colorScheme.background
+        ) { padding ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .nestedScroll(pullToRefreshState.nestedScrollConnection)
+            ) {
+                if (uiState.isLoading && uiState.myGroups.isEmpty() && !pullToRefreshState.isRefreshing) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                     }
+                } else {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .verticalScroll(rememberScrollState())
+                    ) {
+                        if (myGroup != null) {
+                            val lastUpdated = FormatUtils.formatDateTime(uiState.recentTransactions.firstOrNull()?.createdAt)
+                            GroupInfoCard(myGroup, lastUpdated)
+                        } else {
+                            BannerSection()
+                        }
 
-                    QuickActionsSection(navController, myGroup, uiState.myRole)
+                        QuickActionsSection(navController, myGroup, uiState.myRole)
 
-                    RecentTransactionsSection(
-                        transactions = if (myGroup != null) uiState.recentTransactions else emptyList(),
-                        hasGroup = myGroup != null
-                    )
+                        RecentTransactionsSection(
+                            transactions = if (myGroup != null) uiState.recentTransactions else emptyList(),
+                            hasGroup = myGroup != null
+                        )
+                    }
                 }
+
+                PullToRefreshContainer(
+                    state = pullToRefreshState,
+                    modifier = Modifier.align(Alignment.TopCenter),
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    contentColor = MaterialTheme.colorScheme.primary
+                )
             }
         }
     }

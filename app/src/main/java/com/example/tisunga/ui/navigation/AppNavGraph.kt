@@ -17,6 +17,7 @@ import com.example.tisunga.ui.screens.events.ActivitiesScreen
 import com.example.tisunga.ui.screens.group.*
 import com.example.tisunga.ui.screens.home.HomeScreen
 import com.example.tisunga.ui.screens.home.SettingsScreen
+import com.example.tisunga.ui.screens.home.AboutScreen
 import com.example.tisunga.ui.screens.loans.*
 import com.example.tisunga.ui.screens.notifications.NotificationsScreen
 import com.example.tisunga.ui.screens.notifications.NotificationDetailScreen
@@ -71,6 +72,7 @@ object Routes {
     const val SETTINGS              = "settings"
     const val CHANGE_PASSWORD       = "change_password"
     const val EDIT_GROUP            = "edit_group/{groupId}"
+    const val ABOUT                 = "about"
 }
 
 @Composable
@@ -159,6 +161,7 @@ fun AppNavGraph(
             GroupMembersChairScreen(navController, groupId, groupViewModel)
         }
 
+        // ... (remaining composables)
         composable(Routes.CREATE_GROUP_STEP1) {
             CreateGroupStep1Screen(navController, groupViewModel)
         }
@@ -375,12 +378,17 @@ fun AppNavGraph(
             SettingsScreen(
                 navController = navController,
                 sessionManager = sessionManager,
-                homeViewModel = homeViewModel
+                homeViewModel = homeViewModel,
+                onThemeChange = onThemeChange
             )
         }
 
         composable(Routes.CHANGE_PASSWORD) { ComingSoonScreen("Change Password") }
         composable(Routes.MEETINGS) { ComingSoonScreen("Meetings") }
+
+        composable(Routes.ABOUT) {
+            AboutScreen(navController)
+        }
     }
 }
 

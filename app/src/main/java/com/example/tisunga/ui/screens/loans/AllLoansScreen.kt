@@ -11,11 +11,14 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -51,6 +54,8 @@ fun AllLoansScreen(
     val scope             = rememberCoroutineScope()
     val snackbarHost      = remember { SnackbarHostState() }
 
+    val pullToRefreshState = rememberPullToRefreshState()
+
     val currentGroup = homeUiState.myGroups.firstOrNull()
     val groupId      = currentGroup?.id ?: ""
     val myRole       = homeUiState.myRole?.uppercase() ?: ""
@@ -61,10 +66,26 @@ fun AllLoansScreen(
     var rejectingLoanId by remember { mutableStateOf<String?>(null) }
     var rejectReason    by remember { mutableStateOf("") }
 
-    // Load both my loans + group loans on entry
-    LaunchedEffect(groupId) {
+    val refreshData = {
         viewModel.getMyLoans()
         if (groupId.isNotEmpty()) viewModel.getGroupLoans(groupId)
+    }
+
+    // Load both my loans + group loans on entry
+    LaunchedEffect(groupId) {
+        refreshData()
+    }
+
+    if (pullToRefreshState.isRefreshing) {
+        LaunchedEffect(true) {
+            refreshData()
+        }
+    }
+
+    LaunchedEffect(uiState.isLoading) {
+        if (!uiState.isLoading) {
+            pullToRefreshState.endRefresh()
+        }
     }
 
     // Show snackbar on success or error
@@ -161,103 +182,116 @@ fun AllLoansScreen(
             bottomBar = { BottomNavBar(navController) },
             snackbarHost = { SnackbarHost(snackbarHost) }
         ) { padding ->
-            Column(
+            Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding)
-                    .verticalScroll(rememberScrollState())
+                    .nestedScroll(pullToRefreshState.nestedScrollConnection)
             ) {
-                if (uiState.isLoading) {
-                    LinearProgressIndicator(
-                        modifier = Modifier.fillMaxWidth(),
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-
-                if (isLeader && currentGroup != null) {
-                    GroupBalanceCard(
-                        totalSavings = currentGroup.totalSavings,
-                        actualAvailable = currentGroup.availableBalance
-                    )
-                    Spacer(Modifier.height(8.dp))
-                }
-
-                if (canApprove && pendingLoans.isNotEmpty()) {
-                    SectionHeader(
-                        title   = stringResource(R.string.pending_approvals_title),
-                        badge   = pendingLoans.size.toString(),
-                        action  = null
-                    )
-                    Column(
-                        modifier = Modifier.padding(horizontal = 16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        pendingLoans.forEach { loan ->
-                            PendingApprovalCard(
-                                loan       = loan,
-                                isApproving = uiState.isApproving == loan.id,
-                                isRejecting = uiState.isRejecting == loan.id,
-                                onApprove  = { viewModel.approveLoan(loan.id, groupId) },
-                                onReject   = { rejectingLoanId = loan.id }
-                            )
-                        }
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    if (uiState.isLoading && !pullToRefreshState.isRefreshing) {
+                        LinearProgressIndicator(
+                            modifier = Modifier.fillMaxWidth(),
+                            color = MaterialTheme.colorScheme.primary
+                        )
                     }
-                    Spacer(Modifier.height(8.dp))
-                }
 
-                SectionHeader(
-                    title  = stringResource(R.string.my_loan_title),
-                    action = if (uiState.myLoans.isNotEmpty()) Pair(stringResource(R.string.all_loans_link)) {
-                        navController.navigate("my_loans/$groupId")
-                    } else null
-                )
-
-                Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-                    when {
-                        activeMyLoan != null -> {
-                            ActiveLoanCard(
-                                loan         = activeMyLoan,
-                                onRepayClick = { navController.navigate("repay_loan/${activeMyLoan.id}") }
-                            )
-                        }
-                        pendingMyLoan != null -> {
-                            PendingOwnLoanCard(loan = pendingMyLoan)
-                        }
-                        uiState.myLoans.none { it.status.uppercase() == "ACTIVE" || it.status.uppercase() == "PENDING" } -> {
-                            NoLoanCard(
-                                hasGroup = groupId.isNotEmpty(),
-                                onApply  = { navController.navigate("apply_loan/$groupId") }
-                            )
-                        }
+                    if (isLeader && currentGroup != null) {
+                        GroupBalanceCard(
+                            totalSavings = currentGroup.totalSavings,
+                            actualAvailable = currentGroup.availableBalance
+                        )
+                        Spacer(Modifier.height(8.dp))
                     }
-                }
 
-                val activeGroupLoans = uiState.groupLoans.filter { it.status.uppercase() == "ACTIVE" }
-                if (activeGroupLoans.isNotEmpty()) {
-                    Spacer(Modifier.height(8.dp))
-                    SectionHeader(
-                        title  = stringResource(R.string.group_loan_activity_title),
-                        action = null
-                    )
-                    Column(
-                        modifier = Modifier.padding(horizontal = 16.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        activeGroupLoans.take(3).forEach { loan ->
-                            GroupLoanCard(loan)
+                    if (canApprove && pendingLoans.isNotEmpty()) {
+                        SectionHeader(
+                            title   = stringResource(R.string.pending_approvals_title),
+                            badge   = pendingLoans.size.toString(),
+                            action  = null
+                        )
+                        Column(
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            pendingLoans.forEach { loan ->
+                                PendingApprovalCard(
+                                    loan       = loan,
+                                    isApproving = uiState.isApproving == loan.id,
+                                    isRejecting = uiState.isRejecting == loan.id,
+                                    onApprove  = { viewModel.approveLoan(loan.id, groupId) },
+                                    onReject   = { rejectingLoanId = loan.id }
+                                )
+                            }
                         }
-                        if (activeGroupLoans.size > 3) {
-                            TextButton(
-                                onClick = { navController.navigate("group_loans/$groupId") },
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Text(stringResource(R.string.more_loans_link, activeGroupLoans.size - 3), color = MaterialTheme.colorScheme.primary)
+                        Spacer(Modifier.height(8.dp))
+                    }
+
+                    SectionHeader(
+                        title  = stringResource(R.string.my_loan_title),
+                        action = if (uiState.myLoans.isNotEmpty()) Pair(stringResource(R.string.all_loans_link)) {
+                            navController.navigate("my_loans/$groupId")
+                        } else null
+                    )
+
+                    Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+                        when {
+                            activeMyLoan != null -> {
+                                ActiveLoanCard(
+                                    loan         = activeMyLoan,
+                                    onRepayClick = { navController.navigate("repay_loan/${activeMyLoan.id}") }
+                                )
+                            }
+                            pendingMyLoan != null -> {
+                                PendingOwnLoanCard(loan = pendingMyLoan)
+                            }
+                            uiState.myLoans.none { it.status.uppercase() == "ACTIVE" || it.status.uppercase() == "PENDING" } -> {
+                                NoLoanCard(
+                                    hasGroup = groupId.isNotEmpty(),
+                                    onApply  = { navController.navigate("apply_loan/$groupId") }
+                                )
                             }
                         }
                     }
+
+                    val activeGroupLoans = uiState.groupLoans.filter { it.status.uppercase() == "ACTIVE" }
+                    if (activeGroupLoans.isNotEmpty()) {
+                        Spacer(Modifier.height(8.dp))
+                        SectionHeader(
+                            title  = stringResource(R.string.group_loan_activity_title),
+                            action = null
+                        )
+                        Column(
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            activeGroupLoans.take(3).forEach { loan ->
+                                GroupLoanCard(loan)
+                            }
+                            if (activeGroupLoans.size > 3) {
+                                TextButton(
+                                    onClick = { navController.navigate("group_loans/$groupId") },
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text(stringResource(R.string.more_loans_link, activeGroupLoans.size - 3), color = MaterialTheme.colorScheme.primary)
+                                }
+                            }
+                        }
+                    }
+
+                    Spacer(Modifier.height(100.dp))
                 }
 
-                Spacer(Modifier.height(100.dp))
+                PullToRefreshContainer(
+                    state = pullToRefreshState,
+                    modifier = Modifier.align(Alignment.TopCenter),
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    contentColor = MaterialTheme.colorScheme.primary
+                )
             }
         }
     }
@@ -279,7 +313,7 @@ fun GroupBalanceCard(totalSavings: Double, actualAvailable: Double) {
         ) {
             Text(
                 text = stringResource(R.string.group_balance_overview_title),
-                color = Color.White.copy(alpha = 0.9f),
+                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f),
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold
             )
@@ -291,26 +325,27 @@ fun GroupBalanceCard(totalSavings: Double, actualAvailable: Double) {
                 Column {
                     Text(
                         text = stringResource(R.string.total_rendered_label),
-                        color = Color.White.copy(alpha = 0.7f),
+                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f),
                         fontSize = 12.sp
                     )
                     Text(
                         text = FormatUtils.formatMoney(totalSavings),
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onPrimary,
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold
                     )
                 }
 
                 Column {
+                    @Suppress("DEPRECATION")
                     Text(
                         text = stringResource(R.string.actual_available_label),
-                        color = Color.White.copy(alpha = 0.7f),
+                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f),
                         fontSize = 12.sp
                     )
                     Text(
                         text = FormatUtils.formatMoney(actualAvailable),
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onPrimary,
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -420,6 +455,7 @@ private fun PendingApprovalCard(
                             overflow = TextOverflow.Ellipsis
                         )
 
+                        @Suppress("DEPRECATION")
                         Text(
                             loan.purpose?.ifBlank { stringResource(R.string.personal_loan_default) } ?: stringResource(R.string.personal_loan_default),
                             fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -440,7 +476,7 @@ private fun PendingApprovalCard(
             if (expanded) {
                 Spacer(Modifier.height(12.dp))
                 Surface(
-                    color = BackgroundGray,
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -494,6 +530,7 @@ private fun PendingApprovalCard(
                     } else {
                         Icon(Icons.Default.Close, null, Modifier.size(14.dp))
                         Spacer(Modifier.width(4.dp))
+                        @Suppress("DEPRECATION")
                         Text(stringResource(R.string.decline_button), fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                     }
                 }
@@ -509,6 +546,7 @@ private fun PendingApprovalCard(
                     } else {
                         Icon(Icons.Default.Check, null, Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSecondary)
                         Spacer(Modifier.width(4.dp))
+                        @Suppress("DEPRECATION")
                         Text(stringResource(R.string.approve_button), color = MaterialTheme.colorScheme.onSecondary, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                     }
                 }
@@ -537,6 +575,7 @@ private fun ActiveLoanCard(loan: Loan, onRepayClick: () -> Unit) {
                 verticalAlignment = Alignment.Top
             ) {
                 Column {
+                    @Suppress("DEPRECATION")
                     Text(stringResource(R.string.outstanding_balance_label), color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f), fontSize = 12.sp)
                     Text(
                         FormatUtils.formatMoney(loan.principalAmount),
@@ -558,6 +597,7 @@ private fun ActiveLoanCard(loan: Loan, onRepayClick: () -> Unit) {
                     }
                 }
                 Surface(shape = RoundedCornerShape(8.dp), color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f)) {
+                    @Suppress("DEPRECATION")
                     Text(stringResource(R.string.status_active_caps), modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
                         color = MaterialTheme.colorScheme.secondary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                 }
@@ -575,8 +615,10 @@ private fun ActiveLoanCard(loan: Loan, onRepayClick: () -> Unit) {
             Spacer(Modifier.height(6.dp))
 
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                @Suppress("DEPRECATION")
                 Text(stringResource(R.string.loan_repaid_percent_alt, (pct * 100).toInt()), color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f), fontSize = 11.sp)
                 if (!loan.dueDate.isNullOrBlank())
+                    @Suppress("DEPRECATION")
                     Text(stringResource(R.string.due_label, FormatUtils.formatDate(loan.dueDate)), color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
             }
 
@@ -589,6 +631,7 @@ private fun ActiveLoanCard(loan: Loan, onRepayClick: () -> Unit) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.VerifiedUser, null, tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(14.dp))
                     Spacer(Modifier.width(6.dp))
+                    @Suppress("DEPRECATION")
                     Text(stringResource(R.string.approved_by_label, cleanedApprover ?: "System"), color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f), fontSize = 11.sp)
                     Text("  ${FormatUtils.formatDate(loan.approvedAt)}", color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f), fontSize = 11.sp)
                 }
@@ -606,6 +649,7 @@ private fun ActiveLoanCard(loan: Loan, onRepayClick: () -> Unit) {
             ) {
                 Icon(Icons.Default.Payment, null, Modifier.size(16.dp))
                 Spacer(Modifier.width(6.dp))
+                @Suppress("DEPRECATION")
                 Text(stringResource(R.string.make_repayment_button), fontWeight = FontWeight.Bold, fontSize = 14.sp)
             }
         }
@@ -629,12 +673,15 @@ private fun PendingOwnLoanCard(loan: Loan) {
             Icon(Icons.Default.HourglassTop, null,
                 tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(32.dp))
             Column(modifier = Modifier.weight(1f)) {
+                @Suppress("DEPRECATION")
                 Text(stringResource(R.string.pending_review_title), fontWeight = FontWeight.Bold, fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurface)
+                @Suppress("DEPRECATION")
                 Text(
                     stringResource(R.string.awaiting_approval_msg, FormatUtils.formatMoney(loan.principalAmount)),
                     fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, lineHeight = 16.sp
                 )
                 loan.purpose?.let {
+                    @Suppress("DEPRECATION")
                     Text(stringResource(R.string.purpose_display_label, it), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 2.dp))
                 }
             }
@@ -657,7 +704,9 @@ private fun NoLoanCard(hasGroup: Boolean, onApply: () -> Unit) {
             Icon(Icons.Default.CreditCard, null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f), modifier = Modifier.size(48.dp))
             Spacer(Modifier.height(12.dp))
+            @Suppress("DEPRECATION")
             Text(stringResource(R.string.no_active_loan_title), fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurface)
+            @Suppress("DEPRECATION")
             Text(
                 if (hasGroup) stringResource(R.string.apply_funds_msg)
                 else stringResource(R.string.join_group_loan_msg),
@@ -673,6 +722,7 @@ private fun NoLoanCard(hasGroup: Boolean, onApply: () -> Unit) {
                 ) {
                     Icon(Icons.Default.Add, null, Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
                     Spacer(Modifier.width(6.dp))
+                    @Suppress("DEPRECATION")
                     Text(stringResource(R.string.apply_loan_button), color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
                 }
             }
@@ -690,7 +740,7 @@ fun GroupLoanCard(loan: Loan) {
 
     val statusColor = when (loan.status.uppercase()) {
         "ACTIVE"    -> MaterialTheme.colorScheme.secondary
-        "PENDING"   -> NavyBlue
+        "PENDING"   -> MaterialTheme.colorScheme.primary
         "COMPLETED" -> MaterialTheme.colorScheme.primary
         "REJECTED"  -> MaterialTheme.colorScheme.error
         else        -> Color.Gray
@@ -713,6 +763,7 @@ fun GroupLoanCard(loan: Loan) {
             ) {
 
                 Column(modifier = Modifier.weight(1f)) {
+                    @Suppress("DEPRECATION")
                     val defaultName = stringResource(R.string.member_default_name)
                     val cleanedBorrowerName = remember(loan.borrower, loan.borrowerName) {
                         val first = loan.borrower?.firstName?.replace("null", "", true)?.trim() ?: ""
@@ -741,6 +792,7 @@ fun GroupLoanCard(loan: Loan) {
                         }
                     }
                     if (loan.status.uppercase() != "PENDING") {
+                        @Suppress("DEPRECATION")
                         val actionText = when (loan.status.uppercase()) {
                             "REJECTED" -> stringResource(R.string.loan_rejected_by_simple, cleanedApprover)
                             else       -> stringResource(R.string.loan_approved_by_simple, cleanedApprover)
@@ -801,7 +853,7 @@ fun GroupLoanCard(loan: Loan) {
             if (expanded) {
                 Spacer(Modifier.height(10.dp))
                 Surface(
-                    color = BackgroundGray,
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
                     shape = RoundedCornerShape(8.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -848,7 +900,9 @@ fun GroupLoanCard(loan: Loan) {
                     modifier = Modifier.fillMaxWidth().padding(top = 3.dp),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
+                    @Suppress("DEPRECATION")
                     Text(stringResource(R.string.loan_repaid_percent_alt, (pct * 100).toInt()), fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    @Suppress("DEPRECATION")
                     Text(
                         stringResource(R.string.amount_left_label, FormatUtils.formatMoney(loan.remainingBalance)),
                         fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant

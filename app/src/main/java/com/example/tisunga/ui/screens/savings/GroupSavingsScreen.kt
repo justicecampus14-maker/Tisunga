@@ -10,10 +10,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -32,6 +35,7 @@ import com.example.tisunga.viewmodel.NotificationViewModel
 import com.example.tisunga.viewmodel.SavingsViewModel
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GroupSavingsScreen(
     navController: NavController,
@@ -45,10 +49,29 @@ fun GroupSavingsScreen(
     val drawerState    = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope          = rememberCoroutineScope()
 
+    val pullToRefreshState = rememberPullToRefreshState()
+
     // Load savings data for the user's current group
     val groupId = homeUiState.myGroups.firstOrNull()?.id
-    LaunchedEffect(groupId) {
+    
+    val refreshData = {
         groupId?.let { viewModel.loadSavingsData(it) }
+    }
+
+    LaunchedEffect(groupId) {
+        refreshData()
+    }
+
+    if (pullToRefreshState.isRefreshing) {
+        LaunchedEffect(true) {
+            refreshData()
+        }
+    }
+
+    LaunchedEffect(uiState.isLoading) {
+        if (!uiState.isLoading) {
+            pullToRefreshState.endRefresh()
+        }
     }
 
     ModalNavigationDrawer(
@@ -83,72 +106,84 @@ fun GroupSavingsScreen(
             bottomBar      = { BottomNavBar(navController) },
             containerColor = MaterialTheme.colorScheme.background
         ) { padding ->
-            if (uiState.isLoading) {
-                Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-                }
-                return@Scaffold
-            }
-
-            LazyColumn(
+            Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding)
-                    .padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                    .nestedScroll(pullToRefreshState.nestedScrollConnection)
             ) {
-                item { Spacer(modifier = Modifier.height(8.dp)) }
-
-                item {
-                    Text(
-                        text = stringResource(R.string.savings_title),
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                }
-
-                // Top summary card: Group Savings + My Savings
-                item {
-                    SavingsSummaryCard(
-                        groupTotal = uiState.totalGroupSavings,
-                        mySavings  = uiState.mySavings
-                    )
-                }
-
-                // Per-member savings list
-                val summary = uiState.groupSavings.firstOrNull()
-                if (summary != null && summary.memberSavings.isNotEmpty()) {
-                    item {
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = stringResource(R.string.group_savings_title),
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onBackground
-                        )
+                if (uiState.isLoading && !pullToRefreshState.isRefreshing) {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                     }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        item { Spacer(modifier = Modifier.height(8.dp)) }
 
-                    items(summary.memberSavings) { row ->
-                        MemberSavingsCard(row = row)
-                    }
-                } else if (summary != null) {
-                    // No disbursement yet — show basic group card
-                    item {
-                        Text(
-                            text = stringResource(R.string.group_savings_title),
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onBackground
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        GroupSavingsCard(summary = summary) {
-                            groupId?.let { navController.navigate("make_contribution/$it/${summary.groupName}") }
+                        item {
+                            Text(
+                                text = stringResource(R.string.savings_title),
+                                fontSize = 24.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onBackground
+                            )
                         }
+
+                        // Top summary card: Group Savings + My Savings
+                        item {
+                            SavingsSummaryCard(
+                                groupTotal = uiState.totalGroupSavings,
+                                mySavings  = uiState.mySavings
+                            )
+                        }
+
+                        // Per-member savings list
+                        val summary = uiState.groupSavings.firstOrNull()
+                        if (summary != null && summary.memberSavings.isNotEmpty()) {
+                            item {
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = stringResource(R.string.group_savings_title),
+                                    fontSize = 20.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onBackground
+                                )
+                            }
+
+                            items(summary.memberSavings) { row ->
+                                MemberSavingsCard(row = row)
+                            }
+                        } else if (summary != null) {
+                            // No disbursement yet — show basic group card
+                            item {
+                                Text(
+                                    text = stringResource(R.string.group_savings_title),
+                                    fontSize = 20.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onBackground
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                GroupSavingsCard(summary = summary) {
+                                    groupId?.let { navController.navigate("make_contribution/$it") }
+                                }
+                            }
+                        }
+
+                        item { Spacer(modifier = Modifier.height(16.dp)) }
                     }
                 }
 
-                item { Spacer(modifier = Modifier.height(16.dp)) }
+                PullToRefreshContainer(
+                    state = pullToRefreshState,
+                    modifier = Modifier.align(Alignment.TopCenter),
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    contentColor = MaterialTheme.colorScheme.primary
+                )
             }
         }
     }
@@ -219,6 +254,7 @@ fun SavingsSummaryCard(groupTotal: Double, mySavings: Double) {
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
+                    @Suppress("DEPRECATION")
                     Text(
                         text = if (isMySavingsVisible) FormatUtils.formatMoney(mySavings) else "MWK XXXXXX",
                         fontSize = 22.sp,
@@ -287,6 +323,7 @@ fun MemberSavingsCard(row: MemberSavingsRow) {
                 Spacer(modifier = Modifier.width(12.dp))
 
                 Column {
+                    @Suppress("DEPRECATION")
                     Text(
                         text = row.userName.ifBlank { stringResource(R.string.member_default_name) },
                         fontWeight = FontWeight.SemiBold,
@@ -329,12 +366,14 @@ fun GroupSavingsCard(summary: GroupSavingsSummary, onSaveClick: () -> Unit) {
                 color = MaterialTheme.colorScheme.onSurface
             )
             Spacer(modifier = Modifier.height(8.dp))
+            @Suppress("DEPRECATION")
             Text(
                 text = stringResource(R.string.total_amount_with_label, FormatUtils.formatMoney(summary.totalSavings)),
                 fontSize = 14.sp,
                 color = MaterialTheme.colorScheme.primary,
                 fontWeight = FontWeight.SemiBold
             )
+            @Suppress("DEPRECATION")
             Text(
                 text = stringResource(R.string.my_savings_amount_label, FormatUtils.formatMoney(summary.mySavings)),
                 fontSize = 13.sp,
@@ -342,6 +381,7 @@ fun GroupSavingsCard(summary: GroupSavingsSummary, onSaveClick: () -> Unit) {
             )
             if (summary.withdrawDate != null) {
                 Spacer(modifier = Modifier.height(6.dp))
+                @Suppress("DEPRECATION")
                 Text(
                     text = stringResource(R.string.withdraw_date_label, summary.withdrawDate),
                     fontWeight = FontWeight.Bold,
@@ -352,6 +392,7 @@ fun GroupSavingsCard(summary: GroupSavingsSummary, onSaveClick: () -> Unit) {
             Spacer(modifier = Modifier.height(12.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                 TextButton(onClick = onSaveClick) {
+                    @Suppress("DEPRECATION")
                     Text(
                         text = stringResource(R.string.save_now_link),
                         color = MaterialTheme.colorScheme.primary,

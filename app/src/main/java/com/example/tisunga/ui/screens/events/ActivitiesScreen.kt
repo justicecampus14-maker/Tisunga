@@ -50,22 +50,22 @@ fun ActivitiesScreen(
     val context = LocalContext.current
     val selectedTabState = remember { mutableIntStateOf(0) }
     val selectedTab = selectedTabState.intValue
-    
+
     val meetingsState = viewModel.meetings.collectAsState()
     val meetings = meetingsState.value
-    
+
     val eventsState = viewModel.events.collectAsState()
     val events = eventsState.value
-    
+
     val isLoadingState = viewModel.isLoading.collectAsState()
     val isLoading = isLoadingState.value
-    
+
     val errorState = viewModel.error.collectAsState()
     val error = errorState.value
 
     val meetingFilterState = viewModel.meetingFilter.collectAsState()
     val meetingFilter = meetingFilterState.value
-    
+
     val eventFilterState = viewModel.eventFilter.collectAsState()
     val eventFilter = eventFilterState.value
 

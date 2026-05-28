@@ -43,7 +43,6 @@ import com.example.tisunga.viewmodel.LoanViewModel
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
-@Suppress("DEPRECATION")
 @Composable
 fun ApplyLoanScreen(
     navController: NavController,
@@ -104,7 +103,7 @@ fun ApplyLoanScreen(
         Dialog(onDismissRequest = { }) {
             Card(
                 shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = White),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 modifier = Modifier.padding(16.dp)
             ) {
                 Column(
@@ -112,17 +111,17 @@ fun ApplyLoanScreen(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Box(
-                        modifier = Modifier.size(72.dp).background(GreenAccent.copy(alpha = 0.1f), CircleShape),
+                        modifier = Modifier.size(72.dp).background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f), CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(Icons.Default.CheckCircle, null, tint = GreenAccent, modifier = Modifier.size(48.dp))
+                        Icon(Icons.Default.CheckCircle, null, tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(48.dp))
                     }
                     Spacer(modifier = Modifier.height(20.dp))
-                    Text(stringResource(R.string.application_sent_title), fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.application_sent_title), fontSize = 20.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
                         stringResource(R.string.application_sent_msg),
-                        fontSize = 14.sp, color = TextSecondary, textAlign = TextAlign.Center
+                        fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center
                     )
                     Spacer(modifier = Modifier.height(24.dp))
                     Button(
@@ -132,9 +131,9 @@ fun ApplyLoanScreen(
                         },
                         modifier = Modifier.fillMaxWidth().height(50.dp),
                         shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = NavyBlue)
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                     ) {
-                        Text(stringResource(R.string.back_to_loans_button), color = White, fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.back_to_loans_button), color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -151,7 +150,11 @@ fun ApplyLoanScreen(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back_desc))
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = White)
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onSurface
+                )
             )
         }
     ) { padding ->
@@ -159,7 +162,7 @@ fun ApplyLoanScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .background(BackgroundGray)
+                .background(MaterialTheme.colorScheme.background)
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
@@ -170,24 +173,24 @@ fun ApplyLoanScreen(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFFE3F2FD))
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f))
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Info, null, tint = NavyBlue)
+                        Icon(Icons.Default.Info, null, tint = MaterialTheme.colorScheme.primary)
                         Spacer(modifier = Modifier.width(12.dp))
                         Text(
                             "Interest is 5% compounded monthly",
-                            fontSize = 13.sp, color = NavyBlue, fontWeight = FontWeight.Medium
+                            fontSize = 13.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Medium
                         )
                     }
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Warning, null, tint = NavyBlue, modifier = Modifier.size(20.dp))
+                        Icon(Icons.Default.Warning, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                         Spacer(modifier = Modifier.width(12.dp))
                         Text(
                             stringResource(R.string.group_balance_label, FormatUtils.formatMoney(totalSavings)),
-                            fontSize = 13.sp, color = NavyBlue, fontWeight = FontWeight.Bold
+                            fontSize = 13.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold
                         )
                     }
                 }
@@ -198,11 +201,11 @@ fun ApplyLoanScreen(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = White),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 elevation = CardDefaults.cardElevation(2.dp)
             ) {
                 Column(modifier = Modifier.padding(20.dp)) {
-                    Text(stringResource(R.string.loan_amount_mk_label), fontWeight = FontWeight.Bold, fontSize = 14.sp, color = TextPrimary)
+                    Text(stringResource(R.string.loan_amount_mk_label), fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
                     Spacer(modifier = Modifier.height(8.dp))
                     OutlinedTextField(
                         value = amount,
@@ -224,15 +227,15 @@ fun ApplyLoanScreen(
                         ),
                         shape = RoundedCornerShape(12.dp),
                         colors = OutlinedTextFieldDefaults.colors(
-                            unfocusedContainerColor = BackgroundGray,
-                            focusedContainerColor = White,
-                            focusedBorderColor = NavyBlue
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                            focusedContainerColor = MaterialTheme.colorScheme.surface,
+                            focusedBorderColor = MaterialTheme.colorScheme.primary
                         )
                     )
 
                     if (amount.isNotEmpty()) {
                         Spacer(modifier = Modifier.height(24.dp))
-                        Text("Repayment Summary", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = TextPrimary)
+                        Text("Repayment Summary", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
                         Spacer(modifier = Modifier.height(12.dp))
                         
                         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -271,7 +274,7 @@ fun ApplyLoanScreen(
 
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    Text("Duration (Months)", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = TextPrimary)
+                    Text("Duration (Months)", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
                     Spacer(modifier = Modifier.height(12.dp))
 
                     val monthOptions = (1..savingPeriod).toList()
@@ -288,13 +291,13 @@ fun ApplyLoanScreen(
                                     .height(48.dp)
                                     .clickable { durationValue = value },
                                 shape = RoundedCornerShape(12.dp),
-                                color = if (isSelected) NavyBlue else BackgroundGray,
-                                border = if (isSelected) null else BorderStroke(1.dp, DividerColor)
+                                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                border = if (isSelected) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
                                     Text(
                                         "$value",
-                                        color = if (isSelected) White else TextPrimary,
+                                        color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
                                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                                     )
                                 }
@@ -304,7 +307,7 @@ fun ApplyLoanScreen(
 
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    Text(stringResource(R.string.purpose_label), fontWeight = FontWeight.Bold, fontSize = 14.sp, color = TextPrimary)
+                    Text(stringResource(R.string.purpose_label), fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
                     Spacer(modifier = Modifier.height(8.dp))
                     OutlinedTextField(
                         value = purpose,
@@ -322,9 +325,9 @@ fun ApplyLoanScreen(
                         ),
                         shape = RoundedCornerShape(12.dp),
                         colors = OutlinedTextFieldDefaults.colors(
-                            unfocusedContainerColor = BackgroundGray,
-                            focusedContainerColor = White,
-                            focusedBorderColor = NavyBlue
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                            focusedContainerColor = MaterialTheme.colorScheme.surface,
+                            focusedBorderColor = MaterialTheme.colorScheme.primary
                         )
                     )
 
@@ -339,17 +342,17 @@ fun ApplyLoanScreen(
                         modifier = Modifier.fillMaxWidth().height(56.dp),
                         shape = RoundedCornerShape(14.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = if (isInsufficient || !isValidAmount) Color.Gray else NavyBlue
+                            containerColor = if (isInsufficient || !isValidAmount) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.primary
                         ),
                         enabled = !uiState.isLoading && isValidAmount && !isInsufficient
                     ) {
                         if (uiState.isLoading) {
-                            CircularProgressIndicator(color = White, modifier = Modifier.size(24.dp))
+                            CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(24.dp))
                         } else {
                             Text(
                                 text = if (isInsufficient) stringResource(R.string.insufficient_balance_button) 
                                        else stringResource(R.string.submit_application_button),
-                                color = White, 
+                                color = MaterialTheme.colorScheme.onPrimary, 
                                 fontSize = 16.sp, 
                                 fontWeight = FontWeight.Bold
                             )
@@ -361,17 +364,17 @@ fun ApplyLoanScreen(
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(10.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color(0xFFFFEBEE))
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.2f))
                         ) {
                             Row(
                                 modifier = Modifier.padding(12.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Icon(Icons.Default.Error, null, tint = Color.Red, modifier = Modifier.size(16.dp))
+                                Icon(Icons.Default.Error, null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
                                     stringResource(R.string.insufficient_balance_error, FormatUtils.formatMoney(amtVal), FormatUtils.formatMoney(totalSavings)),
-                                    color = Color.Red, fontSize = 12.sp, lineHeight = 16.sp
+                                    color = MaterialTheme.colorScheme.error, fontSize = 12.sp, lineHeight = 16.sp
                                 )
                             }
                         }
@@ -387,21 +390,21 @@ fun InfoBox(label: String, value: String, modifier: Modifier = Modifier) {
     Card(
         modifier = modifier,
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = BackgroundGray.copy(alpha = 0.4f)),
-        border = BorderStroke(0.5.dp, DividerColor)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)),
+        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
         Column(
             modifier = Modifier
                 .padding(12.dp)
                 .fillMaxWidth()
         ) {
-            Text(label, fontSize = 10.sp, color = TextSecondary, fontWeight = FontWeight.Medium)
+            Text(label, fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Medium)
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 value,
                 fontWeight = FontWeight.ExtraBold,
                 fontSize = 14.sp,
-                color = NavyBlue,
+                color = MaterialTheme.colorScheme.primary,
                 maxLines = 1
             )
         }
