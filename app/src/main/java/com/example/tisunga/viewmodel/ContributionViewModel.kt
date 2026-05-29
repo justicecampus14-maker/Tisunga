@@ -42,8 +42,9 @@ class ContributionViewModel(
                     initResponse = response,
                     showPendingDialog = true
                 )
-                getMyHistory()
-                getGroupHistory(groupId)
+                // Refresh history in background without showing loading state or errors on this screen
+                getMyHistory(showLoading = false)
+                getGroupHistory(groupId, showLoading = false)
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
@@ -53,32 +54,28 @@ class ContributionViewModel(
         }
     }
 
-    fun getMyHistory() {
+    fun getMyHistory(showLoading: Boolean = true) {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true)
+            if (showLoading) _uiState.value = _uiState.value.copy(isLoading = true)
             try {
                 val history = repository.getMyHistory()
                 _uiState.value = _uiState.value.copy(isLoading = false, myHistory = history)
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    errorMessage = e.message ?: "Failed to load your history"
-                )
+                _uiState.value = _uiState.value.copy(isLoading = false)
+                // Silent failure for history updates to avoid confusing users with secondary errors
             }
         }
     }
 
-    fun getGroupHistory(groupId: String) {
+    fun getGroupHistory(groupId: String, showLoading: Boolean = true) {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true)
+            if (showLoading) _uiState.value = _uiState.value.copy(isLoading = true)
             try {
                 val history = repository.getGroupHistory(groupId)
                 _uiState.value = _uiState.value.copy(isLoading = false, groupHistory = history)
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    errorMessage = e.message ?: "Failed to load group history"
-                )
+                _uiState.value = _uiState.value.copy(isLoading = false)
+                // Silent failure for history updates
             }
         }
     }

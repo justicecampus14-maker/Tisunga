@@ -181,10 +181,6 @@ fun MakeContributionScreen(
 
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    if (uiState.errorMessage != null) {
-                        Text(uiState.errorMessage!!, color = MaterialTheme.colorScheme.error, fontSize = 14.sp, modifier = Modifier.padding(bottom = 8.dp))
-                    }
-
                     Button(
                         onClick = { 
                             val amtVal = amount.toDoubleOrNull() ?: 0.0
