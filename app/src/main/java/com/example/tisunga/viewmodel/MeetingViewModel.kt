@@ -99,7 +99,8 @@ class MeetingViewModel(
                             presentCount = found.presentCount,
                             totalCount = found.totalCount,
                             attendancePercent = found.attendancePercent,
-                            attendance = emptyList()
+                            attendance = emptyList(),
+                            images = found.images ?: emptyList()
                         )
                         _uiState.value = _uiState.value.copy(
                             isLoading = false,
@@ -180,7 +181,8 @@ class MeetingViewModel(
                             attendancePercent = updatedMeeting.attendancePercent,
                             notes = updatedMeeting.notes,
                             image = updatedMeeting.image,
-                            imageUrl = updatedMeeting.imageUrl
+                            imageUrl = updatedMeeting.imageUrl,
+                            images = updatedMeeting.images ?: emptyList()
                         )
                     } else it
                 }
@@ -206,13 +208,7 @@ class MeetingViewModel(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = "")
             try {
-                // 1. Update status to COMPLETED
-                api.updateMeetingStatus(groupId, meetingId, mapOf("status" to "COMPLETED"))
-
-                // 2. Update meeting notes using dedicated endpoint
-                api.updateMeetingNotes(groupId, meetingId, mapOf("notes" to notes))
-
-                // 3. Upload image if present
+                // 1. Upload image FIRST if present
                 if (imageUri != null) {
                     val file = try {
                         uriToFile(imageUri, context)
@@ -225,6 +221,13 @@ class MeetingViewModel(
                         api.uploadMeetingImage(groupId, meetingId, imagePart)
                     }
                 }
+
+                // 2. Update status and notes in ONE call to prevent sequential 403/latency issues
+                val body = mapOf(
+                    "status" to "COMPLETED",
+                    "notes" to notes
+                )
+                api.updateMeetingStatus(groupId, meetingId, body)
 
                 // 3. Refresh full meeting detail
                 val updatedMeeting = api.getMeeting(groupId, meetingId)
@@ -239,7 +242,8 @@ class MeetingViewModel(
                             attendancePercent = updatedMeeting.attendancePercent,
                             notes = updatedMeeting.notes,
                             image = updatedMeeting.image,
-                            imageUrl = updatedMeeting.imageUrl
+                            imageUrl = updatedMeeting.imageUrl,
+                            images = updatedMeeting.images ?: emptyList()
                         )
                     } else it
                 }
@@ -290,7 +294,8 @@ class MeetingViewModel(
                         it.copy(
                             notes = updatedMeeting.notes,
                             image = updatedMeeting.image,
-                            imageUrl = updatedMeeting.imageUrl
+                            imageUrl = updatedMeeting.imageUrl,
+                            images = updatedMeeting.images ?: emptyList()
                         )
                     } else it
                 }
@@ -334,7 +339,8 @@ class MeetingViewModel(
                         it.copy(
                             notes = updatedMeeting.notes,
                             image = updatedMeeting.image,
-                            imageUrl = updatedMeeting.imageUrl
+                            imageUrl = updatedMeeting.imageUrl,
+                            images = updatedMeeting.images ?: emptyList()
                         )
                     } else it
                 }
@@ -434,7 +440,8 @@ class MeetingViewModel(
                             attendancePercent = updatedMeeting.attendancePercent,
                             notes = updatedMeeting.notes,
                             image = updatedMeeting.image,
-                            imageUrl = updatedMeeting.imageUrl
+                            imageUrl = updatedMeeting.imageUrl,
+                            images = updatedMeeting.images ?: emptyList()
                         )
                     } else it
                 }

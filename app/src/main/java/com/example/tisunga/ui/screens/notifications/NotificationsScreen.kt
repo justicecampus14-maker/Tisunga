@@ -75,7 +75,7 @@ fun NotificationsScreen(
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(state.errorMessage, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(Modifier.height(12.dp))
-                        Button(onClick = { vm.load() }, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)) { 
+                        Button(onClick = { vm.load() }, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)) {
                             Text(stringResource(R.string.retry_button), color = MaterialTheme.colorScheme.onPrimary)
                         }
                     }
@@ -97,8 +97,25 @@ fun NotificationsScreen(
                             notification = notif,
                             isExpanded = expandedNotifId == notif.id,
                             onClick = {
-                                expandedNotifId = if (expandedNotifId == notif.id) null else notif.id
                                 if (!notif.isRead) vm.markOneRead(notif.id)
+                                // Deep-link: disbursement notifications go straight to the
+                                // DisbursementScreen for the relevant group so the treasurer
+                                // can see Approve / Reject immediately.
+                                val groupId = notif.groupId
+                                    ?: notif.group?.id
+                                    ?: notif.data?.disbursementId?.let { null }
+                                when (notif.type) {
+                                    "DISBURSEMENT_REQUESTED",
+                                    "DISBURSEMENT_APPROVED",
+                                    "DISBURSEMENT_REJECTED" -> {
+                                        if (!groupId.isNullOrBlank()) {
+                                            navController.navigate("disbursement/$groupId")
+                                        } else {
+                                            expandedNotifId = if (expandedNotifId == notif.id) null else notif.id
+                                        }
+                                    }
+                                    else -> expandedNotifId = if (expandedNotifId == notif.id) null else notif.id
+                                }
                             }
                         )
                     }
@@ -204,7 +221,7 @@ fun NotificationCard(
                                 )
                             }
                         }
-                        
+
                         // Action link (if we had specific deep links, we'd put them here)
                         // For now just showing a "Show less" hint or similar isn't needed as tap toggles it.
                     }

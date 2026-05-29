@@ -7,6 +7,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
@@ -44,12 +47,37 @@ fun GroupSavingsScreen(
     val notificationState by notificationViewModel.uiState.collectAsState()
     val drawerState    = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope          = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    // Role normalization - Prioritize SavingsViewModel's role as it's fetched with dashboard
+    val effectiveRole = uiState.userRole.ifEmpty { homeUiState.myRole ?: "MEMBER" }.uppercase()
+    val isChair = effectiveRole.contains("CHAIR") || effectiveRole == "ADMIN"
+    val isTreasurer = effectiveRole.contains("TREAS")
+    val isSecretary = effectiveRole.contains("SEC")
 
     // Load savings data for the user's current group
     val groupId = homeUiState.myGroups.firstOrNull()?.id
     LaunchedEffect(groupId) {
-        groupId?.let { viewModel.loadSavingsData(it) }
+        groupId?.let { 
+            viewModel.loadSavingsData(it)
+            viewModel.loadDisbursementHistory(it)
+        }
     }
+
+    LaunchedEffect(uiState.isSuccess, uiState.errorMessage) {
+        if (uiState.isSuccess && uiState.successMessage.isNotEmpty()) {
+            snackbarHostState.showSnackbar(uiState.successMessage)
+            viewModel.resetState()
+            groupId?.let { viewModel.loadDisbursementHistory(it) }
+        }
+        if (uiState.errorMessage.isNotEmpty()) {
+            snackbarHostState.showSnackbar(uiState.errorMessage)
+            viewModel.resetState()
+        }
+    }
+
+    var showRejectDialog by remember { mutableStateOf<String?>(null) } // disbursementId
+    var rejectionReason by remember { mutableStateOf("") }
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -80,6 +108,7 @@ fun GroupSavingsScreen(
                     onMenuClick   = { scope.launch { drawerState.open() } }
                 )
             },
+            snackbarHost = { SnackbarHost(snackbarHostState) },
             bottomBar      = { BottomNavBar(navController) },
             containerColor = MaterialTheme.colorScheme.background
         ) { padding ->
@@ -113,10 +142,33 @@ fun GroupSavingsScreen(
                     SavingsSummaryCard(
                         groupTotal = uiState.totalGroupSavings,
                         mySavings  = uiState.mySavings,
+                        isChair = isChair,
+                        isTreasurer = isTreasurer,
+                        disbursementStatus = uiState.currentDisbursement?.status,
                         onInitiateDisbursement = {
+                            groupId?.let { navController.navigate("disbursement/$it") }
+                        },
+                        onViewDetails = {
                             groupId?.let { navController.navigate("disbursement/$it") }
                         }
                     )
+                }
+
+                // Treasurer Approval Card (Popping up below the savings card)
+                if (isTreasurer && uiState.currentDisbursement?.status?.equals("PENDING", ignoreCase = true) == true) {
+                    item {
+                        TreasurerApprovalCard(
+                            disbursement = uiState.currentDisbursement!!,
+                            isApproving = uiState.isLoading,
+                            isRejecting = uiState.isLoading,
+                            onApprove = {
+                                groupId?.let { viewModel.approveDisbursement(it, uiState.currentDisbursement!!.id) }
+                            },
+                            onReject = {
+                                showRejectDialog = uiState.currentDisbursement!!.id
+                            }
+                        )
+                    }
                 }
 
                 // Per-member savings list
@@ -155,6 +207,165 @@ fun GroupSavingsScreen(
             }
         }
     }
+
+    // Rejection Dialog
+    if (showRejectDialog != null) {
+        AlertDialog(
+            onDismissRequest = { showRejectDialog = null },
+            title = { Text("Reject Disbursement", fontWeight = FontWeight.Bold) },
+            text = {
+                Column {
+                    Text("Please provide a reason for rejecting this disbursement request.")
+                    Spacer(Modifier.height(12.dp))
+                    OutlinedTextField(
+                        value = rejectionReason,
+                        onValueChange = { rejectionReason = it },
+                        placeholder = { Text("Enter reason...") },
+                        modifier = Modifier.fillMaxWidth(),
+                        minLines = 3
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        groupId?.let { 
+                            viewModel.rejectDisbursement(it, showRejectDialog!!, rejectionReason)
+                        }
+                        showRejectDialog = null
+                        rejectionReason = ""
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = RedAccent),
+                    enabled = rejectionReason.isNotBlank()
+                ) {
+                    Text("Reject")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showRejectDialog = null }) {
+                    Text("Cancel", color = TextSecondary)
+                }
+            }
+        )
+    }
+}
+
+@Composable
+fun TreasurerApprovalCard(
+    disbursement: com.example.tisunga.data.model.Disbursement,
+    isApproving: Boolean = false,
+    isRejecting: Boolean = false,
+    onApprove: () -> Unit,
+    onReject: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(2.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    modifier = Modifier.weight(1f),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Payments,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                    Column {
+                        Text(
+                            "Disbursement Request",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 15.sp,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            "Requested by ${disbursement.requestedByName ?: "Chairperson"}",
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                Text(
+                    FormatUtils.formatMoney(disbursement.amount),
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 18.sp,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                OutlinedButton(
+                    onClick = onReject,
+                    enabled = !isRejecting && !isApproving,
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(44.dp),
+                    shape = RoundedCornerShape(10.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                    border = androidx.compose.foundation.BorderStroke(
+                        1.dp,
+                        MaterialTheme.colorScheme.error.copy(alpha = 0.4f)
+                    )
+                ) {
+                    if (isRejecting) {
+                        CircularProgressIndicator(
+                            Modifier.size(16.dp),
+                            color = MaterialTheme.colorScheme.error,
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Icon(Icons.Default.Close, null, Modifier.size(14.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text("Reject", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                    }
+                }
+
+                Button(
+                    onClick = onApprove,
+                    enabled = !isApproving && !isRejecting,
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(44.dp),
+                    shape = RoundedCornerShape(10.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
+                ) {
+                    if (isApproving) {
+                        CircularProgressIndicator(
+                            Modifier.size(16.dp),
+                            color = MaterialTheme.colorScheme.onSecondary,
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Icon(Icons.Default.Check, null, Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSecondary)
+                        Spacer(Modifier.width(4.dp))
+                        Text("Approve", color = MaterialTheme.colorScheme.onSecondary, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                    }
+                }
+            }
+        }
+    }
 }
 
 // Summary card: Group Savings + My Savings
@@ -163,7 +374,11 @@ fun GroupSavingsScreen(
 fun SavingsSummaryCard(
     groupTotal: Double,
     mySavings: Double,
-    onInitiateDisbursement: () -> Unit
+    isChair: Boolean = false,
+    isTreasurer: Boolean = false,
+    disbursementStatus: String? = null,
+    onInitiateDisbursement: () -> Unit,
+    onViewDetails: () -> Unit = {}
 ) {
     var isGroupSavingsVisible by remember { mutableStateOf(false) }
     var isMySavingsVisible by remember { mutableStateOf(false) }
@@ -192,17 +407,32 @@ fun SavingsSummaryCard(
                         fontWeight = FontWeight.Medium
                     )
 
-                    TextButton(
-                        onClick = onInitiateDisbursement,
-                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
-                        modifier = Modifier.height(24.dp)
-                    ) {
-                        Text(
-                            text = "Initiate Disbursement",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = White
-                        )
+                    if (disbursementStatus?.equals("PENDING", ignoreCase = true) == true) {
+                        TextButton(
+                            onClick = onViewDetails,
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+                            modifier = Modifier.height(24.dp)
+                        ) {
+                            Text(
+                                text = if (isTreasurer) "Review Request" else "Awaiting Approval",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFFFFD54F)
+                            )
+                        }
+                    } else if (isChair) {
+                        TextButton(
+                            onClick = onInitiateDisbursement,
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+                            modifier = Modifier.height(24.dp)
+                        ) {
+                            Text(
+                                text = "Disbursement",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = White
+                            )
+                        }
                     }
                 }
                 Spacer(modifier = Modifier.height(4.dp))

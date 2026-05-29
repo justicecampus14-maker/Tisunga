@@ -1,22 +1,25 @@
 package com.example.tisunga.ui.screens.meetings
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.compose.ui.res.stringResource
 import com.example.tisunga.R
 import com.example.tisunga.data.model.MeetingAttendance
 import com.example.tisunga.data.remote.dto.AttendanceEntry
@@ -33,6 +36,7 @@ fun AttendanceScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val attendanceEntries = remember { mutableStateMapOf<String, String>() }
+    var isListExpanded by remember { mutableStateOf(false) }
 
     LaunchedEffect(groupId, meetingId) {
         viewModel.resetState()
@@ -42,15 +46,14 @@ fun AttendanceScreen(
     LaunchedEffect(uiState.attendance) {
         if (uiState.attendance.isNotEmpty()) {
             uiState.attendance.forEach {
-                if (!attendanceEntries.containsKey(it.userId) || attendanceEntries[it.userId] == "PENDING") {
-                    attendanceEntries[it.userId] = it.status.uppercase().ifBlank { "PENDING" }
+                val current = attendanceEntries[it.userId]
+                if (current == null || current == "PENDING") {
+                    val backendStatus = it.status.uppercase()
+                    attendanceEntries[it.userId] = backendStatus.ifBlank { "PENDING" }
                 }
             }
         }
     }
-
-    // Remove the redundant if(attendanceEntries.isEmpty()...) block below to avoid conflicts
-
 
     LaunchedEffect(uiState.isSuccess) {
         if (uiState.isSuccess) {
@@ -58,6 +61,11 @@ fun AttendanceScreen(
             viewModel.resetState()
         }
     }
+
+    var showConfirmDialog by remember { mutableStateOf(false) }
+    var pendingAction by remember { mutableStateOf<(() -> Unit)?>(null) }
+    var confirmTitle by remember { mutableStateOf("") }
+    var confirmMessage by remember { mutableStateOf("") }
 
     Scaffold(
         topBar = {
@@ -76,7 +84,6 @@ fun AttendanceScreen(
                 onClick = {
                     val entries = uiState.attendance.map { attendance ->
                         AttendanceEntry(
-                            id = attendance.id,
                             userId = attendance.userId,
                             status = attendanceEntries[attendance.userId] ?: attendance.status
                         )
@@ -119,56 +126,181 @@ fun AttendanceScreen(
                 }
             }
 
-            val presentCount = attendanceEntries.values.count { 
-                it.uppercase() == "PRESENT" || it.uppercase() == "LATE" 
-            }
+            val presentCount = attendanceEntries.values.count { it == "PRESENT" }
+            val lateCount = attendanceEntries.values.count { it == "LATE" }
+            val absentCount = attendanceEntries.values.count { it == "ABSENT" }
+            val excusedCount = attendanceEntries.values.count { it == "EXCUSED" }
+            val pendingCount = uiState.attendance.size - (presentCount + lateCount + absentCount + excusedCount)
             val totalCount = uiState.attendance.size
             
-            AttendanceSummaryBanner(presentCount, totalCount)
+            AttendanceOverviewCard(
+                present = presentCount,
+                late = lateCount,
+                absent = absentCount,
+                excused = excusedCount,
+                total = totalCount
+            )
 
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                items(uiState.attendance) { attendance ->
-                    AttendanceMarkRow(
-                        attendance = attendance,
-                        currentStatus = attendanceEntries[attendance.userId] ?: attendance.status,
-                        onStatusChange = { newStatus ->
-                            attendanceEntries[attendance.userId] = newStatus.uppercase()
+                OutlinedButton(
+                    onClick = {
+                        confirmTitle = navController.context.getString(R.string.mark_all_present)
+                        confirmMessage = "Are you sure you want to mark all ${uiState.attendance.size} members as PRESENT?"
+                        pendingAction = {
+                            uiState.attendance.forEach {
+                                attendanceEntries[it.userId] = "PRESENT"
+                            }
                         }
+                        showConfirmDialog = true
+                    },
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(8.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = GreenAccent)
+                ) {
+                    Text(stringResource(R.string.mark_all_present))
+                }
+                
+                if (pendingCount > 0) {
+                    OutlinedButton(
+                        onClick = {
+                            confirmTitle = navController.context.getString(R.string.mark_pending_absent)
+                            confirmMessage = "Are you sure you want to mark all $pendingCount pending members as ABSENT?"
+                            pendingAction = {
+                                uiState.attendance.forEach {
+                                    if (attendanceEntries[it.userId] == "PENDING" || attendanceEntries[it.userId] == null) {
+                                        attendanceEntries[it.userId] = "ABSENT"
+                                    }
+                                }
+                            }
+                            showConfirmDialog = true
+                        },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(8.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = RedAccent)
+                    ) {
+                        Text(stringResource(R.string.mark_pending_absent))
+                    }
+                }
+            }
+
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp)
+                    .clickable { isListExpanded = !isListExpanded },
+                color = Color.White,
+                shadowElevation = 1.dp
+            ) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = stringResource(R.string.attendance_list_title),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp
                     )
+                    Icon(
+                        imageVector = if (isListExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                        contentDescription = if (isListExpanded) "Collapse" else "Expand",
+                        tint = GreenAccent
+                    )
+                }
+            }
+
+            if (isListExpanded) {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(uiState.attendance) { attendance ->
+                        AttendanceMarkRow(
+                            attendance = attendance,
+                            currentStatus = attendanceEntries[attendance.userId] ?: attendance.status,
+                            onStatusChange = { newStatus ->
+                                attendanceEntries[attendance.userId] = newStatus.uppercase()
+                            }
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    if (showConfirmDialog) {
+        com.example.tisunga.ui.components.TisungaConfirmDialog(
+            title = confirmTitle,
+            message = confirmMessage,
+            onConfirm = {
+                pendingAction?.invoke()
+                showConfirmDialog = false
+            },
+            onDismiss = { showConfirmDialog = false }
+        )
+    }
+}
+
+@Composable
+fun AttendanceOverviewCard(present: Int, late: Int, absent: Int, excused: Int, total: Int) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = stringResource(R.string.attendance_overview_title),
+                fontWeight = FontWeight.Bold,
+                fontSize = 16.sp
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    AttendanceLegendItem(GreenAccent, stringResource(R.string.status_present), present)
+                    AttendanceLegendItem(OrangeTag, stringResource(R.string.status_late), late)
+                    AttendanceLegendItem(RedAccent, stringResource(R.string.status_absent), absent)
+                    AttendanceLegendItem(Color.Gray, stringResource(R.string.status_excused), excused)
+                }
+                
+                Box(modifier = Modifier.size(100.dp), contentAlignment = Alignment.Center) {
+                    if (total > 0) {
+                        AttendancePieChart(
+                            present = present,
+                            late = late,
+                            absent = absent,
+                            excused = excused,
+                            total = total,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    } else {
+                        CircularProgressIndicator(
+                            progress = { 0f },
+                            modifier = Modifier.size(80.dp),
+                            color = BackgroundGray,
+                            trackColor = BackgroundGray,
+                            strokeWidth = 8.dp
+                        )
+                    }
                 }
             }
         }
     }
 }
 
-@Composable
-fun AttendanceSummaryBanner(present: Int, total: Int) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        color = Color.White,
-        shadowElevation = 2.dp
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                stringResource(R.string.attendance_live_tally, present, total),
-                fontWeight = FontWeight.Bold,
-                fontSize = 16.sp,
-                color = GreenAccent
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            LinearProgressIndicator(
-                progress = { if (total > 0) present.toFloat() / total else 0f },
-                modifier = Modifier.fillMaxWidth().height(8.dp),
-                color = GreenAccent,
-                trackColor = BackgroundGray,
-            )
-        }
-    }
-}
 
 @Composable
 fun AttendanceMarkRow(
