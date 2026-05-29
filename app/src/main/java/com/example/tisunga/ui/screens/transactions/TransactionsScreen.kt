@@ -12,10 +12,13 @@ import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -36,9 +39,22 @@ fun TransactionsScreen(
     val uiState by viewModel.uiState.collectAsState()
     var selectedType by remember { mutableStateOf<String?>(null) }
     val listState = rememberLazyListState()
+    val pullToRefreshState = rememberPullToRefreshState()
 
     LaunchedEffect(groupId, selectedType) {
         viewModel.getTransactions(groupId, selectedType, refresh = true)
+    }
+
+    if (pullToRefreshState.isRefreshing) {
+        LaunchedEffect(true) {
+            viewModel.getTransactions(groupId, selectedType, refresh = true)
+        }
+    }
+
+    LaunchedEffect(uiState.isLoading) {
+        if (!uiState.isLoading) {
+            pullToRefreshState.endRefresh()
+        }
     }
 
     // Infinite scroll trigger
@@ -56,7 +72,7 @@ fun TransactionsScreen(
     }
 
     Scaffold(
-        containerColor = BackgroundGray,
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text("Transaction History", fontSize = 18.sp, fontWeight = FontWeight.Bold) },
@@ -65,7 +81,11 @@ fun TransactionsScreen(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = White)
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onSurface
+                )
             )
         }
     ) { padding ->
@@ -75,7 +95,10 @@ fun TransactionsScreen(
                 .padding(padding)
         ) {
             // Filter Chips
-            Surface(color = White, shadowElevation = 1.dp) {
+            Surface(
+                color = MaterialTheme.colorScheme.surface,
+                shadowElevation = 1.dp
+            ) {
                 LazyRow(
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -103,32 +126,50 @@ fun TransactionsScreen(
                 }
             }
 
-            if (uiState.transactions.isEmpty() && !uiState.isLoading) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(Icons.Default.History, null, Modifier.size(64.dp), tint = Color.LightGray)
-                        Text("No transactions found", color = Color.Gray)
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .nestedScroll(pullToRefreshState.nestedScrollConnection)
+            ) {
+                if (uiState.transactions.isEmpty() && !uiState.isLoading) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(
+                                Icons.Default.History, 
+                                null, 
+                                Modifier.size(64.dp), 
+                                tint = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+                            )
+                            Text("No transactions found", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
                     }
-                }
-            } else {
-                LazyColumn(
-                    state = listState,
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(uiState.transactions, key = { it.id }) { transaction ->
-                        TransactionItem(transaction)
-                    }
+                } else {
+                    LazyColumn(
+                        state = listState,
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(uiState.transactions, key = { it.id }) { transaction ->
+                            TransactionItem(transaction)
+                        }
 
-                    if (uiState.isLoading) {
-                        item {
-                            Box(modifier = Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
-                                CircularProgressIndicator(color = NavyBlue, modifier = Modifier.size(24.dp))
+                        if (uiState.isLoading && !pullToRefreshState.isRefreshing) {
+                            item {
+                                Box(modifier = Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
+                                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
+                                }
                             }
                         }
                     }
                 }
+
+                PullToRefreshContainer(
+                    state = pullToRefreshState,
+                    modifier = Modifier.align(Alignment.TopCenter),
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    contentColor = MaterialTheme.colorScheme.primary
+                )
             }
         }
     }
@@ -145,13 +186,16 @@ fun TransactionItem(transaction: Transaction) {
         TransactionType.INTEREST,
         TransactionType.SYSTEM
     )
-    val color = if (isCredit) GreenAccent else Color(0xFF333333)
+    val color = if (isCredit) GreenAccent else MaterialTheme.colorScheme.onSurface
     val icon = if (isCredit) Icons.Default.ArrowDownward else Icons.Default.ArrowUpward
 
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = White),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface,
+            contentColor = MaterialTheme.colorScheme.onSurface
+        ),
         elevation = CardDefaults.cardElevation(2.dp)
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
@@ -175,7 +219,8 @@ fun TransactionItem(transaction: Transaction) {
                         Text(
                             text = transaction.type?.name?.replace("_", " ") ?: "Transaction",
                             fontWeight = FontWeight.Bold,
-                            fontSize = 14.sp
+                            fontSize = 14.sp,
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 }
@@ -202,15 +247,16 @@ fun TransactionItem(transaction: Transaction) {
                     text = baseDesc,
                     modifier = Modifier.weight(1f),
                     fontSize = 12.sp,
-                    color = TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     lineHeight = 16.sp
                 )
                 Spacer(modifier = Modifier.width(8.dp))
+                @Suppress("DEPRECATION")
                 Text(
                     text = dateStr,
                     modifier = Modifier.weight(1f),
                     fontSize = 12.sp,
-                    color = TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     lineHeight = 16.sp,
                     textAlign = androidx.compose.ui.text.style.TextAlign.End
                 )

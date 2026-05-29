@@ -12,10 +12,13 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -38,15 +41,39 @@ fun MeetingsScreen(navController: NavController, groupId: String, viewModel: Mee
     val context = androidx.compose.ui.platform.LocalContext.current
     val sessionManager = remember { com.example.tisunga.utils.SessionManager(context) }
     
+    val pullToRefreshState = rememberPullToRefreshState()
+    
     val groupRole = sessionManager.getGroupRole(groupId)
     val isChair = groupRole == "CHAIR" || groupRole == "SECRETARY"
     
-    LaunchedEffect(groupId) {
+    val refreshData = {
         viewModel.getGroupMeetings(groupId)
     }
 
+    LaunchedEffect(groupId) {
+        refreshData()
+    }
+
+    if (pullToRefreshState.isRefreshing) {
+        LaunchedEffect(true) {
+            refreshData()
+        }
+    }
+
+    LaunchedEffect(uiState.isLoading) {
+        if (!uiState.isLoading) {
+            pullToRefreshState.endRefresh()
+        }
+    }
+
     if (showCreateDialog) {
-        // Dialog implementation could go here, for now just show a simple one or handle it
+        CreateMeetingDialog(
+            onDismiss = { showCreateDialog = false },
+            onCreate = { title, scheduledAt, location, agenda ->
+                viewModel.createMeeting(groupId, title, scheduledAt, location, agenda)
+                showCreateDialog = false
+            }
+        )
     }
 
     Scaffold(
@@ -75,22 +102,25 @@ fun MeetingsScreen(navController: NavController, groupId: String, viewModel: Mee
             }
         }
     ) { padding ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
                 .background(BackgroundGray)
+                .nestedScroll(pullToRefreshState.nestedScrollConnection)
         ) {
-            if (uiState.isLoading) {
+            if (uiState.isLoading && !pullToRefreshState.isRefreshing) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(color = GreenAccent)
                 }
             } else if (uiState.meetings.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    @Suppress("DEPRECATION")
                     Text(stringResource(R.string.no_meetings_msg), color = TextSecondary)
                 }
             } else {
                 LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
@@ -101,9 +131,17 @@ fun MeetingsScreen(navController: NavController, groupId: String, viewModel: Mee
                     }
                 }
             }
+
+            PullToRefreshContainer(
+                state = pullToRefreshState,
+                modifier = Modifier.align(Alignment.TopCenter),
+                containerColor = MaterialTheme.colorScheme.surface,
+                contentColor = MaterialTheme.colorScheme.primary
+            )
         }
     }
 }
+
 @Composable
 fun MeetingItem(meeting: Meeting, onClick: () -> Unit) {
     Card(
@@ -129,6 +167,7 @@ fun MeetingItem(meeting: Meeting, onClick: () -> Unit) {
                 StatusBadge(meeting.status)
             }
             
+            @Suppress("DEPRECATION")
             Spacer(modifier = Modifier.height(8.dp))
             
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -138,6 +177,7 @@ fun MeetingItem(meeting: Meeting, onClick: () -> Unit) {
             }
             
             if (!meeting.location.isNullOrBlank()) {
+                @Suppress("DEPRECATION")
                 Spacer(modifier = Modifier.height(4.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.LocationOn, contentDescription = null, modifier = Modifier.size(16.dp), tint = TextSecondary)
@@ -147,6 +187,7 @@ fun MeetingItem(meeting: Meeting, onClick: () -> Unit) {
             }
             
             if (meeting.status == "COMPLETED") {
+                @Suppress("DEPRECATION")
                 Spacer(modifier = Modifier.height(8.dp))
                 LinearProgressIndicator(
                     progress = { meeting.attendancePercent / 100f },
@@ -154,6 +195,7 @@ fun MeetingItem(meeting: Meeting, onClick: () -> Unit) {
                     color = GreenAccent,
                     trackColor = BackgroundGray,
                 )
+                @Suppress("DEPRECATION")
                 Text(
                     text = stringResource(R.string.attendance_percent_label, meeting.attendancePercent),
                     fontSize = 12.sp,

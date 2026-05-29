@@ -10,6 +10,7 @@ import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -17,14 +18,14 @@ import androidx.navigation.NavController
 import com.example.tisunga.ui.navigation.Routes
 import com.example.tisunga.utils.SessionManager
 import com.example.tisunga.viewmodel.HomeViewModel
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     navController: NavController,
     sessionManager: SessionManager,
-    homeViewModel: HomeViewModel
+    homeViewModel: HomeViewModel,
+    onThemeChange: (Boolean) -> Unit
 ) {
     val homeUiState by homeViewModel.uiState.collectAsState()
     val isGroupAdmin = homeUiState.myRole?.uppercase()?.let {
@@ -33,12 +34,9 @@ fun SettingsScreen(
     val currentGroup = homeUiState.myGroups.firstOrNull()
 
     var notificationsEnabled by remember { mutableStateOf(sessionManager.isNotificationsEnabled()) }
-    var checkingForUpdates by remember { mutableStateOf(false) }
-    val snackbarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
+    var isDarkMode by remember { mutableStateOf(sessionManager.isDarkMode()) }
 
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Settings", fontWeight = FontWeight.Bold) },
@@ -139,9 +137,9 @@ fun SettingsScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Section: About
+            // Section: Theme
             Text(
-                "About",
+                "Theme",
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(vertical = 8.dp)
@@ -152,45 +150,35 @@ fun SettingsScreen(
             ) {
                 Column {
                     ListItem(
-                        headlineContent = { Text("Help Center") },
-                        leadingContent = { Icon(Icons.AutoMirrored.Filled.HelpOutline, null) },
-                        trailingContent = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null) },
-                        modifier = Modifier.clickable { /* Support logic */ }
-                    )
-                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
-                    ListItem(
-                        headlineContent = { Text("Privacy Policy") },
-                        leadingContent = { Icon(Icons.Default.PrivacyTip, null) },
-                        trailingContent = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null) },
-                        modifier = Modifier.clickable { /* Privacy logic */ }
-                    )
-                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
-                    ListItem(
-                        headlineContent = { Text("Check for Updates") },
-                        leadingContent = {
-                            if (checkingForUpdates) {
-                                CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
-                            } else {
-                                Icon(Icons.Default.SystemUpdate, null)
-                            }
+                        headlineContent = { Text("Dark Mode") },
+                        supportingContent = { 
+                            Text(
+                                if (isDarkMode) "Enhanced visibility for night use" 
+                                else "Standard visibility for day use"
+                            ) 
                         },
-                        modifier = Modifier.clickable(enabled = !checkingForUpdates) {
-                            scope.launch {
-                                checkingForUpdates = true
-                                kotlinx.coroutines.delay(2000)
-                                checkingForUpdates = false
-                                snackbarHostState.showSnackbar("Your app is up to date!")
-                            }
+                        leadingContent = { 
+                            Icon(
+                                imageVector = if (isDarkMode) Icons.Default.DarkMode else Icons.Default.LightMode, 
+                                contentDescription = null,
+                                tint = if (isDarkMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
+                            ) 
+                        },
+                        trailingContent = {
+                            Switch(
+                                checked = isDarkMode,
+                                onCheckedChange = {
+                                    isDarkMode = it
+                                    sessionManager.setDarkMode(it)
+                                    onThemeChange(it)
+                                }
+                            )
                         }
-                    )
-                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
-                    ListItem(
-                        headlineContent = { Text("Version") },
-                        supportingContent = { Text("1.0.0") },
-                        leadingContent = { Icon(Icons.Default.Info, null) }
                     )
                 }
             }
+            
+            Spacer(modifier = Modifier.height(40.dp))
         }
     }
 }

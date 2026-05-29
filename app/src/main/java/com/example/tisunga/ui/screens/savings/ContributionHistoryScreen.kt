@@ -112,7 +112,7 @@ fun ContributionHistoryScreen(
                 }
             } else {
                 val list = if (selectedTab == 0) uiState.myHistory else uiState.groupHistory
-                
+
                 if (list.isEmpty()) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {

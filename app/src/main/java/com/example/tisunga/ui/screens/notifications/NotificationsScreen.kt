@@ -11,10 +11,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -38,6 +41,19 @@ fun NotificationsScreen(
 ) {
     val state by vm.uiState.collectAsState()
     var expandedNotifId by remember { mutableStateOf<String?>(null) }
+    val pullToRefreshState = rememberPullToRefreshState()
+
+    if (pullToRefreshState.isRefreshing) {
+        LaunchedEffect(true) {
+            vm.load()
+        }
+    }
+
+    LaunchedEffect(state.isLoading) {
+        if (!state.isLoading) {
+            pullToRefreshState.endRefresh()
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -50,6 +66,7 @@ fun NotificationsScreen(
                 },
                 actions = {
                     if (state.unreadCount > 0) {
+                        @Suppress("DEPRECATION")
                         TextButton(onClick = { vm.markAllRead() }) {
                             Text(stringResource(R.string.mark_all_read_label), fontSize = 13.sp, color = MaterialTheme.colorScheme.primary)
                         }
@@ -64,10 +81,17 @@ fun NotificationsScreen(
         },
         containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
-        when {
-            state.isLoading -> {
-                Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .nestedScroll(pullToRefreshState.nestedScrollConnection)
+        ) {
+            when {
+                state.isLoading && !pullToRefreshState.isRefreshing -> {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                    }
                 }
             }
             state.errorMessage.isNotEmpty() -> {
@@ -80,10 +104,11 @@ fun NotificationsScreen(
                         }
                     }
                 }
-            }
-            state.notifications.isEmpty() -> {
-                Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                    Text(stringResource(R.string.no_notifications_msg), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                state.notifications.isEmpty() -> {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        @Suppress("DEPRECATION")
+                        Text(stringResource(R.string.no_notifications_msg), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
                 }
             }
             else -> {
@@ -121,6 +146,13 @@ fun NotificationsScreen(
                     }
                 }
             }
+
+            PullToRefreshContainer(
+                state = pullToRefreshState,
+                modifier = Modifier.align(Alignment.TopCenter),
+                containerColor = MaterialTheme.colorScheme.surface,
+                contentColor = MaterialTheme.colorScheme.primary
+            )
         }
     }
 }

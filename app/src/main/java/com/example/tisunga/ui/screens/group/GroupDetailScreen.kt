@@ -11,11 +11,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -39,6 +42,7 @@ import com.example.tisunga.utils.FormatUtils
 import com.example.tisunga.ui.screens.savings.PayoutItem
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GroupDetailScreen(
     navController: NavController,
@@ -55,20 +59,33 @@ fun GroupDetailScreen(
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     
-    var selectedTab by remember { mutableStateOf("SAVINGS") } // "SAVINGS" or "DISBURSE"
-
-    // UI state derived from group dashboard
-    val groupName = uiState.selectedGroup?.name ?: homeUiState.myGroups.firstOrNull { it.id == groupId }?.name ?: stringResource(R.string.placeholder_group_name)
+    val pullToRefreshState = rememberPullToRefreshState()
     
-    // Check if user is Chair or Secretary for this group
-    val groupRole = homeUiState.myRole?.uppercase() ?: "MEMBER"
-    val isChair = groupRole == "CHAIRPERSON" || groupRole == "SECRETARY"
+    var selectedTab by remember { mutableStateOf("SAVINGS") } 
 
-    LaunchedEffect(groupId) {
+    val refreshData = {
         viewModel.getGroupDashboard(groupId)
         viewModel.getGroupTransactions(groupId)
         savingsViewModel.loadSavingsData(groupId)
         savingsViewModel.loadDisbursementHistory(groupId)
+    }
+
+    LaunchedEffect(groupId) {
+        refreshData()
+    }
+
+    // Handle Pull to Refresh trigger
+    LaunchedEffect(pullToRefreshState.isRefreshing) {
+        if (pullToRefreshState.isRefreshing) {
+            refreshData()
+        }
+    }
+
+    // End refresh when loading finishes
+    LaunchedEffect(uiState.isLoading, savingsUiState.isLoading) {
+        if (!uiState.isLoading && !savingsUiState.isLoading) {
+            pullToRefreshState.endRefresh()
+        }
     }
 
     ModalNavigationDrawer(
@@ -91,143 +108,154 @@ fun GroupDetailScreen(
     ) {
         Scaffold(
             bottomBar = { BottomNavBar(navController) },
-            containerColor = BackgroundLightGray
+            containerColor = MaterialTheme.colorScheme.background
         ) { padding ->
-            Column(
+            Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding)
+                    .nestedScroll(pullToRefreshState.nestedScrollConnection)
             ) {
-                HomeHeader(
-                    userPhone = homeUiState.userPhone,
-                    unreadCount = notificationState.unreadCount,
-                    navController = navController,
-                    onMenuClick = { scope.launch { drawerState.open() } }
-                )
+                Column(modifier = Modifier.fillMaxSize()) {
+                    HomeHeader(
+                        userPhone = homeUiState.userPhone,
+                        unreadCount = notificationState.unreadCount,
+                        navController = navController,
+                        onMenuClick = { scope.launch { drawerState.open() } }
+                    )
 
-                // Tab Selector Buttons
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Button(
-                        onClick = { selectedTab = "SAVINGS" },
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(10.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = if (selectedTab == "SAVINGS") NavyBlue else NavyBlue.copy(alpha = 0.6f),
-                            contentColor = Color.White
-                        )
+                    // Tab Selector Buttons
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Text("Group Savings", fontWeight = FontWeight.Bold)
+                        Button(
+                            onClick = { selectedTab = "SAVINGS" },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(10.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (selectedTab == "SAVINGS") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primary.copy(alpha = 0.6f),
+                                contentColor = MaterialTheme.colorScheme.onPrimary
+                            )
+                        ) {
+                            Text("Group Savings", fontWeight = FontWeight.Bold)
+                        }
+                        Button(
+                            onClick = { selectedTab = "DISBURSE" },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(10.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (selectedTab == "DISBURSE") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primary.copy(alpha = 0.6f),
+                                contentColor = MaterialTheme.colorScheme.onPrimary
+                            )
+                        ) {
+                            Text("Disburse", fontWeight = FontWeight.Bold)
+                        }
                     }
-                    Button(
-                        onClick = { selectedTab = "DISBURSE" },
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(10.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = if (selectedTab == "DISBURSE") NavyBlue else NavyBlue.copy(alpha = 0.6f),
-                            contentColor = Color.White
-                        )
+
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(bottom = 16.dp)
                     ) {
-                        Text("Disburse", fontWeight = FontWeight.Bold)
-                    }
-                }
-
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(bottom = 16.dp)
-                ) {
-                    if (selectedTab == "SAVINGS") {
-                        item {
-                            val lastUpdated = FormatUtils.formatDateTime(uiState.transactions.firstOrNull()?.createdAt)
-                            GroupSummaryCard(
-                                groupName = groupName,
-                                totalSavings = uiState.selectedGroup?.totalSavings ?: 0.0,
-                                mySavings = uiState.selectedGroup?.mySavings ?: 0.0,
-                                lastUpdated = lastUpdated
-                            )
-                            Spacer(modifier = Modifier.height(20.dp))
-                        }
-                        
-                        item {
-                            QuickActionsHeader(navController, groupId, isChair)
-                            Spacer(modifier = Modifier.height(12.dp))
-                            QuickActionsGrid(navController, groupId, isChair, groupName)
-                            Spacer(modifier = Modifier.height(20.dp))
-                        }
-                        
-                        item {
-                            TransactionsHeader(navController, groupId)
-                            Spacer(modifier = Modifier.height(12.dp))
-                        }
-                        
-                        items(uiState.transactions.take(2)) { transaction ->
-                            TransactionSummaryCard(transaction)
-                            Spacer(modifier = Modifier.height(12.dp))
-                        }
-                    } else {
-                        // Disbursement List View
-                        item {
-                            Text(
-                                text = "Member Share Payouts",
-                                modifier = Modifier.padding(16.dp),
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-
-                        val currentDisbursement = savingsUiState.currentDisbursement
-                        if (currentDisbursement != null && currentDisbursement.memberShares.isNotEmpty()) {
-                            items(currentDisbursement.memberShares) { payout ->
-                                Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
-                                    PayoutItem(payout)
-                                }
+                        if (selectedTab == "SAVINGS") {
+                            item {
+                                val groupName = uiState.selectedGroup?.name ?: homeUiState.myGroups.firstOrNull { it.id == groupId }?.name ?: stringResource(R.string.placeholder_group_name)
+                                val lastUpdated = FormatUtils.formatDateTime(uiState.transactions.firstOrNull()?.createdAt)
+                                GroupSummaryCard(
+                                    groupName = groupName,
+                                    totalSavings = uiState.selectedGroup?.totalSavings ?: 0.0,
+                                    mySavings = uiState.selectedGroup?.mySavings ?: 0.0,
+                                    lastUpdated = lastUpdated
+                                )
+                                Spacer(modifier = Modifier.height(20.dp))
                             }
                             
                             item {
-                                Spacer(modifier = Modifier.height(24.dp))
-                                Button(
-                                    onClick = { navController.navigate(Routes.DISBURSEMENT.replace("{groupId}", groupId)) },
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(horizontal = 16.dp)
-                                        .height(50.dp),
-                                    shape = RoundedCornerShape(12.dp),
-                                    colors = ButtonDefaults.buttonColors(containerColor = NavyBlue)
-                                ) {
-                                    Text("Confirm Disbursement", color = Color.White, fontWeight = FontWeight.Bold)
-                                }
+                                val groupRole = homeUiState.myRole?.uppercase() ?: "MEMBER"
+                                val isChair = groupRole == "CHAIRPERSON" || groupRole == "SECRETARY"
+                                QuickActionsHeader(navController, groupId, isChair)
+                                Spacer(modifier = Modifier.height(12.dp))
+                                QuickActionsGrid(navController, groupId, isChair, "Group")
+                                Spacer(modifier = Modifier.height(20.dp))
+                            }
+                            
+                            item {
+                                TransactionsHeader(navController, groupId)
+                                Spacer(modifier = Modifier.height(12.dp))
+                            }
+                            
+                            items(uiState.transactions.take(5)) { transaction ->
+                                TransactionSummaryCard(transaction)
+                                Spacer(modifier = Modifier.height(12.dp))
                             }
                         } else {
+                            // Disbursement List View
                             item {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(32.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                        Icon(
-                                            Icons.Default.Info,
-                                            contentDescription = null,
-                                            tint = TextSecondary,
-                                            modifier = Modifier.size(48.dp)
-                                        )
-                                        Spacer(modifier = Modifier.height(16.dp))
-                                        Text(
-                                            "No active disbursement request found.",
-                                            color = TextSecondary,
-                                            textAlign = TextAlign.Center
-                                        )
-                                        Spacer(modifier = Modifier.height(16.dp))
-                                        Button(
-                                            onClick = { navController.navigate(Routes.DISBURSEMENT.replace("{groupId}", groupId)) },
-                                            colors = ButtonDefaults.buttonColors(containerColor = NavyBlue)
-                                        ) {
-                                            Text("Go to Disbursement Page", color = Color.White)
+                                Text(
+                                    text = "Member Share Payouts",
+                                    modifier = Modifier.padding(16.dp),
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onBackground
+                                )
+                            }
+
+                            val currentDisbursement = savingsUiState.currentDisbursement
+                            if (currentDisbursement != null && currentDisbursement.memberShares.isNotEmpty()) {
+                                items(currentDisbursement.memberShares) { payout ->
+                                    Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
+                                        PayoutItem(payout)
+                                    }
+                                }
+                                
+                                item {
+                                    Spacer(modifier = Modifier.height(24.dp))
+                                    Button(
+                                        onClick = { navController.navigate(Routes.DISBURSEMENT.replace("{groupId}", groupId)) },
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 16.dp)
+                                            .height(50.dp),
+                                        shape = RoundedCornerShape(12.dp),
+                                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                                    ) {
+                                        @Suppress("DEPRECATION")
+                                        Text("Confirm Disbursement", color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold)
+                                    }
+                                }
+                            } else {
+                                item {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(32.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                            Icon(
+                                                Icons.Default.Info,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                modifier = Modifier.size(48.dp)
+                                            )
+                                            @Suppress("DEPRECATION")
+                                            Spacer(modifier = Modifier.height(16.dp))
+                                            Text(
+                                                "No active disbursement request found.",
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                textAlign = TextAlign.Center
+                                            )
+                                            @Suppress("DEPRECATION")
+                                            Spacer(modifier = Modifier.height(16.dp))
+                                            Button(
+                                                onClick = { navController.navigate(Routes.DISBURSEMENT.replace("{groupId}", groupId)) },
+                                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                                            ) {
+                                                @Suppress("DEPRECATION")
+                                                Text("Go to Disbursement Page", color = MaterialTheme.colorScheme.onPrimary)
+                                            }
                                         }
                                     }
                                 }
@@ -235,6 +263,13 @@ fun GroupDetailScreen(
                         }
                     }
                 }
+
+                PullToRefreshContainer(
+                    state = pullToRefreshState,
+                    modifier = Modifier.align(Alignment.TopCenter),
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    contentColor = MaterialTheme.colorScheme.primary
+                )
             }
         }
     }
@@ -246,16 +281,16 @@ fun GroupSummaryCard(groupName: String, totalSavings: Double, mySavings: Double,
     var isMySavingsVisible by remember { mutableStateOf(false) }
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(bottomStart = 20.dp, bottomEnd = 20.dp),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary),
         elevation = CardDefaults.cardElevation(4.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(groupName, fontSize = 26.sp, color = Color.White, fontWeight = FontWeight.Bold)
+        Column(modifier = Modifier.padding(20.dp)) {
+            Text(groupName, fontSize = 24.sp, color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(16.dp))
             
-            Text(stringResource(R.string.group_saving_label), fontSize = 14.sp, color = Color.White.copy(alpha = 0.8f))
+            Text(stringResource(R.string.group_saving_label), fontSize = 14.sp, color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f))
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -263,8 +298,8 @@ fun GroupSummaryCard(groupName: String, totalSavings: Double, mySavings: Double,
             ) {
                 val amountFontSize = 24.sp
                 Text(
-                    text = if (isGroupSavingsVisible) com.example.tisunga.utils.FormatUtils.formatMoney(totalSavings) else "MWK XXXXXX",
-                    color = Color.White,
+                    text = if (isGroupSavingsVisible) FormatUtils.formatMoney(totalSavings) else "MWK XXXXXX",
+                    color = MaterialTheme.colorScheme.onPrimary,
                     fontSize = amountFontSize,
                     fontWeight = FontWeight.Bold
                 )
@@ -275,7 +310,7 @@ fun GroupSummaryCard(groupName: String, totalSavings: Double, mySavings: Double,
                     Icon(
                         imageVector = if (isGroupSavingsVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
                         contentDescription = "Toggle Visibility",
-                        tint = Color.White.copy(alpha = 0.7f),
+                        tint = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f),
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -283,7 +318,7 @@ fun GroupSummaryCard(groupName: String, totalSavings: Double, mySavings: Double,
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            Text(stringResource(R.string.my_savings_label), fontSize = 14.sp, color = Color.White.copy(alpha = 0.8f))
+            Text(stringResource(R.string.my_savings_label), fontSize = 14.sp, color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f))
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -291,8 +326,8 @@ fun GroupSummaryCard(groupName: String, totalSavings: Double, mySavings: Double,
             ) {
                 val amountFontSize = 24.sp
                 Text(
-                    text = if (isMySavingsVisible) com.example.tisunga.utils.FormatUtils.formatMoney(mySavings) else "MWK XXXXXX",
-                    color = Color.White,
+                    text = if (isMySavingsVisible) FormatUtils.formatMoney(mySavings) else "MWK XXXXXX",
+                    color = MaterialTheme.colorScheme.onPrimary,
                     fontSize = amountFontSize,
                     fontWeight = FontWeight.Bold
                 )
@@ -303,7 +338,7 @@ fun GroupSummaryCard(groupName: String, totalSavings: Double, mySavings: Double,
                     Icon(
                         imageVector = if (isMySavingsVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
                         contentDescription = "Toggle Visibility",
-                        tint = Color.White.copy(alpha = 0.7f),
+                        tint = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f),
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -314,7 +349,7 @@ fun GroupSummaryCard(groupName: String, totalSavings: Double, mySavings: Double,
                 Text(
                     text = "Last updated: $lastUpdated",
                     fontSize = 11.sp,
-                    color = Color.White.copy(alpha = 0.7f)
+                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f)
                 )
             }
         }
@@ -329,10 +364,11 @@ fun QuickActionsHeader(navController: NavController, groupId: String, isChair: B
         verticalAlignment = Alignment.CenterVertically
     ) {
         @Suppress("DEPRECATION")
-        Text(stringResource(R.string.quick_actions_title), fontSize = 15.sp, fontWeight = FontWeight.Bold)
+        Text(stringResource(R.string.quick_actions_title), fontSize = 15.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground)
+        @Suppress("DEPRECATION")
         Text(
             stringResource(R.string.members_link),
-            color = BlueLink,
+            color = MaterialTheme.colorScheme.primary,
             modifier = Modifier.clickable {
                 if (isChair) {
                     navController.navigate(Routes.GROUP_MEMBERS_CHAIR.replace("{groupId}", groupId))
@@ -383,7 +419,7 @@ fun ActionCard(icon: ImageVector, label: String, modifier: Modifier, onClick: ()
     Card(
         modifier = modifier.aspectRatio(1f).clickable { onClick() },
         shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(containerColor = White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(2.dp)
     ) {
         Column(
@@ -391,9 +427,9 @@ fun ActionCard(icon: ImageVector, label: String, modifier: Modifier, onClick: ()
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Icon(icon, null, tint = NavyBlue, modifier = Modifier.size(24.dp))
+            Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
             Spacer(modifier = Modifier.height(4.dp))
-            Text(label, fontSize = 10.sp, fontWeight = FontWeight.Bold, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+            Text(label, fontSize = 10.sp, fontWeight = FontWeight.Bold, textAlign = androidx.compose.ui.text.style.TextAlign.Center, color = MaterialTheme.colorScheme.onSurface)
         }
     }
 }
@@ -405,10 +441,12 @@ fun TransactionsHeader(navController: NavController, groupId: String) {
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(stringResource(R.string.transactions_history_title), fontSize = 15.sp, fontWeight = FontWeight.Bold)
+        @Suppress("DEPRECATION")
+        Text(stringResource(R.string.transactions_history_title), fontSize = 15.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground)
+        @Suppress("DEPRECATION")
         Text(
             stringResource(R.string.view_all_link),
-            color = BlueLink,
+            color = MaterialTheme.colorScheme.primary,
             modifier = Modifier.clickable { navController.navigate(Routes.TRANSACTIONS.replace("{groupId}", groupId)) }
         )
     }
@@ -425,7 +463,7 @@ fun TransactionSummaryCard(transaction: Transaction) {
         TransactionType.INTEREST,
         TransactionType.SYSTEM
     )
-    val color = if (isCredit) GreenAccent else Color(0xFF333333)
+    val color = if (isCredit) GreenAccent else MaterialTheme.colorScheme.onSurface
     val icon = if (isCredit) Icons.Default.ArrowDownward else Icons.Default.ArrowUpward
 
     Card(
@@ -433,7 +471,7 @@ fun TransactionSummaryCard(transaction: Transaction) {
             .fillMaxWidth()
             .padding(horizontal = 16.dp),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(2.dp)
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
@@ -457,7 +495,8 @@ fun TransactionSummaryCard(transaction: Transaction) {
                         Text(
                             text = transaction.type?.name?.replace("_", " ") ?: "Transaction",
                             fontWeight = FontWeight.Bold,
-                            fontSize = 14.sp
+                            fontSize = 14.sp,
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 }
@@ -476,11 +515,11 @@ fun TransactionSummaryCard(transaction: Transaction) {
                 val raw = transaction.description.replace("null", "", true).trim()
                 if (raw.isEmpty() || raw == "null null") {
                     when (transaction.type) {
-                        TransactionType.SAVINGS, TransactionType.SOCIAL_FUND, TransactionType.SHARE_PURCHASE -> 
+                        TransactionType.SAVINGS, TransactionType.SOCIAL_FUND, TransactionType.SHARE_PURCHASE ->
                             "Contribution to the group"
-                        TransactionType.JOIN_FEE -> 
+                        TransactionType.JOIN_FEE ->
                             "Joining fee payment"
-                        TransactionType.LOAN_IN -> 
+                        TransactionType.LOAN_IN ->
                             "Loan repayment"
                         else -> "Transaction completed"
                     }
@@ -500,17 +539,18 @@ fun TransactionSummaryCard(transaction: Transaction) {
                     text = displayDescription,
                     modifier = Modifier.weight(1f),
                     fontSize = 12.sp,
-                    color = TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     lineHeight = 16.sp,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
                 Spacer(modifier = Modifier.width(8.dp))
+                @Suppress("DEPRECATION")
                 Text(
                     text = dateStr,
                     modifier = Modifier.weight(1f),
                     fontSize = 12.sp,
-                    color = TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     lineHeight = 16.sp,
                     textAlign = TextAlign.End
                 )
