@@ -431,12 +431,15 @@
 
     <!-- Attendance Screen -->
     <string name="attendance_title">Mark Attendance</string>
+    <string name="mark_all_present">Mark All Present</string>
+    <string name="mark_pending_absent">Mark Pending Absent</string>
     <string name="submit_attendance_button">Submit Attendance Sheet</string>
     <string name="attendance_live_tally">Live Tally: %1$d / %2$d marked present</string>
     <string name="status_present">PRESENT</string>
     <string name="status_late">LATE</string>
     <string name="status_absent">ABSENT</string>
     <string name="status_excused">EXCUSED</string>
+    <string name="status_pending">PENDING</string>
     <string name="add_new_member_title">Add New Member</string>
     <string name="add_member_instructions">Search for a user by their phone number to add them to your group.</string>
     <string name="phone_number_search_hint">Phone Number (e.g. 0882123456)</string>

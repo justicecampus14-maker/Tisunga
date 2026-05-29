@@ -1,7 +1,6 @@
 package com.example.tisunga.ui.screens.meetings
 
 import android.net.Uri
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -13,8 +12,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
@@ -25,14 +22,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.navigation.NavController
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import coil.compose.AsyncImage
 import com.example.tisunga.R
 import com.example.tisunga.data.model.MeetingAttendance
@@ -61,6 +60,7 @@ fun MeetingDetailScreen(
     var isEditingNotes by remember { mutableStateOf(false) }
     var discussionText by remember(meetingId) { mutableStateOf("") }
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
+    var showFullScreenImage by remember { mutableStateOf(false) }
     
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -83,7 +83,9 @@ fun MeetingDetailScreen(
     }
 
     val groupRole = sessionManager.getGroupRole(groupId)?.uppercase() ?: "MEMBER"
-    val isChair = groupRole == "CHAIR" || groupRole == "CHAIRPERSON" || groupRole == "SECRETARY" || groupRole == "TREASURER" || groupRole == "ADMIN"
+    val isChair = groupRole == "CHAIR" || groupRole == "CHAIRPERSON" || groupRole == "SECRETARY" || groupRole == "ADMIN"
+    val isTreasurer = groupRole == "TREASURER"
+    val hasAdminPrivileges = isChair || isTreasurer
 
     LaunchedEffect(groupId, meetingId) {
         if (meeting == null || meeting.id != meetingId) {
@@ -93,11 +95,11 @@ fun MeetingDetailScreen(
 
     LaunchedEffect(uiState.isSuccess, uiState.errorMessage) {
         if (uiState.isSuccess && uiState.successMessage.isNotEmpty()) {
-            Toast.makeText(context, uiState.successMessage, Toast.LENGTH_SHORT).show()
+            android.widget.Toast.makeText(context, uiState.successMessage, android.widget.Toast.LENGTH_SHORT).show()
             viewModel.resetState()
         }
         if (uiState.errorMessage.isNotEmpty()) {
-            Toast.makeText(context, uiState.errorMessage, Toast.LENGTH_LONG).show()
+            android.widget.Toast.makeText(context, uiState.errorMessage, android.widget.Toast.LENGTH_LONG).show()
         }
     }
 
@@ -159,6 +161,15 @@ fun MeetingDetailScreen(
                 CircularProgressIndicator(color = GreenAccent)
             }
         } else if (meeting != null) {
+            val attendance = meeting.attendance
+            val totalCount = attendance.size
+            val presentCount = attendance.count { it.status.uppercase() == "PRESENT" }
+            val lateCount = attendance.count { it.status.uppercase() == "LATE" }
+            val absentCount = attendance.count { it.status.uppercase() == "ABSENT" }
+            val excusedCount = attendance.count { it.status.uppercase() == "EXCUSED" }
+            
+            val presentPercent = if (totalCount > 0) ((presentCount + lateCount) * 100) / totalCount else 0
+
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
@@ -173,18 +184,8 @@ fun MeetingDetailScreen(
                         status = meeting.status,
                         scheduledAt = meeting.scheduledAt,
                         location = meeting.location,
-                        agenda = meeting.agenda ?: "",
-                        isEditable = isChair && (meeting.status.uppercase() == "SCHEDULED" || meeting.status.uppercase() == "ONGOING"),
-                        onSaveAgenda = { newAgenda ->
-                            viewModel.updateMeetingAgenda(groupId, meetingId, newAgenda)
-                        }
+                        agenda = meeting.agenda ?: ""
                     )
-                }
-
-                if (!meeting.notes.isNullOrBlank()) {
-                    item {
-                        MeetingNotesCard(meeting.notes)
-                    }
                 }
 
                 val statusUpper = meeting.status.uppercase()
@@ -203,7 +204,7 @@ fun MeetingDetailScreen(
                         onNotesChange = { discussionText = it },
                         isEditing = isEditingNotes,
                         onEditingChange = { isEditingNotes = it },
-                        isEditable = isChair && (statusUpper == "SCHEDULED" || statusUpper == "ONGOING"),
+                        isEditable = hasAdminPrivileges && (statusUpper == "SCHEDULED" || statusUpper == "ONGOING"),
                         onSave = { 
                             viewModel.updateMeetingNotes(groupId, meetingId, discussionText) 
                         },
@@ -215,24 +216,50 @@ fun MeetingDetailScreen(
                                 selectedImageUri = null
                             }
                         },
+                        onImageClick = { showFullScreenImage = true },
                         imageUri = selectedImageUri,
                         imageUrl = meeting.imageUrl ?: meeting.image,
                         originalNotes = meeting.notes ?: "",
-                        isChair = isChair
+                        hasAdminPrivileges = hasAdminPrivileges
                     )
                 }
 
                 item {
-                    Text(
-                        stringResource(R.string.attendance_list_title),
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(vertical = 8.dp)
+                    MeetingAttendanceSummaryCard(
+                        present = presentCount,
+                        late = lateCount,
+                        absent = absentCount,
+                        excused = excusedCount,
+                        total = totalCount
                     )
                 }
 
-                items(meeting.attendance, key = { it.userId }) { attendance ->
-                    AttendanceMemberItem(attendance)
+                item {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { isAttendanceExpanded = !isAttendanceExpanded }
+                            .padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            stringResource(R.string.attendance_list_title),
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Icon(
+                            imageVector = if (isAttendanceExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                            contentDescription = if (isAttendanceExpanded) "Collapse" else "Expand",
+                            tint = GreenAccent
+                        )
+                    }
+                }
+
+                if (isAttendanceExpanded) {
+                    items(meeting.attendance, key = { it.userId }) { attendance ->
+                        AttendanceMemberItem(attendance)
+                    }
                 }
                 
                 item {
@@ -240,7 +267,6 @@ fun MeetingDetailScreen(
                 }
             }
         } else {
-            // Error or Not Found State
             Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(24.dp)) {
                     if (uiState.errorMessage.isNotEmpty()) {
@@ -257,15 +283,12 @@ fun MeetingDetailScreen(
                             Text("Retry")
                         }
                     } else {
-                        // Not loading, no meeting, no error
                         CircularProgressIndicator(color = GreenAccent)
-                        
                         var showNotFound by remember { mutableStateOf(false) }
                         LaunchedEffect(Unit) {
                             kotlinx.coroutines.delay(3000)
                             showNotFound = true
                         }
-                        
                         if (showNotFound) {
                             Text(stringResource(R.string.meeting_not_found), color = TextSecondary)
                             Spacer(Modifier.height(8.dp))
@@ -281,6 +304,44 @@ fun MeetingDetailScreen(
             }
         }
     }
+
+    val displayImageUrl = meeting?.imageUrl ?: meeting?.image
+    if (showFullScreenImage && !displayImageUrl.isNullOrBlank()) {
+        val fullImageUrl = if (displayImageUrl.startsWith("http")) displayImageUrl 
+                         else "${com.example.tisunga.utils.Constants.BASE_URL.removeSuffix("api/v1/")}uploads/meetings/$displayImageUrl"
+        
+        Dialog(
+            onDismissRequest = { showFullScreenImage = false },
+            properties = DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black)
+            ) {
+                AsyncImage(
+                    model = fullImageUrl,
+                    contentDescription = "Full Screen Meeting Minutes",
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Fit
+                )
+                
+                IconButton(
+                    onClick = { showFullScreenImage = false },
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(top = 16.dp, start = 16.dp)
+                        .background(Color.Black.copy(alpha = 0.5f), CircleShape)
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back",
+                        tint = Color.White
+                    )
+                }
+            }
+        }
+    }
 }
 
 @Composable
@@ -289,18 +350,8 @@ fun MeetingHeaderCard(
     status: String,
     scheduledAt: String,
     location: String?,
-    agenda: String,
-    isEditable: Boolean = false,
-    onSaveAgenda: (String) -> Unit = {}
+    agenda: String
 ) {
-    var isEditing by remember { mutableStateOf(false) }
-    var editedAgenda by remember { mutableStateOf(agenda) }
-    val focusManager = LocalFocusManager.current
-
-    LaunchedEffect(agenda) {
-        editedAgenda = agenda
-    }
-
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
@@ -319,56 +370,19 @@ fun MeetingHeaderCard(
             Spacer(modifier = Modifier.height(12.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Description, contentDescription = null, modifier = Modifier.size(18.dp), tint = GreenAccent)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(stringResource(R.string.agenda_label), fontWeight = FontWeight.Bold, fontSize = 15.sp, color = GreenAccent)
-                }
-
-                if (isEditable) {
-                    IconButton(onClick = {
-                        if (isEditing) {
-                            onSaveAgenda(editedAgenda)
-                        }
-                        isEditing = !isEditing
-                    }, modifier = Modifier.size(32.dp)) {
-                        Icon(
-                            imageVector = if (isEditing) Icons.Default.Save else Icons.Default.Edit,
-                            contentDescription = null,
-                            tint = GreenAccent,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-                }
+                Icon(Icons.Default.Description, contentDescription = null, modifier = Modifier.size(18.dp), tint = GreenAccent)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(stringResource(R.string.agenda_label), fontWeight = FontWeight.Bold, fontSize = 15.sp, color = GreenAccent)
             }
             
-            if (isEditing) {
-                OutlinedTextField(
-                    value = editedAgenda,
-                    onValueChange = { editedAgenda = it },
-                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = GreenAccent,
-                        cursorColor = GreenAccent
-                    ),
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                    keyboardActions = KeyboardActions(onDone = {
-                        focusManager.clearFocus()
-                        onSaveAgenda(editedAgenda)
-                        isEditing = false
-                    })
-                )
-            } else {
-                Text(
-                    text = agenda.ifBlank { "No agenda specified." },
-                    color = TextPrimary,
-                    modifier = Modifier.padding(top = 4.dp),
-                    fontSize = 14.sp
-                )
-            }
+            Text(
+                text = agenda.ifBlank { "No agenda specified." },
+                color = TextPrimary,
+                modifier = Modifier.padding(top = 4.dp),
+                fontSize = 14.sp
+            )
 
             if (!location.isNullOrBlank()) {
                 Spacer(modifier = Modifier.height(16.dp))
@@ -419,10 +433,11 @@ fun MeetingDiscussionCard(
     onImagePick: () -> Unit,
     onImageRemove: () -> Unit,
     onImageUpload: () -> Unit,
+    onImageClick: () -> Unit = {},
     imageUri: Uri? = null,
     imageUrl: String? = null,
     originalNotes: String = "",
-    isChair: Boolean = false
+    hasAdminPrivileges: Boolean = false
 ) {
     val hasChanges = notes != originalNotes
     val focusManager = LocalFocusManager.current
@@ -534,53 +549,52 @@ fun MeetingDiscussionCard(
                 )
             }
 
-            if (isEditable) {
-                if (imageUri != null) {
-                    Box(
+            if (isEditable && imageUri != null) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .border(1.dp, BackgroundGray, RoundedCornerShape(8.dp))
+                ) {
+                    AsyncImage(
+                        model = imageUri,
+                        contentDescription = "Meeting Minutes Preview",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                    
+                    Surface(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .height(200.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .border(1.dp, BackgroundGray, RoundedCornerShape(8.dp))
+                            .align(Alignment.TopEnd)
+                            .padding(8.dp)
+                            .size(32.dp)
+                            .clickable { onImageRemove() },
+                        shape = CircleShape,
+                        color = Color.Black.copy(alpha = 0.6f)
                     ) {
-                        AsyncImage(
-                            model = imageUri,
-                            contentDescription = "Meeting Minutes Preview",
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Remove image",
+                            tint = Color.White,
+                            modifier = Modifier.padding(6.dp)
                         )
-                        
-                        Surface(
-                            modifier = Modifier
-                                .align(Alignment.TopEnd)
-                                .padding(8.dp)
-                                .size(32.dp)
-                                .clickable { onImageRemove() },
-                            shape = CircleShape,
-                            color = Color.Black.copy(alpha = 0.6f)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Close,
-                                contentDescription = "Remove image",
-                                tint = Color.White,
-                                modifier = Modifier.padding(6.dp)
-                            )
-                        }
+                    }
 
-                        Button(
-                            onClick = onImageUpload,
-                            modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = GreenAccent)
-                        ) {
-                            Icon(Icons.Default.CloudUpload, contentDescription = null)
-                            Spacer(Modifier.width(8.dp))
-                            Text("Upload Image")
-                        }
+                    Button(
+                        onClick = onImageUpload,
+                        modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = GreenAccent)
+                    ) {
+                        Icon(Icons.Default.CloudUpload, contentDescription = null)
+                        Spacer(Modifier.width(8.dp))
+                        Text("Upload Image")
                     }
                 }
             }
 
-            if (isChair && !imageUrl.isNullOrBlank()) {
+            if (!imageUrl.isNullOrBlank()) {
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
                     text = "Uploaded Minutes:",
@@ -600,11 +614,12 @@ fun MeetingDiscussionCard(
                         .fillMaxWidth()
                         .height(200.dp)
                         .clip(RoundedCornerShape(8.dp))
-                        .border(1.dp, BackgroundGray, RoundedCornerShape(8.dp)),
+                        .border(1.dp, BackgroundGray, RoundedCornerShape(8.dp))
+                        .clickable { onImageClick() },
                     contentScale = ContentScale.Fit
                 )
                 
-                if (isEditable) {
+                if (hasAdminPrivileges && isEditable) {
                     TextButton(
                         onClick = onImagePick,
                         modifier = Modifier.align(Alignment.End)
@@ -653,6 +668,54 @@ fun MeetingActionsCard(onComplete: () -> Unit, onCancel: () -> Unit) {
 }
 
 @Composable
+fun MeetingAttendanceSummaryCard(present: Int, late: Int, absent: Int, excused: Int, total: Int) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(stringResource(R.string.attendance_overview_title), fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            Spacer(modifier = Modifier.height(16.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    AttendanceLegendItem(GreenAccent, stringResource(R.string.status_present), present)
+                    AttendanceLegendItem(OrangeTag, stringResource(R.string.status_late), late)
+                    AttendanceLegendItem(RedAccent, stringResource(R.string.status_absent), absent)
+                    AttendanceLegendItem(Color.Gray, stringResource(R.string.status_excused), excused)
+                }
+                
+                Box(modifier = Modifier.size(100.dp), contentAlignment = Alignment.Center) {
+                    if (total > 0) {
+                        AttendancePieChart(
+                            present = present,
+                            late = late,
+                            absent = absent,
+                            excused = excused,
+                            total = total,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    } else {
+                        CircularProgressIndicator(
+                            progress = { 0f },
+                            modifier = Modifier.size(80.dp),
+                            color = BackgroundGray,
+                            trackColor = BackgroundGray,
+                            strokeWidth = 8.dp
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+@Composable
 fun AttendanceMemberItem(attendance: MeetingAttendance) {
     val user = attendance.user ?: return
     val status = attendance.status.uppercase()
@@ -675,8 +738,9 @@ fun AttendanceMemberItem(attendance: MeetingAttendance) {
             
             val (statusColor, statusLabel) = when (status) {
                 "PRESENT" -> GreenAccent to stringResource(R.string.status_present)
+                "LATE" -> OrangeTag to stringResource(R.string.status_late)
                 "ABSENT" -> RedAccent to stringResource(R.string.status_absent)
-                "EXCUSED" -> OrangeTag to stringResource(R.string.status_excused)
+                "EXCUSED" -> Color.Gray to stringResource(R.string.status_excused)
                 else -> TextSecondary to status
             }
             

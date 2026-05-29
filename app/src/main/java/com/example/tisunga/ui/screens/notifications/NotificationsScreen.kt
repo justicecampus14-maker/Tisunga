@@ -93,15 +93,14 @@ fun NotificationsScreen(
                         CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                     }
                 }
-                state.errorMessage.isNotEmpty() -> {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(state.errorMessage, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Spacer(Modifier.height(12.dp))
-                            @Suppress("DEPRECATION")
-                            Button(onClick = { vm.load() }, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)) { 
-                                Text(stringResource(R.string.retry_button), color = MaterialTheme.colorScheme.onPrimary)
-                            }
+            }
+            state.errorMessage.isNotEmpty() -> {
+                Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(state.errorMessage, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Spacer(Modifier.height(12.dp))
+                        Button(onClick = { vm.load() }, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)) {
+                            Text(stringResource(R.string.retry_button), color = MaterialTheme.colorScheme.onPrimary)
                         }
                     }
                 }
@@ -111,22 +110,39 @@ fun NotificationsScreen(
                         Text(stringResource(R.string.no_notifications_msg), color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
-                else -> {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        items(state.notifications, key = { it.id }) { notif ->
-                            NotificationCard(
-                                notification = notif,
-                                isExpanded = expandedNotifId == notif.id,
-                                onClick = {
-                                    expandedNotifId = if (expandedNotifId == notif.id) null else notif.id
-                                    if (!notif.isRead) vm.markOneRead(notif.id)
+            }
+            else -> {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize().padding(padding),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    items(state.notifications, key = { it.id }) { notif ->
+                        NotificationCard(
+                            notification = notif,
+                            isExpanded = expandedNotifId == notif.id,
+                            onClick = {
+                                if (!notif.isRead) vm.markOneRead(notif.id)
+                                // Deep-link: disbursement notifications go straight to the
+                                // DisbursementScreen for the relevant group so the treasurer
+                                // can see Approve / Reject immediately.
+                                val groupId = notif.groupId
+                                    ?: notif.group?.id
+                                    ?: notif.data?.disbursementId?.let { null }
+                                when (notif.type) {
+                                    "DISBURSEMENT_REQUESTED",
+                                    "DISBURSEMENT_APPROVED",
+                                    "DISBURSEMENT_REJECTED" -> {
+                                        if (!groupId.isNullOrBlank()) {
+                                            navController.navigate("disbursement/$groupId")
+                                        } else {
+                                            expandedNotifId = if (expandedNotifId == notif.id) null else notif.id
+                                        }
+                                    }
+                                    else -> expandedNotifId = if (expandedNotifId == notif.id) null else notif.id
                                 }
-                            )
-                        }
+                            }
+                        )
                     }
                 }
             }
@@ -237,6 +253,9 @@ fun NotificationCard(
                                 )
                             }
                         }
+
+                        // Action link (if we had specific deep links, we'd put them here)
+                        // For now just showing a "Show less" hint or similar isn't needed as tap toggles it.
                     }
                 }
             }

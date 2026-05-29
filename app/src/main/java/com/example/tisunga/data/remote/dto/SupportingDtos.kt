@@ -1,5 +1,6 @@
 package com.example.tisunga.data.remote.dto
 
+import android.os.Parcelable
 import com.example.tisunga.data.model.Group
 import com.example.tisunga.data.model.Loan
 import com.example.tisunga.data.model.Transaction
@@ -8,8 +9,17 @@ import com.example.tisunga.data.model.Meeting
 import com.example.tisunga.data.model.MeetingAttendance
 import com.example.tisunga.data.model.AttendanceSummary
 import com.google.gson.annotations.SerializedName
+import kotlinx.parcelize.Parcelize
 
 // ── Meetings ──────────────────────────────────────────────────────────────
+
+@Parcelize
+data class MeetingImage(
+    @SerializedName("url")        val url: String,
+    @SerializedName("publicId")   val publicId: String? = null,
+    @SerializedName("uploadedAt") val uploadedAt: String? = null,
+    @SerializedName("uploadedBy") val uploadedBy: String? = null
+) : Parcelable
 
 data class MeetingDetailResponse(
     @SerializedName("id")                val id: String,
@@ -21,7 +31,7 @@ data class MeetingDetailResponse(
     @SerializedName("notes")             val notes: String? = null,
     @SerializedName("image")             val image: String? = null,
     @SerializedName("imageUrl")          val imageUrl: String? = null,
-    @SerializedName("images")            val images: List<String> = emptyList(),
+    @SerializedName("images")            val images: List<MeetingImage>? = emptyList(),
     @SerializedName("creatorName")       val creatorName: String? = null,
     @SerializedName("attendance")        val attendance: List<MeetingAttendance> = emptyList(),
     @SerializedName("presentCount")      val presentCount: Int = 0,
@@ -39,7 +49,6 @@ data class BulkAttendanceRequest(
 )
 
 data class AttendanceEntry(
-    @SerializedName("id")     val id: String? = null,
     @SerializedName("userId") val userId: String,
     @SerializedName("status") val status: String,   // "PRESENT" | "LATE" | "ABSENT" | "EXCUSED"
     @SerializedName("note")   val note: String? = null
@@ -56,37 +65,37 @@ data class ReminderResponse(
 
 // ── Disbursements ─────────────────────────────────────────────────────────
 
-data class DisbursementRequestResponse(
-    @SerializedName("id")            val id: String,
-    @SerializedName("groupId")       val groupId: String,
-    @SerializedName("amount")        val amount: Double,
-    @SerializedName("status")        val status: String,
-    @SerializedName("requestedBy")   val requestedBy: String,
-    @SerializedName("requestedAt")   val requestedAt: String
+data class RequestDisbursementResponse(
+    @SerializedName("disbursement") val disbursement: DisbursementResponse,
+    @SerializedName("memberShares") val memberShares: List<MemberSharePayoutDto>
 )
 
 data class DisbursementResponse(
     @SerializedName("id")              val id: String,
     @SerializedName("groupId")         val groupId: String,
-    @SerializedName("amount")          val amount: Double,
+    @SerializedName("amount")          val amount: Double?,
+    @SerializedName("totalAmount")     val totalAmount: Double?,
     @SerializedName("status")          val status: String,
     @SerializedName("requestedBy")     val requestedBy: String,
     @SerializedName("requestedByName") val requestedByName: String?,
-    @SerializedName("requestedAt")     val requestedAt: String,
+    @SerializedName("requestedAt")     val requestedAt: String?,
+    @SerializedName("createdAt")       val createdAt: String?,
     @SerializedName("approvedBy")      val approvedBy: String?,
     @SerializedName("approvedByName")  val approvedByName: String?,
     @SerializedName("approvedAt")      val approvedAt: String?,
     @SerializedName("rejectionReason") val rejectionReason: String?,
-    @SerializedName("memberShares")    val memberShares: List<MemberSharePayoutDto>
+    @SerializedName("memberShares")    val memberShares: List<MemberSharePayoutDto> = emptyList()
 )
 
 data class MemberSharePayoutDto(
     @SerializedName("userId")        val userId: String,
-    @SerializedName("userName")      val userName: String,
-    @SerializedName("userPhone")     val userPhone: String,
+    @SerializedName("userName")      val userName: String?,
+    @SerializedName("name")          val name: String?,
+    @SerializedName("userPhone")     val userPhone: String?,
+    @SerializedName("phone")         val phone: String?,
     @SerializedName("memberSavings") val memberSavings: Double,
     @SerializedName("shareAmount")   val shareAmount: Double,
-    @SerializedName("status")        val status: String
+    @SerializedName("status")        val status: String?
 )
 
 // ── Events ────────────────────────────────────────────────────────────────
@@ -102,6 +111,20 @@ data class CreateEventRequest(
 
 data class ContributeRequest(
     @SerializedName("amount") val amount: Double
+)
+
+data class DisbursementApprovalResponse(
+    @SerializedName("disbursementId") val disbursementId: String,
+    @SerializedName("totalMembers")   val totalMembers: Int,
+    @SerializedName("successCount")   val successCount: Int,
+    @SerializedName("failedCount")    val failedCount: Int,
+    @SerializedName("errors")         val errors: List<DisbursementError>? = null
+)
+
+data class DisbursementError(
+    @SerializedName("userId") val userId: String,
+    @SerializedName("name")   val name: String,
+    @SerializedName("error")  val error: String
 )
 
 data class RejectDisbursementRequest(

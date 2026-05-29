@@ -120,20 +120,36 @@ fun NotificationDetailScreen(
                 Spacer(Modifier.height(40.dp))
 
                 // Optional: Dynamic action button based on type
-                val buttonLabel = when(notification.type) {
-                    "LOAN" -> "View My Loans"
-                    "SAVINGS" -> "View Savings"
-                    "GROUP" -> "View Group"
+                // Resolve groupId from the richer Notification model fields
+                val groupId = notification.groupId
+                    ?: notification.group?.id
+                    ?: notification.data?.disbursementId?.let { null }
+
+                val buttonConfig: Pair<String, () -> Unit>? = when (notification.type) {
+                    "DISBURSEMENT_REQUESTED",
+                    "DISBURSEMENT_APPROVED",
+                    "DISBURSEMENT_REJECTED" -> {
+                        if (!groupId.isNullOrBlank())
+                            "View Disbursement" to { navController.navigate("disbursement/$groupId") }
+                        else null
+                    }
+                    "LOAN_APPROVED",
+                    "LOAN_REJECTED",
+                    "LOAN_DUE" -> "View My Loans" to { navController.popBackStack() }
+                    "CONTRIBUTION_RECEIVED",
+                    "SAVINGS" -> "View Savings" to { navController.popBackStack() }
+                    "GROUP",
+                    "MEMBER_JOINED" -> "View Group" to { navController.popBackStack() }
                     else -> null
                 }
-                
-                if (buttonLabel != null) {
+
+                if (buttonConfig != null) {
                     Button(
-                        onClick = { /* Navigate to relevant section */ },
+                        onClick = buttonConfig.second,
                         modifier = Modifier.fillMaxWidth().height(50.dp),
                         shape = RoundedCornerShape(12.dp)
                     ) {
-                        Text(buttonLabel, fontWeight = FontWeight.Bold)
+                        Text(buttonConfig.first, fontWeight = FontWeight.Bold)
                     }
                 }
             }

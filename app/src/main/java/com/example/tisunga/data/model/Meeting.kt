@@ -1,6 +1,7 @@
 package com.example.tisunga.data.model
 
 import android.os.Parcelable
+import com.example.tisunga.data.remote.dto.MeetingImage
 import kotlinx.parcelize.Parcelize
 
 @Parcelize
@@ -16,6 +17,7 @@ data class Meeting(
     val notes: String? = null,
     val image: String? = null,
     val imageUrl: String? = null,
+    val images: List<MeetingImage>? = emptyList(),
     val notifiedAt: String? = null,
     val createdAt: String? = null,
     val creatorName: String? = null,

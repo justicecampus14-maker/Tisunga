@@ -163,10 +163,16 @@ interface ApiService {
     ): Event
 
     @POST("groups/{groupId}/disbursements/request")
-    suspend fun requestDisbursement(@Path("groupId") id: String): DisbursementResponse
+    suspend fun requestDisbursement(@Path("groupId") id: String): RequestDisbursementResponse
 
     @GET("groups/{groupId}/disbursements/current")
     suspend fun getCurrentDisbursement(@Path("groupId") groupId: String): DisbursementResponse
+
+    @GET("groups/{groupId}/disbursements/{disbursementId}")
+    suspend fun getDisbursementById(
+        @Path("groupId") groupId: String,
+        @Path("disbursementId") disbursementId: String
+    ): DisbursementResponse
 
     @GET("groups/{groupId}/disbursements")
     suspend fun getDisbursementHistory(@Path("groupId") groupId: String): List<DisbursementResponse>
@@ -178,7 +184,7 @@ interface ApiService {
     suspend fun approveDisbursement(
         @Path("groupId") groupId: String,
         @Path("disbursementId") disbursementId: String
-    ): MessageResponse
+    ): DisbursementApprovalResponse
 
     @POST("groups/{groupId}/disbursements/{disbursementId}/reject")
     suspend fun rejectDisbursement(
@@ -295,6 +301,14 @@ interface ApiService {
         @Path("groupId") groupId: String,
         @Path("meetingId") meetingId: String
     ): ReminderResponse
+
+    @Multipart
+    @PATCH("groups/{groupId}/meetings/{meetingId}/image")
+    suspend fun uploadMeetingImage(
+        @Path("groupId") groupId: String,
+        @Path("meetingId") meetingId: String,
+        @Part image: MultipartBody.Part
+    ): MeetingDetailResponse
 
     // ── NOTIFICATIONS ────────────────────────────────────────────────────
 

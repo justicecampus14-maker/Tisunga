@@ -49,16 +49,20 @@ fun DisbursementScreen(
     var rejectionReason by remember { mutableStateOf("") }
     val focusManager = LocalFocusManager.current
 
-    val rawRole = sessionManager.getGroupRole(groupId)?.lowercase() ?: "member"
-    val userRole = when (rawRole) {
-        "chair", "chairperson" -> "chairperson"
-        "secretary" -> "secretary"
-        "treasurer" -> "treasurer"
-        else -> "member"
+    val rawRole = (sessionManager.getGroupRole(groupId) ?: uiState.userRole).uppercase()
+    val isChair = rawRole.contains("CHAIR") || rawRole == "ADMIN"
+    val isTreasurer = rawRole.contains("TREAS")
+    val isSecretary = rawRole.contains("SEC")
+
+    val userRole = when {
+        isChair -> "CHAIRPERSON"
+        isTreasurer -> "TREASURER"
+        isSecretary -> "SECRETARY"
+        else -> "MEMBER"
     }
     
-    val canInitiate = userRole == "chairperson"
-    val canApprove = userRole == "treasurer" || userRole == "secretary"
+    val canInitiate = isChair
+    val canApprove = isTreasurer
 
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -92,25 +96,33 @@ fun DisbursementScreen(
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
-            // Show FAB for chairperson to request OR treasurer/secretary to approve
+            // Show FAB for chairperson to request OR treasurer to approve
             val showRequestFab = canInitiate && (uiState.currentDisbursement == null || uiState.currentDisbursement?.status == "REJECTED")
             val showApproveFab = canApprove && uiState.currentDisbursement?.status == "PENDING"
             
+            // Disable request if there are no savings to disburse
+            val canRequest = uiState.totalGroupSavings > 0
+
             if (showRequestFab || showApproveFab) {
+                val isResubmit = canInitiate && uiState.currentDisbursement?.status == "REJECTED"
                 ExtendedFloatingActionButton(
                     onClick = {
-                        if (showRequestFab) {
-                            dialogType = "request"
-                        } else {
-                            dialogType = "approve"
+                        if (showRequestFab && !canRequest) {
+                            viewModel.setErrorMessage("No group savings available to disburse.")
+                            return@ExtendedFloatingActionButton
                         }
+                        dialogType = if (showApproveFab) "approve" else "request"
                         showConfirmDialog = true
                     },
-                    containerColor = NavyBlue,
+                    containerColor = if (showRequestFab && !canRequest) Color.Gray else NavyBlue,
                     contentColor = White
                 ) {
                     Text(
-                        text = if (showRequestFab) stringResource(R.string.request_disbursement_button) else stringResource(R.string.approve_disbursement_button),
+                        text = when {
+                            showApproveFab -> stringResource(R.string.approve_disbursement_button)
+                            isResubmit -> stringResource(R.string.resubmit_request_button)
+                            else -> stringResource(R.string.request_disbursement_button)
+                        },
                         color = White,
                         fontWeight = SemiBold
                     )
@@ -190,17 +202,6 @@ fun DisbursementScreen(
                                     )
                                 )
                             }
-                        }
-                    }
-
-                    // 3. History Section
-                    if (uiState.history.isNotEmpty()) {
-                        item {
-                            Spacer(Modifier.height(8.dp))
-                            Text(stringResource(R.string.filter_history), fontWeight = Bold, fontSize = 16.sp)
-                        }
-                        items(uiState.history) { past ->
-                            HistoryItem(past)
                         }
                     }
                 }
@@ -304,14 +305,6 @@ fun CurrentDisbursementCard(
             if (disbursement == null) {
                 Text(stringResource(R.string.total_to_disburse_label), fontSize = 14.sp, color = TextSecondary)
                 Text(FormatUtils.formatMoney(totalGroupSavings), fontSize = 28.sp, fontWeight = Bold, color = NavyBlue)
-                Spacer(Modifier.height(16.dp))
-                if (role != "chairperson") {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Info, null, tint = TextSecondary, modifier = Modifier.size(16.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text(stringResource(R.string.waiting_chairperson_disbursement), fontSize = 12.sp, color = TextSecondary)
-                    }
-                }
             } else {
                 Row(
                     Modifier.fillMaxWidth(),
@@ -326,22 +319,38 @@ fun CurrentDisbursementCard(
                 }
 
                 Spacer(Modifier.height(8.dp))
-                Text(stringResource(R.string.requested_by_user_label, disbursement.requestedByName ?: stringResource(R.string.role_chairperson)), fontSize = 12.sp, color = TextSecondary)
+                Text(stringResource(R.string.requested_by_user_label, disbursement.requestedByName ?: "Chairperson"), fontSize = 12.sp, color = TextSecondary)
 
                 if (disbursement.status == "PENDING") {
                     Spacer(Modifier.height(16.dp))
                     if (canApprove) {
-                        OutlinedButton(
-                            onClick = onReject,
-                            modifier = Modifier.fillMaxWidth().height(48.dp),
-                            shape = RoundedCornerShape(10.dp),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, RedAccent)
+                        Row(
+                            Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            Text(stringResource(R.string.reject_button), color = RedAccent, fontWeight = SemiBold)
+                            OutlinedButton(
+                                onClick = onReject,
+                                modifier = Modifier.weight(1f).height(48.dp),
+                                shape = RoundedCornerShape(10.dp),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, RedAccent)
+                            ) {
+                                Text(stringResource(R.string.reject_button), color = RedAccent, fontWeight = SemiBold)
+                            }
+                            Button(
+                                onClick = onApprove,
+                                modifier = Modifier.weight(1f).height(48.dp),
+                                shape = RoundedCornerShape(10.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = GreenAccent)
+                            ) {
+                                Text(stringResource(R.string.approve_button), color = White, fontWeight = SemiBold)
+                            }
                         }
                     } else {
                         Text(stringResource(R.string.awaiting_treasurer_approval), fontSize = 13.sp, color = NavyBlue, fontWeight = SemiBold)
                     }
+                } else if (disbursement.status == "PROCESSING") {
+                    Spacer(Modifier.height(16.dp))
+                    Text("Processing payouts...", fontSize = 13.sp, color = GreenAccent, fontWeight = SemiBold)
                 } else if (disbursement.status == "REJECTED") {
                     Spacer(Modifier.height(12.dp))
                     Box(Modifier.fillMaxWidth().background(RedAccent.copy(alpha = 0.05f), RoundedCornerShape(8.dp)).padding(12.dp)) {
@@ -404,9 +413,9 @@ fun HistoryItem(disbursement: Disbursement) {
 fun StatusBadge(status: String) {
     val color = when (status) {
         "PENDING" -> Color(0xFFFF9800)
-        "APPROVED" -> GreenAccent
+        "PROCESSING" -> Color(0xFF2196F3)
+        "APPROVED", "COMPLETED" -> GreenAccent
         "REJECTED" -> RedAccent
-        "COMPLETED" -> Color(0xFF4CAF50)
         else -> TextSecondary
     }
     Surface(

@@ -15,9 +15,9 @@ import androidx.compose.ui.unit.sp
 fun StatusBadge(status: String) {
     val color = when (status.uppercase()) {
         "ACTIVE", "COMPLETED", "PRESENT" -> Color(0xFF4CAF50)
-        "SCHEDULED", "PENDING" -> Color(0xFF2196F3)
-        "CANCELLED", "ABSENT", "CLOSED" -> Color(0xFFF44336)
-        "REMINDER", "EXCUSED" -> Color(0xFFFFA000)
+        "SCHEDULED", "ONGOING", "PENDING" -> Color(0xFF2196F3)
+        "CANCELLED", "ABSENT", "CLOSED", "REJECTED" -> Color(0xFFF44336)
+        "REMINDER", "EXCUSED", "LATE" -> Color(0xFFFFA000)
         else -> Color(0xFF757575)
     }
     
