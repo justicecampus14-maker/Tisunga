@@ -3,6 +3,7 @@ package com.example.tisunga.ui.screens.auth
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -12,7 +13,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -30,11 +33,22 @@ fun ForgotPasswordScreen(navController: NavController, viewModel: AuthViewModel)
     val uiState by viewModel.uiState.collectAsState()
     var phone by remember { mutableStateOf("") }
     var phoneError by remember { mutableStateOf("") }
+    val focusManager = LocalFocusManager.current
 
     LaunchedEffect(uiState.isSuccess) {
         if (uiState.isSuccess) {
             navController.navigate("verification/FORGOT_PASSWORD")
             viewModel.resetState()
+        }
+    }
+
+    val invalidPhoneMsg = stringResource(R.string.error_invalid_phone_format)
+    val onSend = {
+        val isValidPrefix = phone.startsWith("09") || phone.startsWith("08")
+        if (phone.length == 10 && isValidPrefix) {
+            viewModel.forgotPassword(phone)
+        } else {
+            phoneError = invalidPhoneMsg
         }
     }
 
@@ -105,7 +119,16 @@ fun ForgotPasswordScreen(navController: NavController, viewModel: AuthViewModel)
                             unfocusedContainerColor = BackgroundGray,
                             focusedContainerColor = BackgroundGray
                         ),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Phone,
+                            imeAction = ImeAction.Done
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onDone = { 
+                                focusManager.clearFocus()
+                                onSend() 
+                            }
+                        ),
                         singleLine = true,
                         isError = phoneError.isNotEmpty()
                     )
@@ -121,17 +144,8 @@ fun ForgotPasswordScreen(navController: NavController, viewModel: AuthViewModel)
                     
                     Spacer(modifier = Modifier.height(32.dp))
                     
-                    val invalidPhoneMsg = stringResource(R.string.error_invalid_phone_format)
-
                     Button(
-                        onClick = { 
-                            val isValidPrefix = phone.startsWith("09") || phone.startsWith("08")
-                            if (phone.length == 10 && isValidPrefix) {
-                                viewModel.forgotPassword(phone)
-                            } else {
-                                phoneError = invalidPhoneMsg
-                            }
-                        },
+                        onClick = { onSend() },
                         enabled = phone.length == 10 && !uiState.isLoading,
                         modifier = Modifier.fillMaxWidth().height(52.dp),
                         shape = RoundedCornerShape(12.dp),

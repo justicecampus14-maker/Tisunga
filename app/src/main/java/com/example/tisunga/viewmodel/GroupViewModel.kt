@@ -10,6 +10,7 @@ import com.example.tisunga.data.remote.ApiClient
 import com.example.tisunga.data.remote.dto.GroupDashboardResponse
 import com.example.tisunga.data.remote.dto.MembershipResponse
 import com.example.tisunga.data.remote.dto.SearchMemberResponse
+import com.example.tisunga.utils.NetworkErrorHandler
 import com.example.tisunga.utils.MockDataProvider
 import com.example.tisunga.utils.SessionManager
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -49,7 +50,6 @@ fun GroupCreationDraft.toGroup(id: String = "0") = Group(
     totalSavings = 0.0,
     isActive = true,
     mySavings = 0.0
-
 )
 
 data class GroupUiState(
@@ -79,6 +79,10 @@ class GroupViewModel(
 
     private val apiService = ApiClient.getClient()
 
+    private fun handleApiError(e: Exception): String {
+        return NetworkErrorHandler.getSafeMessage(e)
+    }
+
     // ── Draft helpers ─────────────────────────────────────────────────────
 
     fun updateDraft(update: GroupCreationDraft.() -> GroupCreationDraft) {
@@ -95,13 +99,11 @@ class GroupViewModel(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
             try {
-                // Backend GET /groups/my returns a single object wrapped in { data: ... }
-                // We call getMyGroup() and wrap in a list for the UI.
                 val myGroupResponse = apiService.getMyGroup()
                 val group = myGroupResponse.toGroup()
                 _uiState.value = _uiState.value.copy(isLoading = false, groups = listOf(group))
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(isLoading = false, groups = MockDataProvider.getMockGroups())
+                _uiState.value = _uiState.value.copy(isLoading = false)
             }
         }
     }
@@ -113,15 +115,11 @@ class GroupViewModel(
                 val groups = apiService.getAllGroups()
                 _uiState.value = _uiState.value.copy(isLoading = false, allGroups = groups)
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(isLoading = false, allGroups = MockDataProvider.getMockGroups())
+                _uiState.value = _uiState.value.copy(isLoading = false)
             }
         }
     }
 
-    /**
-     * Reads from draft state and sends the correct field names to the backend.
-     * Key fix: sends "savingPeriodMonths" not "savingPeriod"; drops "visibility".
-     */
     fun createGroup() {
         viewModelScope.launch {
             val draft = _uiState.value.draft
@@ -133,7 +131,6 @@ class GroupViewModel(
                     "savingPeriodMonths" to draft.savingPeriodMonths,
                     "maxMembers"         to draft.maxMembers
                 )
-                // Optional fields — only include if non-empty
                 if (draft.description.isNotEmpty()) body["description"] = draft.description
                 if (draft.location.isNotEmpty())    body["location"]    = draft.location
                 if (draft.startDate.isNotEmpty())   body["startDate"]   = draft.startDate
@@ -151,8 +148,7 @@ class GroupViewModel(
                     selectedGroup = createdGroup
                 )
             } catch (e: Exception) {
-                val message = e.message ?: "Failed to create group"
-                _uiState.value = _uiState.value.copy(isLoading = false, errorMessage = message)
+                _uiState.value = _uiState.value.copy(isLoading = false, errorMessage = handleApiError(e))
             }
         }
     }
@@ -179,7 +175,7 @@ class GroupViewModel(
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    errorMessage = e.message ?: "Failed to update group"
+                    errorMessage = handleApiError(e)
                 )
             }
         }
@@ -192,7 +188,7 @@ class GroupViewModel(
                 apiService.joinGroup(mapOf("groupCode" to code))
                 _uiState.value = _uiState.value.copy(isLoading = false, isSuccess = true, successMessage = "Join request sent")
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(isLoading = false, isSuccess = true, successMessage = "Join request sent (Mock)")
+                _uiState.value = _uiState.value.copy(isLoading = false, errorMessage = handleApiError(e))
             }
         }
     }
@@ -215,7 +211,6 @@ class GroupViewModel(
                     }
                 _uiState.value = _uiState.value.copy(isLoading = false, members = users)
             } catch (e: Exception) {
-                // If API fails, we keep the current list or fallback to empty if null, instead of mock
                 _uiState.value = _uiState.value.copy(isLoading = false)
             }
         }
@@ -232,21 +227,19 @@ class GroupViewModel(
                 firstName?.let { body["firstName"] = it }
                 lastName?.let { body["lastName"] = it }
 
-                // Backend POST /groups/{id}/members returns AddMemberResponse, not List<User>
                 apiService.addMember(groupId, body)
 
                 _uiState.value = _uiState.value.copy(
                     isLoading = false, 
                     successMessage = "Member added",
-                    searchResult = null // Clear search result after successful addition
+                    searchResult = null
                 )
                 
-                // Re-fetch the updated member list
                 getGroupMembers(groupId)
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false, 
-                    successMessage = "Member added (Mock)"
+                    errorMessage = handleApiError(e)
                 )
             }
         }
@@ -259,7 +252,7 @@ class GroupViewModel(
                 val result = apiService.searchMemberByPhone(phone)
                 _uiState.value = _uiState.value.copy(isLoading = false, searchResult = result)
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(isLoading = false, errorMessage = "Search failed")
+                _uiState.value = _uiState.value.copy(isLoading = false, errorMessage = handleApiError(e))
             }
         }
     }
@@ -271,7 +264,7 @@ class GroupViewModel(
                 val transactions = apiService.getGroupTransactions(groupId)
                 _uiState.value = _uiState.value.copy(isLoading = false, transactions = transactions)
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(isLoading = false, transactions = MockDataProvider.getMockTransactions())
+                _uiState.value = _uiState.value.copy(isLoading = false)
             }
         }
     }
@@ -293,7 +286,7 @@ class GroupViewModel(
                             groupCode = g.groupCode ?: "",
                             minContribution = 0.0,
                             savingPeriod = 0,
-                            maxMembers = g.memberCount, // Using as proxy if exact field missing
+                            maxMembers = g.memberCount,
                             startDate = null,
                             endDate = g.endDate,
                             meetingDay = g.meetingDay,
@@ -301,7 +294,6 @@ class GroupViewModel(
                             totalSavings = g.totalSavings,
                             isActive = true,
                             mySavings = dashboard.mySavings
-
                         )
                     },
                     currentUserRole = dashboard.myRole?.lowercase() ?: "member"
@@ -320,7 +312,7 @@ class GroupViewModel(
                 getGroupMembers(groupId)
                 _uiState.value = _uiState.value.copy(isLoading = false, successMessage = "Role updated")
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(isLoading = false, errorMessage = "Failed to update role")
+                _uiState.value = _uiState.value.copy(isLoading = false, errorMessage = handleApiError(e))
             }
         }
     }
@@ -333,16 +325,11 @@ class GroupViewModel(
                 getGroupMembers(groupId)
                 _uiState.value = _uiState.value.copy(isLoading = false, successMessage = "Member removed")
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(isLoading = false, errorMessage = "Failed to remove member")
+                _uiState.value = _uiState.value.copy(isLoading = false, errorMessage = handleApiError(e))
             }
         }
     }
 
-
-    /**
-     Called from HomeScreen when home data loads — seeds selectedGroup and role
-     so GroupDetailScreen has data immediately without waiting for a dashboard call.
-     */
     fun seedSelectedGroup(group: com.example.tisunga.data.model.Group, role: String) {
         _uiState.value = _uiState.value.copy(
             selectedGroup   = group,

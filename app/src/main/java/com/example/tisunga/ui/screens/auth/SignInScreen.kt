@@ -2,6 +2,7 @@ package com.example.tisunga.ui.screens.auth
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Lock
@@ -12,9 +13,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -34,6 +38,7 @@ fun SignInScreen(navController: NavController, viewModel: AuthViewModel) {
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var phoneError by remember { mutableStateOf("") }
+    val focusManager = LocalFocusManager.current
 
     LaunchedEffect(uiState.isSuccess) {
         if (uiState.isSuccess) {
@@ -41,6 +46,18 @@ fun SignInScreen(navController: NavController, viewModel: AuthViewModel) {
                 popUpTo(Routes.SIGN_IN) { inclusive = true }
             }
             viewModel.resetState()
+        }
+    }
+
+    val invalidPhoneMsg = stringResource(R.string.error_invalid_phone_format)
+    val performLogin = {
+        val isValidPrefix = phone.startsWith("09") || phone.startsWith("08")
+        if (phone.length == 10 && isValidPrefix) {
+            if (password.isNotEmpty()) {
+                viewModel.login(phone, password)
+            }
+        } else {
+            phoneError = invalidPhoneMsg
         }
     }
 
@@ -105,7 +122,13 @@ fun SignInScreen(navController: NavController, viewModel: AuthViewModel) {
                                 unfocusedContainerColor = BackgroundGray,
                                 focusedContainerColor = BackgroundGray
                             ),
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Phone,
+                                imeAction = ImeAction.Next
+                            ),
+                            keyboardActions = KeyboardActions(
+                                onNext = { focusManager.moveFocus(FocusDirection.Down) }
+                            ),
                             singleLine = true,
                             shape = RoundedCornerShape(12.dp),
                             isError = phoneError.isNotEmpty()
@@ -149,7 +172,13 @@ fun SignInScreen(navController: NavController, viewModel: AuthViewModel) {
                                 unfocusedContainerColor = BackgroundGray,
                                 focusedContainerColor = BackgroundGray
                             ),
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Password,
+                                imeAction = ImeAction.Done
+                            ),
+                            keyboardActions = KeyboardActions(
+                                onDone = { performLogin() }
+                            ),
                             singleLine = true,
                             shape = RoundedCornerShape(12.dp)
                         )
@@ -168,19 +197,8 @@ fun SignInScreen(navController: NavController, viewModel: AuthViewModel) {
                     
                     Spacer(modifier = Modifier.height(16.dp))
                     
-                    val invalidPhoneMsg = stringResource(R.string.error_invalid_phone_format)
-                    
                     Button(
-                        onClick = { 
-                            val isValidPrefix = phone.startsWith("09") || phone.startsWith("08")
-                            if (phone.length == 10 && isValidPrefix) {
-                                if (password.isNotEmpty()) {
-                                    viewModel.login(phone, password)
-                                }
-                            } else {
-                                phoneError = invalidPhoneMsg
-                            }
-                        },
+                        onClick = { performLogin() },
                         enabled = phone.length == 10 && password.isNotEmpty() && !uiState.isLoading,
                         modifier = Modifier.fillMaxWidth().height(52.dp),
                         shape = RoundedCornerShape(12.dp),

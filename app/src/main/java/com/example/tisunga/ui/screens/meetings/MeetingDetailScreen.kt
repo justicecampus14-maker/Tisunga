@@ -3,7 +3,6 @@ package com.example.tisunga.ui.screens.meetings
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -24,6 +23,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -53,11 +53,9 @@ fun MeetingDetailScreen(
     val meeting = uiState.selectedMeeting
     val context = LocalContext.current
     val sessionManager = remember { com.example.tisunga.utils.SessionManager(context) }
-    val navBackStackEntry by navController.currentBackStackEntryAsState()
     
     var showCompleteDialog by remember { mutableStateOf(false) }
     var showCancelDialog by remember { mutableStateOf(false) }
-    var isAttendanceExpanded by remember { mutableStateOf(false) }
     
     var isEditingNotes by remember { mutableStateOf(false) }
     var discussionText by remember(meetingId) { mutableStateOf("") }
@@ -289,9 +287,7 @@ fun MeetingDetailScreen(
                         var showNotFound by remember { mutableStateOf(false) }
                         LaunchedEffect(Unit) {
                             kotlinx.coroutines.delay(3000)
-                            if (meeting == null && !uiState.isLoading) {
-                                showNotFound = true
-                            }
+                            showNotFound = true
                         }
                         if (showNotFound) {
                             Text(stringResource(R.string.meeting_not_found), color = TextSecondary)
@@ -408,6 +404,25 @@ fun MeetingHeaderCard(
 }
 
 @Composable
+fun MeetingNotesCard(notes: String) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = stringResource(R.string.meeting_notes_label),
+                fontWeight = FontWeight.Bold,
+                fontSize = 16.sp
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(text = notes, fontSize = 14.sp, color = TextPrimary)
+        }
+    }
+}
+
+@Composable
 fun MeetingDiscussionCard(
     notes: String,
     onNotesChange: (String) -> Unit,
@@ -425,6 +440,7 @@ fun MeetingDiscussionCard(
     hasAdminPrivileges: Boolean = false
 ) {
     val hasChanges = notes != originalNotes
+    val focusManager = LocalFocusManager.current
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -467,11 +483,21 @@ fun MeetingDiscussionCard(
                             .heightIn(min = 40.dp),
                         textStyle = LocalTextStyle.current.copy(color = TextPrimary, fontSize = 14.sp),
                         decorationBox = { innerTextField ->
-                            if (notes.isEmpty()) {
-                                Text("Type meeting discussion/notes here...", color = TextSecondary, fontSize = 14.sp)
+                            Box {
+                                if (notes.isEmpty()) {
+                                    Text("Type meeting discussion/notes here...", color = TextSecondary, fontSize = 14.sp)
+                                }
+                                innerTextField()
                             }
-                            innerTextField()
-                        }
+                        },
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(onDone = {
+                            if (hasChanges) {
+                                onSave()
+                                onEditingChange(false)
+                            }
+                            focusManager.clearFocus()
+                        })
                     )
                     
                     Row(

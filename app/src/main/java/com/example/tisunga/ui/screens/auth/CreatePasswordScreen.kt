@@ -3,6 +3,7 @@ package com.example.tisunga.ui.screens.auth
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -12,8 +13,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -36,6 +40,7 @@ fun CreatePasswordScreen(navController: NavController, viewModel: AuthViewModel)
     var confirmPassword by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf("") }
+    val focusManager = LocalFocusManager.current
 
     LaunchedEffect(uiState.isSuccess) {
         if (uiState.isSuccess) {
@@ -44,6 +49,24 @@ fun CreatePasswordScreen(navController: NavController, viewModel: AuthViewModel)
                 popUpTo(Routes.WELCOME) { inclusive = true }
             }
             viewModel.resetState()
+        }
+    }
+
+    val onSetPassword = {
+        val hasUpperCase = password.any { it.isUpperCase() }
+        val hasSymbol = password.any { !it.isLetterOrDigit() }
+
+        if (password != confirmPassword) {
+            error = context.getString(R.string.error_passwords_dont_match)
+        } else if (password.length < 8 || password.length > 64) {
+            error = context.getString(R.string.error_password_length)
+        } else if (!hasUpperCase) {
+            error = context.getString(R.string.error_password_uppercase)
+        } else if (!hasSymbol) {
+            error = context.getString(R.string.error_password_symbol)
+        } else {
+            error = ""
+            viewModel.setPassword(password)
         }
     }
 
@@ -107,7 +130,13 @@ fun CreatePasswordScreen(navController: NavController, viewModel: AuthViewModel)
                             unfocusedContainerColor = BackgroundGray,
                             focusedContainerColor = BackgroundGray
                         ),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Password,
+                            imeAction = ImeAction.Next
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onNext = { focusManager.moveFocus(FocusDirection.Down) }
+                        ),
                         singleLine = true
                     )
                     
@@ -139,7 +168,13 @@ fun CreatePasswordScreen(navController: NavController, viewModel: AuthViewModel)
                             unfocusedContainerColor = BackgroundGray,
                             focusedContainerColor = BackgroundGray
                         ),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Password,
+                            imeAction = ImeAction.Done
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onDone = { onSetPassword() }
+                        ),
                         singleLine = true
                     )
                     
@@ -156,23 +191,7 @@ fun CreatePasswordScreen(navController: NavController, viewModel: AuthViewModel)
                     Spacer(modifier = Modifier.height(32.dp))
                     
                     Button(
-                        onClick = { 
-                            val hasUpperCase = password.any { it.isUpperCase() }
-                            val hasSymbol = password.any { !it.isLetterOrDigit() }
-
-                            if (password != confirmPassword) {
-                                error = context.getString(R.string.error_passwords_dont_match)
-                            } else if (password.length < 8 || password.length > 64) {
-                                error = context.getString(R.string.error_password_length)
-                            } else if (!hasUpperCase) {
-                                error = context.getString(R.string.error_password_uppercase)
-                            } else if (!hasSymbol) {
-                                error = context.getString(R.string.error_password_symbol)
-                            } else {
-                                error = ""
-                                viewModel.setPassword(password)
-                            }
-                        },
+                        onClick = { onSetPassword() },
                         enabled = !uiState.isLoading,
                         modifier = Modifier.fillMaxWidth().height(52.dp),
                         shape = RoundedCornerShape(12.dp),

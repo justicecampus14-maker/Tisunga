@@ -4,6 +4,8 @@ import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -17,8 +19,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.animation.animateContentSize
 import androidx.compose.ui.unit.dp
@@ -57,6 +63,7 @@ fun MyLoansScreen(
     val uiState by viewModel.uiState.collectAsState()
     val homeUiState by homeViewModel.uiState.collectAsState()
     val groupUiState = groupViewModel?.uiState?.collectAsState()
+    val focusManager = LocalFocusManager.current
 
     val pullToRefreshState = rememberPullToRefreshState()
 
@@ -79,6 +86,13 @@ fun MyLoansScreen(
 
     // Reject dialog
     if (rejectingLoanId != null) {
+        val performReject = {
+            if (rejectReason.isNotBlank()) {
+                rejectingLoanId?.let { viewModel.rejectLoan(it, rejectReason, groupId) }
+                rejectingLoanId = null; rejectReason = ""
+            }
+        }
+
         AlertDialog(
             onDismissRequest = { rejectingLoanId = null },
             icon = {
@@ -95,16 +109,18 @@ fun MyLoansScreen(
                         placeholder = { Text(stringResource(R.string.enter_reason_hint)) },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(10.dp),
-                        minLines = 2
+                        minLines = 2,
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(onDone = { 
+                            focusManager.clearFocus()
+                            performReject() 
+                        })
                     )
                 }
             },
             confirmButton = {
                 Button(
-                    onClick = {
-                        rejectingLoanId?.let { viewModel.rejectLoan(it, rejectReason, groupId) }
-                        rejectingLoanId = null; rejectReason = ""
-                    },
+                    onClick = { performReject() },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
                     enabled = rejectReason.isNotBlank()
                 ) { Text(stringResource(R.string.reject_button_label), color = Color.White) }
@@ -674,6 +690,10 @@ fun RepayLoanDialog(
     onDismiss: () -> Unit
 ) {
     var amount by remember { mutableStateOf(loan.remainingBalance.toString()) }
+    val focusManager = LocalFocusManager.current
+    val onPay = {
+        amount.toDoubleOrNull()?.let { onConfirm(it) }
+    }
 
     Dialog(onDismissRequest = onDismiss) {
         Card(
@@ -709,7 +729,12 @@ fun RepayLoanDialog(
                     colors = OutlinedTextFieldDefaults.colors(
                         unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
                         focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-                    )
+                    ),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(onDone = { 
+                        focusManager.clearFocus()
+                        onPay() 
+                    })
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -723,7 +748,7 @@ fun RepayLoanDialog(
                         Text(stringResource(R.string.cancel_button), color = MaterialTheme.colorScheme.onSurface)
                     }
                     Button(
-                        onClick = { amount.toDoubleOrNull()?.let { onConfirm(it) } },
+                        onClick = { onPay() },
                         modifier = Modifier.weight(1f).height(50.dp),
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)

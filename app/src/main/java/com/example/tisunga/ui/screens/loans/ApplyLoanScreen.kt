@@ -74,6 +74,12 @@ fun ApplyLoanScreen(
     val isInsufficient = amtVal > totalSavings
     val isValidAmount = amount.isNotEmpty() && amtVal > 0
 
+    val onApply = {
+        if (isValidAmount && !isInsufficient) {
+            viewModel.applyForLoan(groupId, amtVal, durationValue, purpose)
+        }
+    }
+
     // Synchronize local interest calculations
     LaunchedEffect(amount, durationValue) {
         val amt = amount.toDoubleOrNull() ?: 0.0
@@ -222,7 +228,6 @@ fun ApplyLoanScreen(
                         keyboardActions = KeyboardActions(
                             onNext = {
                                 focusManager.moveFocus(FocusDirection.Down)
-                                keyboardController?.hide()
                             }
                         ),
                         shape = RoundedCornerShape(12.dp),
@@ -321,6 +326,7 @@ fun ApplyLoanScreen(
                             onDone = {
                                 keyboardController?.hide()
                                 focusManager.clearFocus()
+                                onApply()
                             }
                         ),
                         shape = RoundedCornerShape(12.dp),
@@ -334,11 +340,7 @@ fun ApplyLoanScreen(
                     Spacer(modifier = Modifier.height(32.dp))
 
                     Button(
-                        onClick = {
-                            if (isValidAmount && !isInsufficient) {
-                                viewModel.applyForLoan(groupId, amtVal, durationValue, purpose)
-                            }
-                        },
+                        onClick = { onApply() },
                         modifier = Modifier.fillMaxWidth().height(56.dp),
                         shape = RoundedCornerShape(14.dp),
                         colors = ButtonDefaults.buttonColors(

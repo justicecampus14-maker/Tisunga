@@ -196,7 +196,7 @@ interface ApiService {
     // ── CONTRIBUTIONS ─────────────────────────────────────────────────────
 
     @POST("contributions")
-    suspend fun makeContribution(@Body body: Map<String, @JvmSuppressWildcards Any>): ContributionInitResponse
+    suspend fun makeContribution(@Body request: ContributionRequest): ContributionInitResponse
 
     @POST("contributions/model")
     suspend fun makeContributionModel(@Body contribution: Contribution): ContributionInitResponse
@@ -273,6 +273,14 @@ interface ApiService {
         @Path("groupId") groupId: String,
         @Path("meetingId") meetingId: String,
         @Body body: Map<String, String>
+    ): MeetingDetailResponse
+
+    @Multipart
+    @POST("groups/{groupId}/meetings/{meetingId}/image")
+    suspend fun uploadMeetingImage(
+        @Path("groupId") groupId: String,
+        @Path("meetingId") meetingId: String,
+        @Part image: MultipartBody.Part
     ): MeetingDetailResponse
 
     @PATCH("groups/{groupId}/meetings/{meetingId}/attendance")

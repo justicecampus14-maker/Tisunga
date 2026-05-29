@@ -3,6 +3,7 @@ package com.example.tisunga.data.repository
 import com.example.tisunga.data.model.Contribution
 import com.example.tisunga.data.remote.ApiService
 import com.example.tisunga.data.remote.dto.ContributionInitResponse
+import com.example.tisunga.data.remote.dto.ContributionRequest
 
 class ContributionRepository(
     private val apiService: ApiService,
@@ -12,16 +13,16 @@ class ContributionRepository(
         groupId: String,
         amount: Double,
         phone: String,
-        type: String, // "REGULAR", "SHARE_PURCHASE", "SOCIAL_FUND"
+        type: String, // "SAVINGS", "SHARE_PURCHASE", "SOCIAL_FUND"
         externalRef: String? = null
     ): ContributionInitResponse =
         apiService.makeContribution(
-            mapOf(
-                "groupId" to groupId,
-                "amount" to amount,
-                "phone" to phone,
-                "type" to type,
-                "externalRef" to (externalRef ?: "")
+            ContributionRequest(
+                groupId = groupId,
+                amount = amount,
+                phone = phone,
+                type = type,
+                externalRef = externalRef
             )
         )
 

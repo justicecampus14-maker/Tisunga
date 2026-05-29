@@ -2,6 +2,7 @@ package com.example.tisunga.ui.screens.auth
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Lock
@@ -11,9 +12,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -32,6 +36,7 @@ fun ResetPasswordScreen(navController: NavController, viewModel: AuthViewModel) 
     var confirmPassword by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var confirmPasswordVisible by remember { mutableStateOf(false) }
+    val focusManager = LocalFocusManager.current
 
     LaunchedEffect(uiState.isSuccess) {
         if (uiState.isSuccess) {
@@ -39,6 +44,12 @@ fun ResetPasswordScreen(navController: NavController, viewModel: AuthViewModel) 
                 popUpTo(Routes.SIGN_IN) { inclusive = true }
             }
             viewModel.resetState()
+        }
+    }
+
+    val onReset = {
+        if (password.isNotEmpty() && password == confirmPassword) {
+            viewModel.resetPassword(password)
         }
     }
 
@@ -87,7 +98,13 @@ fun ResetPasswordScreen(navController: NavController, viewModel: AuthViewModel) 
                             unfocusedContainerColor = BackgroundGray,
                             focusedContainerColor = BackgroundGray
                         ),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Password,
+                            imeAction = ImeAction.Next
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onNext = { focusManager.moveFocus(FocusDirection.Down) }
+                        ),
                         singleLine = true
                     )
                     
@@ -113,18 +130,23 @@ fun ResetPasswordScreen(navController: NavController, viewModel: AuthViewModel) 
                             unfocusedContainerColor = BackgroundGray,
                             focusedContainerColor = BackgroundGray
                         ),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Password,
+                            imeAction = ImeAction.Done
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onDone = { 
+                                focusManager.clearFocus()
+                                onReset() 
+                            }
+                        ),
                         singleLine = true
                     )
                     
                     Spacer(modifier = Modifier.height(32.dp))
                     
                     Button(
-                        onClick = { 
-                            if (password.isNotEmpty() && password == confirmPassword) {
-                                viewModel.resetPassword(password)
-                            }
-                        },
+                        onClick = { onReset() },
                         enabled = password.isNotEmpty() && password == confirmPassword && !uiState.isLoading,
                         modifier = Modifier.fillMaxWidth().height(52.dp),
                         shape = RoundedCornerShape(12.dp),

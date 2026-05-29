@@ -4,6 +4,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -13,7 +15,10 @@ import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -31,6 +36,7 @@ fun EditGroupScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val group = uiState.selectedGroup
+    val focusManager = LocalFocusManager.current
 
     var name by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
@@ -47,6 +53,12 @@ fun EditGroupScreen(
         initialMinute = currentTime.get(Calendar.MINUTE),
         is24Hour = true
     )
+
+    val onSave = {
+        if (name.isNotBlank()) {
+            viewModel.updateGroup(groupId, name, description, location, meetingTime, meetingDay)
+        }
+    }
 
     LaunchedEffect(groupId) {
         viewModel.getGroupDashboard(groupId)
@@ -87,7 +99,7 @@ fun EditGroupScreen(
                         )
                     } else {
                         IconButton(
-                            onClick = { viewModel.updateGroup(groupId, name, description, location, meetingTime, meetingDay) },
+                            onClick = { onSave() },
                             enabled = name.isNotBlank()
                         ) {
                             Icon(Icons.Default.Save, contentDescription = "Save")
@@ -121,14 +133,18 @@ fun EditGroupScreen(
                         label = "Group Name*",
                         value = name,
                         onValueChange = { name = it },
-                        placeholder = "Enter group name"
+                        placeholder = "Enter group name",
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                        keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) })
                     )
 
                     EditInputField(
                         label = "Location",
                         value = location,
                         onValueChange = { location = it },
-                        placeholder = "Enter group location"
+                        placeholder = "Enter group location",
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                        keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) })
                     )
                 }
             }
@@ -194,14 +210,19 @@ fun EditGroupScreen(
                     modifier = Modifier.fillMaxWidth().height(120.dp),
                     placeholder = { Text("What is this group about?") },
                     shape = RoundedCornerShape(12.dp),
-                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = NavyBlue)
+                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = NavyBlue),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(onDone = { 
+                        focusManager.clearFocus()
+                        onSave()
+                    })
                 )
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
             Button(
-                onClick = { viewModel.updateGroup(groupId, name, description, location, meetingTime, meetingDay) },
+                onClick = { onSave() },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = NavyBlue),
@@ -249,7 +270,14 @@ fun EditSection(title: String, content: @Composable () -> Unit) {
 }
 
 @Composable
-fun EditInputField(label: String, value: String, onValueChange: (String) -> Unit, placeholder: String) {
+fun EditInputField(
+    label: String, 
+    value: String, 
+    onValueChange: (String) -> Unit, 
+    placeholder: String,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    keyboardActions: KeyboardActions = KeyboardActions.Default
+) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(label, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = TextSecondary)
         OutlinedTextField(
@@ -259,7 +287,9 @@ fun EditInputField(label: String, value: String, onValueChange: (String) -> Unit
             placeholder = { Text(placeholder) },
             shape = RoundedCornerShape(12.dp),
             singleLine = true,
-            colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = NavyBlue)
+            colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = NavyBlue),
+            keyboardOptions = keyboardOptions,
+            keyboardActions = keyboardActions
         )
     }
 }

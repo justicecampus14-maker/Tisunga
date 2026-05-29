@@ -16,8 +16,12 @@ import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
+import retrofit2.HttpException
 import java.io.File
 import java.io.FileOutputStream
+import java.net.ConnectException
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 
 data class UserProfileUiState(
     val user: UserResponse? = null,
@@ -40,6 +44,36 @@ class UserProfileViewModel(
         loadProfile()
     }
 
+    private fun handleError(e: Exception): String {
+        val rawMessage = when (e) {
+            is ConnectException, is UnknownHostException -> "Server connection failed. Please check your internet."
+            is SocketTimeoutException -> "Connection timed out. Try again later."
+            is HttpException -> {
+                try {
+                    val errorBody = e.response()?.errorBody()?.string()
+                    val json = com.google.gson.JsonParser.parseString(errorBody).asJsonObject
+                    if (json.has("message")) json.get("message").asString
+                    else if (json.has("error")) json.get("error").asString
+                    else "Server error (${e.code()})"
+                } catch (_: Exception) { "Server error (${e.code()})" }
+            }
+            else -> e.message
+        }
+        
+        val msg = rawMessage ?: "An unexpected error occurred"
+        
+        return when {
+            msg.contains("prisma", ignoreCase = true) -> "A database error occurred."
+            msg.contains("Internal Server Error", ignoreCase = true) -> "Something went wrong on our end."
+            msg.contains("where minimum is", ignoreCase = true) -> {
+                val value = msg.substringAfter("where minimum is").trim().takeWhile { it.isDigit() || it == '.' || it == ',' }
+                if (value.isNotEmpty()) "The minimum amount required is MWK $value" 
+                else "Amount is below the minimum limit."
+            }
+            else -> msg
+        }
+    }
+
     fun loadProfile() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
@@ -55,7 +89,7 @@ class UserProfileViewModel(
                     userRole = response.memberships?.firstOrNull()?.role ?: "member"
                 )
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(isLoading = false, errorMessage = e.message ?: "Failed to load profile")
+                _uiState.value = _uiState.value.copy(isLoading = false, errorMessage = handleError(e))
             }
         }
     }
@@ -80,7 +114,7 @@ class UserProfileViewModel(
                     userRole = sessionManager.getUserRole()
                 )
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(isUpdating = false, errorMessage = e.message ?: "Failed to update profile")
+                _uiState.value = _uiState.value.copy(isUpdating = false, errorMessage = handleError(e))
             }
         }
     }
@@ -107,7 +141,7 @@ class UserProfileViewModel(
                 
                 _uiState.value = _uiState.value.copy(user = mergedUser, isUpdating = false, successMessage = "Avatar updated successfully")
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(isUpdating = false, errorMessage = e.message ?: "Failed to upload avatar")
+                _uiState.value = _uiState.value.copy(isUpdating = false, errorMessage = handleError(e))
             }
         }
     }

@@ -128,14 +128,14 @@ fun AboutScreen(navController: NavController) {
                 modifier = Modifier
                     .padding(horizontal = 20.dp)
                     .padding(top = 32.dp, bottom = 48.dp),
-                verticalArrangement = Arrangement.spacedBy(28.dp)
+                verticalArrangement = Arrangement.spacedBy(24.dp)
             ) {
                 // Mission Section
                 AboutCard(title = "Our Mission", icon = Icons.Default.RocketLaunch) {
                     Text(
                         text = "Tisunga is a digital ecosystem dedicated to modernizing Village Savings and Loan Associations (VSLAs). We empower communities by providing secure, transparent, and efficient financial management tools that bridge the gap between tradition and technology.",
                         style = MaterialTheme.typography.bodyLarge,
-                        lineHeight = 28.sp,
+                        lineHeight = 26.sp,
                         textAlign = TextAlign.Justify,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.85f)
                     )
@@ -262,11 +262,7 @@ fun AboutCard(
                     color = MaterialTheme.colorScheme.onSurface
                 )
             }
-            HorizontalDivider(
-                modifier = Modifier.padding(vertical = 20.dp),
-                thickness = 1.dp,
-                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
-            )
+            Spacer(modifier = Modifier.height(20.dp))
             content()
         }
     }

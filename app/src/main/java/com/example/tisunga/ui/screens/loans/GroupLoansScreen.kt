@@ -7,6 +7,8 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
@@ -16,8 +18,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.clickable
@@ -42,6 +46,7 @@ fun GroupLoansScreen(
 ) {
     val uiState       by viewModel.uiState.collectAsState()
     val groupUiState  = groupViewModel?.uiState?.collectAsState()
+    val focusManager  = LocalFocusManager.current
 
     // Derive the user's role from GroupViewModel if wired up, else fall back to MEMBER
     val myRole = groupUiState?.value?.currentUserRole?.uppercase() ?: "MEMBER"
@@ -71,6 +76,13 @@ fun GroupLoansScreen(
 
     //Reject dialog
     if (rejectingLoanId != null) {
+        val performReject = {
+            if (rejectReason.isNotBlank()) {
+                rejectingLoanId?.let { viewModel.rejectLoan(it, rejectReason, groupId) }
+                rejectingLoanId = null; rejectReason = ""
+            }
+        }
+
         AlertDialog(
             onDismissRequest = { rejectingLoanId = null },
             icon = {
@@ -87,16 +99,18 @@ fun GroupLoansScreen(
                         placeholder = { Text(stringResource(R.string.enter_reason_hint)) },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(10.dp),
-                        minLines = 2
+                        minLines = 2,
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(onDone = {
+                            focusManager.clearFocus()
+                            performReject()
+                        })
                     )
                 }
             },
             confirmButton = {
                 Button(
-                    onClick = {
-                        rejectingLoanId?.let { viewModel.rejectLoan(it, rejectReason, groupId) }
-                        rejectingLoanId = null; rejectReason = ""
-                    },
+                    onClick = { performReject() },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
                     enabled = rejectReason.isNotBlank()
                 ) { Text(stringResource(R.string.reject_button_label), color = Color.White) }

@@ -7,7 +7,9 @@ import com.example.tisunga.data.model.Contribution
 import com.example.tisunga.data.model.Disbursement
 import com.example.tisunga.data.model.MemberSharePayout
 import com.example.tisunga.data.remote.ApiClient
+import com.example.tisunga.data.remote.dto.ContributionRequest
 import com.example.tisunga.data.remote.dto.RejectDisbursementRequest
+import com.example.tisunga.utils.NetworkErrorHandler
 import com.example.tisunga.utils.SessionManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -122,7 +124,6 @@ class SavingsViewModel(
         }
     }
 
-    /** Alias kept for compatibility with call-sites that used this name */
     fun getGroupSavingsData(groupId: String) = loadSavingsData(groupId)
 
     // â”€â”€ Contribution history â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -189,10 +190,11 @@ class SavingsViewModel(
             _uiState.update { it.copy(isLoading = true) }
             try {
                 apiService.makeContribution(
-                    mapOf(
-                        "groupId" to contribution.groupId,
-                        "amount"  to contribution.amount,
-                        "type"    to contribution.type
+                    ContributionRequest(
+                        groupId = contribution.groupId,
+                        amount  = contribution.amount,
+                        phone   = contribution.phoneUsed ?: sessionManager.getUserPhone() ?: "",
+                        type    = contribution.type
                     )
                 )
                 _uiState.update { it.copy(
